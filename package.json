@@ -1,0 +1,13 @@
+{
+  "name": "ai-code-security-checker-modules",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AI 產出程式碼資安檢查器 — 8 個獨立模組(見 README_START_HERE.md)",
+  "scripts": {
+    "test": "for f in test/*.test.js; do node \"$f\" || exit 1; done"
+  },
+  "devDependencies": {
+    "acorn": "^8.11.3"
+  },
+  "note": "acorn 只有 M6(idor-detector)的 AST 測試需要,其餘 7 個模組完全零依賴。若沒有執行 `npm install`,M6 測試會自動偵測不到 acorn,改以「Acorn 不可用時的退化行為」驗證,不會讓整組測試失敗——這正是在模擬瀏覽器端 CDN 載入失敗的真實情境。瀏覽器端本身不需要 npm install,是透過 <script src=\"...cdn.../acorn.min.js\"> 直接載入,見 reference/index.html。"
+}
