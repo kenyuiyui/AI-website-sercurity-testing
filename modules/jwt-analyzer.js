@@ -6,12 +6,29 @@
  * 輸入: code (string)
  * 輸出: Finding[]
  *
- * 這是純函式,不依賴任何其他模組,可完全獨立開發與測試。
- * 注意: role=anon 是 tier2(設計上可公開), role=service_role 是 tier1(高風險),
- * 角色未知時保守歸為 tier2、不可略過不報。
+ * ⚠️ 修正紀錄(2026,拆分成獨立檔案後才暴露的問題):
+ * 本模組的 evidence 文字組裝依賴 M1(key-detector)的 maskMatch() 遮罩函式。
+ * 單檔版把全部模組寫在同一個 <script> 作用域內時,這個依賴不會出錯,但拆成
+ * 獨立檔案後,若載入順序不含 key-detector.js,或本檔案被單獨抽出使用,
+ * 會在瀏覽器與 Node.js 兩種環境下都直接噴 ReferenceError。
+ * 因此不再宣稱「不依賴任何其他模組」,改為明確處理跨模組依賴:
+ * 瀏覽器端要求 index.html 必須在 jwt-analyzer.js 之前載入 key-detector.js
+ * (demo_split/index.html 的載入順序已符合這個要求);Node.js 環境則直接
+ * require key-detector.js 取得 maskMatch。
+ * 輸入/輸出介面不變:輸入 code(string),輸出 Finding[]。
  */
 
 const JWT_KEY_PATTERN = /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g;
+
+// ── 環境相容取得 maskMatch(定義於 M1 key-detector.js) ──
+// 瀏覽器: key-detector.js 以 <script src> 先載入後,maskMatch 已在全域(window)作用域可用。
+// Node.js: module 物件存在,直接 require 同目錄下的 key-detector.js 取得 maskMatch。
+var maskMatch;
+if (typeof module !== 'undefined' && module.exports) {
+  maskMatch = require('./key-detector').maskMatch;
+} else if (typeof window !== 'undefined') {
+  maskMatch = window.maskMatch;
+}
 
 /**
  * base64url decode,相容瀏覽器(atob)與 Node.js(Buffer)環境
