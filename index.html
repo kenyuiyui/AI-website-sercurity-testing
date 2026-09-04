@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>未發現 ≠ 安全 — AI 產出程式碼資安檢查器</title>
+<meta name="description" content="貼上程式碼，掃描已知格式的明文金鑰外洩、CSP 缺失、弱雜湊演算法，並提示疑似缺少擁有權驗證的模式。純前端執行，內容不外送。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<!--
+  Acorn(JavaScript AST parser),用於 M6 idor-detector 的進階分析。
+  這是唯一的外部函式庫依賴,只影響「疑似缺少擁有權驗證」這一項檢測的精確度。
+  載入失敗時(離線、CDN無法連線等)不影響其他任何功能——idor-detector.js 內部
+  會自動偵測 acorn 是否可用,偵測不到時靜默退化為原本的正則比對版本,
+  不會顯示錯誤訊息、不會中斷掃描,只是這一項檢測的涵蓋範圍會略窄。
+  此函式庫僅在使用者瀏覽器本機執行語法分析,不會把貼上的程式碼送出到任何伺服器。
+-->
+<script src="https://cdn.jsdelivr.net/npm/acorn@8.11.3/dist/acorn.min.js" defer></script>
+<!--
+  ⚠️ 修正紀錄(2026,真實AI產出程式碼實測發現的問題):
+  Acorn 原生完全不認識 JSX 語法(React 的標籤式語法),貼上任何一段含JSX的
+  React元件(.tsx/.jsx,這正是Lovable/v0/Bolt這類工具最主要的產出格式),
+  AST解析必定失敗、靜默退回涵蓋率較低的正則版。acorn-jsx是官方acornjs團隊
+  維護的外掛,可讓acorn認識JSX語法,但acorn-jsx本身沒有提供瀏覽器可直接用
+  script標籤載入的UMD/全域變數版本建置(只發布給npm/打包工具使用的格式),
+  因此改用esm.sh這個CDN服務,它會自動把npm套件轉換成瀏覽器原生ES模組格式,
+  透過ES模組型態的script標籤載入後,將acorn-jsx掛到全域的window.acornJsx,
+  供idor-detector.js的resolveAcornJsx()偵測使用。
+  跟acorn一樣,載入失敗(離線、esm.sh無法連線等)不影響其他任何功能——
+  idor-detector.js的buildParser()在找不到window.acornJsx時,會直接使用
+  純acorn(不支援JSX),此時含JSX的程式碼一樣會依現有機制退回正則版並顯示
+  提示,不會顯示錯誤訊息、不會中斷掃描。
+  ⚠️ 已知限制(誠實記錄):acorn-jsx只處理JSX語法本身,不處理TypeScript
+  專屬語法(interface、型別標註、泛型、as斷言等)。含這些語法的.tsx檔案,
+  即使acorn-jsx成功載入,解析仍會失敗、退回正則版——這是刻意的邊界,
+  不是bug,見idor-detector.js內的修正紀錄說明。
+  ⚠️ 部署前請務必實測:esm.sh是本次新加入的第二個外部CDN依賴,務必在
+  實際瀏覽器開啟這個頁面確認 window.acornJsx 有被正確設定(可在瀏覽器
+  開發者工具Console輸入 window.acornJsx 確認),因為這部分無法在純Node.js
+  測試環境完整驗證瀏覽器實際載入行為。
+-->
+<script type="module">
+  import * as acornJsxModule from "https://esm.sh/acorn-jsx@5.3.2";
+  window.acornJsx = acornJsxModule.default || acornJsxModule;
+</script>
+
+<!--
+  以下 12 個模組檔案是本工具的核心偵測邏輯,拆分成獨立檔案,方便個別開發、測試、維護。
+  必須用同步方式載入(不加 defer/async),且順序必須在主邏輯 <script> 之前,
+  因為主邏輯會在載入完成後立即呼叫這些模組定義的函式。
+  部署時這個 index.html 必須連同 modules/ 資料夾裡的全部 12 個檔案一起上傳,缺一不可。
+-->
+<script src="modules/key-detector.js"></script>
+<script src="modules/jwt-analyzer.js"></script>
+<script src="modules/hash-detector.js"></script>
+<script src="modules/secret-heuristics.js"></script>
+<script src="modules/csp-detector.js"></script>
+<script src="modules/idor-detector.js"></script>
+<script src="modules/language-detector.js"></script>
+<script src="modules/finding-renderer.js"></script>
+<script src="modules/sql-injection-detector.js"></script>
+<script src="modules/insecure-deserialize-detector.js"></script>
+<script src="modules/rate-limit-coverage-detector.js"></script>
+<script src="modules/field-masking-consistency-detector.js"></script>
+
+<style>
+  :root {
+    --bg: #12151C;
+    --bg-raised: #1A1E27;
+    --bg-input: #171B23;
+    --text: #E8E6DF;
+    --text-dim: #8A8F98;
+    --text-dimmer: #565B66;
+    --border: #2D3340;
+    --amber: #D4A15F;
+    --amber-bg: #241D14;
+    --amber-text: #E8C088;
+    --green: #5B8C7B;
+    --green-bg: #16201C;
+    --green-text: #7FB89E;
+    --gray-tier2: #6B7280;
+    --gray-tier2-text: #A9AEB8;
+    --focus: #D4A15F;
+  }
+
+  /* ================= 改版新增: 淺色主題(降低對比,柔和閱讀) ================= */
+  html[data-theme="light"] {
+    --bg: #FAF8F4;
+    --bg-raised: #FFFFFF;
+    --bg-input: #F3F0EA;
+    --text: #2B2A26;
+    --text-dim: #6B6A63;
+    --text-dimmer: #97958C;
+    --border: #E2DED3;
+    --amber: #B8823F;
+    --amber-bg: #FBF0DE;
+    --amber-text: #8A5D22;
+    --green: #4A7A67;
+    --green-bg: #E7F1EC;
+    --green-text: #2F5F4C;
+    --gray-tier2: #8B8F98;
+    --gray-tier2-text: #5C6068;
+    --focus: #B8823F;
+  }
+
+  * { box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'JetBrains Mono', 'Space Mono', ui-monospace, monospace;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 0;
+    background-image:
+      repeating-linear-gradient(0deg, rgba(232,230,223,0.012) 0px, rgba(232,230,223,0.012) 1px, transparent 1px, transparent 3px);
+  }
+
+  a { color: var(--amber); }
+  a:focus-visible, button:focus-visible, textarea:focus-visible, summary:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+
+  .wrap {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* ---------- Header / Hero ---------- */
+  header.hero {
+    padding: 4rem 0 2.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .eyebrow {
+    font-size: 11px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-dimmer);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 1.1rem;
+  }
+  .eyebrow .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 0 3px rgba(91,140,123,0.15);
+    flex-shrink: 0;
+  }
+
+  h1.title {
+    font-size: clamp(28px, 5vw, 40px);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    margin: 0 0 1rem;
+    color: var(--text);
+  }
+  h1.title .flicker {
+    color: var(--amber);
+  }
+
+  .lede {
+    font-size: 14.5px;
+    color: var(--text-dim);
+    max-width: 58ch;
+    margin: 0 0 1.6rem;
+  }
+
+  /* ---------- Boundary section(收進可展開區塊,預設收合,維持頁面精簡) ---------- */
+  .boundary-details {
+    margin: 1.6rem 0 2.2rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-raised);
+    overflow: hidden;
+  }
+  .boundary-details summary {
+    padding: 11px 14px;
+    font-size: 13px;
+    color: var(--amber-text);
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .boundary-details summary::-webkit-details-marker { display: none; }
+  .boundary-details summary::before {
+    content: '▸';
+    display: inline-block;
+    transition: transform 0.15s ease;
+    color: var(--amber);
+  }
+  .boundary-details[open] summary::before { transform: rotate(90deg); }
+  .boundary-details summary:hover { color: var(--text); }
+  .boundary-details[open] summary { border-bottom: 1px solid var(--border); }
+  section.boundary {
+    padding: 1.1rem 1.2rem 1.3rem;
+  }
+  .boundary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+  @media (max-width: 640px) {
+    .boundary-grid { grid-template-columns: 1fr; }
+  }
+  .boundary-col {
+    background: var(--bg-raised);
+    padding: 1.1rem 1.2rem;
+  }
+  .boundary-col .label {
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 0.6rem;
+    font-weight: 600;
+  }
+  .boundary-col.can .label { color: var(--green-text); }
+  .boundary-col.cannot .label { color: var(--text-dim); }
+  .boundary-col ul {
+    margin: 0;
+    padding-left: 1.1rem;
+    font-size: 12.5px;
+    color: var(--text-dim);
+  }
+  .boundary-col.cannot ul { color: var(--text-dimmer); }
+  .boundary-col li { margin-bottom: 0.35rem; }
+
+  .honesty-note {
+    margin-top: 1rem;
+    font-size: 12px;
+    color: var(--text-dimmer);
+    border-left: 2px solid var(--border);
+    padding: 0.6rem 0 0.6rem 0.9rem;
+    line-height: 1.7;
+  }
+
+  /* ---------- Scanner ---------- */
+  section.scanner {
+    padding: 2.4rem 0 1rem;
+  }
+
+  .scanner-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 0.9rem;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+  .scanner-head h2 {
+    font-size: 15px;
+    margin: 0;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .scanner-head .hint {
+    font-size: 11.5px;
+    color: var(--text-dimmer);
+  }
+
+  /* 「不知道怎麼拿到原始碼」教學區塊：導覽性質，比技術細節的摺疊區塊
+     更醒目一些（用琥珀色邊框呼應主色），因為這是給不熟悉技術的人看的
+     入口，需要比較容易被注意到，而不是隱藏起來。 */
+  .howto-block {
+    margin-bottom: 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-raised);
+    overflow: hidden;
+  }
+  .howto-block summary {
+    padding: 11px 14px;
+    font-size: 13px;
+    color: var(--amber-text);
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .howto-block summary::-webkit-details-marker { display: none; }
+  .howto-block summary::before {
+    content: '▸';
+    display: inline-block;
+    transition: transform 0.15s ease;
+    color: var(--amber);
+  }
+  .howto-block[open] summary::before { transform: rotate(90deg); }
+  .howto-block summary:hover { color: var(--text); }
+  .howto-block[open] summary { border-bottom: 1px solid var(--border); }
+
+  .howto-body {
+    padding: 14px 16px 16px;
+  }
+  .howto-intro {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    line-height: 1.75;
+    margin: 0 0 16px;
+  }
+  .howto-method {
+    margin-bottom: 18px;
+  }
+  .howto-method:last-child { margin-bottom: 0; }
+  .howto-method-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .howto-num {
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    background: rgba(212,161,95,0.15);
+    color: var(--amber-text);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-weight: 600;
+  }
+  .howto-steps {
+    margin: 0;
+    padding-left: 1.4rem;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    line-height: 1.85;
+  }
+  .howto-steps li { margin-bottom: 4px; }
+  .howto-steps code {
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 11.5px;
+    color: var(--amber-text);
+  }
+  .howto-note {
+    font-size: 11.5px;
+    color: var(--text-dimmer);
+    line-height: 1.7;
+    margin: 10px 0 0;
+    padding: 8px 10px;
+    background: var(--bg-input);
+    border-radius: 6px;
+    border-left: 2px solid var(--border);
+  }
+
+  .input-frame {
+    position: relative;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--bg-input);
+    overflow: hidden;
+  }
+  .input-frame .bar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .input-frame .bar .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--border); }
+  .input-frame .bar .barlabel {
+    margin-left: 6px;
+    font-size: 11px;
+    color: var(--text-dimmer);
+    letter-spacing: 0.04em;
+  }
+
+  textarea#codeInput {
+    width: 100%;
+    display: block;
+    min-height: 190px;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 14px 16px;
+    resize: vertical;
+    line-height: 1.7;
+  }
+  textarea#codeInput::placeholder { color: var(--text-dimmer); }
+
+  /* scanning sweep overlay */
+  .scan-sweep {
+    position: absolute;
+    left: 0; right: 0;
+    height: 46px;
+    top: 38px;
+    background: linear-gradient(180deg, rgba(212,161,95,0) 0%, rgba(212,161,95,0.09) 50%, rgba(212,161,95,0) 100%);
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(0);
+  }
+  .scan-sweep.running {
+    animation: sweep 0.9s cubic-bezier(0.4,0,0.2,1) forwards;
+  }
+  @keyframes sweep {
+    0% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(220px); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .scan-sweep.running { animation: none; opacity: 0; }
+  }
+
+  .controls {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+
+  button {
+    font-family: inherit;
+    font-size: 13px;
+    border-radius: 6px;
+    padding: 9px 18px;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease, transform 0.05s ease;
+  }
+  button:active { transform: translateY(1px); }
+
+  #scanBtn {
+    background: var(--amber);
+    color: #1A1408;
+    border: none;
+    font-weight: 600;
+  }
+  #scanBtn:hover { background: #E0AD6D; }
+  #scanBtn:disabled { opacity: 0.6; cursor: default; }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-dim);
+    border: 1px solid var(--border);
+  }
+  .btn-ghost:hover { border-color: #454C5C; color: var(--text); }
+
+  /* ── 多檔案模式(2026新增修補) ── */
+  .multi-file-toggle {
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+  }
+  .mf-toggle-label {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    cursor: pointer;
+    line-height: 1.5;
+  }
+  .mf-toggle-label input[type="checkbox"] {
+    margin-top: 2px;
+    accent-color: var(--amber);
+    cursor: pointer;
+  }
+
+  .multi-file-container {
+    margin-top: 12px;
+  }
+  .mf-file-item {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-raised);
+    margin-bottom: 10px;
+    overflow: hidden;
+  }
+  .mf-file-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 10px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-input);
+  }
+  .mf-filename-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 13px;
+    padding: 4px 6px;
+    border-radius: 4px;
+  }
+  .mf-filename-input:focus {
+    outline: 1px solid var(--amber);
+    background: var(--bg-input);
+  }
+  .mf-filename-input::placeholder { color: var(--text-dimmer); }
+  .mf-remove-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-dimmer);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .mf-remove-btn:hover { border-color: rgba(212,161,95,0.4); color: var(--amber-text); }
+  .mf-file-item textarea {
+    width: 100%;
+    min-height: 120px;
+    background: var(--bg-input);
+    border: none;
+    color: var(--text);
+    font-family: inherit;
+    font-size: 12.5px;
+    padding: 10px;
+    resize: vertical;
+    box-sizing: border-box;
+  }
+  .mf-file-item textarea:focus { outline: none; }
+  .mf-file-item textarea::placeholder { color: var(--text-dimmer); }
+
+  .mf-add-btn {
+    font-size: 12.5px;
+    padding: 7px 14px;
+  }
+  .mf-hint {
+    margin-top: 10px;
+    font-size: 11.5px;
+    color: var(--text-dimmer);
+    line-height: 1.6;
+  }
+
+  .status-line {
+    font-size: 11.5px;
+    color: var(--text-dimmer);
+    margin-top: 10px;
+    min-height: 1.4em;
+  }
+
+  /* ---------- Results ---------- */
+  #results { margin-top: 1.6rem; }
+
+  .result-card {
+    border-left: 2px solid var(--border);
+    padding: 11px 14px;
+    border-radius: 0 8px 8px 0;
+    margin-bottom: 8px;
+    animation: develop 0.4s ease both;
+  }
+  @keyframes develop {
+    from { opacity: 0; transform: translateY(-3px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .result-card { animation: none; }
+  }
+
+  .result-card.tier1 { border-color: var(--amber); background: var(--amber-bg); }
+  .result-card.tier2 { border-color: var(--gray-tier2); background: var(--bg-raised); }
+  .result-card.clean { border-color: var(--green); background: var(--green-bg); }
+
+  .result-card .rc-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 3px;
+  }
+  .result-card.tier1 .rc-title { color: var(--amber-text); }
+  .result-card.tier2 .rc-title { color: var(--gray-tier2-text); }
+  .result-card.clean .rc-title { color: var(--green-text); }
+
+  .result-card .rc-tag {
+    display: inline-block;
+    font-size: 9.5px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 1px 6px;
+    border-radius: 4px;
+    margin-right: 8px;
+    vertical-align: middle;
+    position: relative;
+    top: -1px;
+  }
+  .result-card.tier1 .rc-tag { background: rgba(212,161,95,0.18); color: var(--amber-text); }
+  .result-card.tier2 .rc-tag { background: rgba(107,114,128,0.18); color: var(--gray-tier2-text); }
+
+  /* 檔名標籤:多檔案掃描時標示這筆發現來自哪個檔案,刻意用中性淡灰色,
+     不套用tier的amber/gray配色——這不是嚴重程度資訊,只是來源標示,
+     不該搶走rc-tag(發現/建議複查)原本該有的視覺重量。單一檔案掃描時
+     Finding不帶filename欄位,這個class根本不會出現在畫面上。 */
+  .result-card .rc-filename-tag {
+    display: inline-block;
+    font-size: 10.5px;
+    color: var(--text-dimmer);
+    background: var(--bg-input);
+    border: 1px solid var(--border);
+    padding: 1px 7px;
+    border-radius: 4px;
+    margin-left: 8px;
+    vertical-align: middle;
+    font-family: inherit;
+  }
+
+  .result-card .rc-evidence {
+    font-size: 12px;
+    color: var(--text-dim);
+    font-family: inherit;
+    margin-top: 4px;
+    word-break: break-all;
+  }
+  .result-card.tier2 .rc-evidence { color: var(--text-dimmer); }
+
+  /* 白話後果說明：優先呈現，字級比技術名稱大，不需要背景知識也要看懂 */
+  .result-card .rc-plain {
+    font-size: 14px;
+    line-height: 1.65;
+    color: var(--text);
+    margin: 6px 0 10px;
+  }
+
+  /* 技術細節：摺疊在 <details> 裡，給想深入了解的人看，不強迫每個人都要先懂術語 */
+  .result-card .rc-tech {
+    margin-top: 4px;
+  }
+  .result-card .rc-tech summary {
+    font-size: 11px;
+    color: var(--text-dimmer);
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    user-select: none;
+  }
+  .result-card .rc-tech summary:hover { color: var(--text-dim); }
+  .result-card .rc-tech[open] summary { margin-bottom: 6px; }
+
+  /* 複製貼給 AI 的交接指令 */
+  .rc-handoff {
+    margin-top: 10px;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    background: var(--bg-input);
+    overflow: hidden;
+  }
+  .rc-handoff-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 10px;
+    gap: 8px;
+  }
+  .rc-handoff-label {
+    font-size: 11px;
+    color: var(--text-dimmer);
+    letter-spacing: 0.03em;
+  }
+  .rc-copy-btn {
+    font-family: inherit;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--text-dim);
+    cursor: pointer;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+  .rc-copy-btn:hover { border-color: var(--amber); color: var(--amber-text); }
+  .rc-copy-btn.copied { border-color: var(--green); color: var(--green-text); background: rgba(91,140,123,0.1); }
+
+  .rc-handoff-text {
+    display: none;
+    white-space: pre-wrap;
+    font-size: 11.5px;
+    line-height: 1.7;
+    color: var(--text-dimmer);
+    padding: 0 10px 10px;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+  .rc-handoff.expanded .rc-handoff-text { display: block; }
+
+  /* 攻擊示範:合法使用者 vs 攻擊者對比卡片(目前僅IDOR發現使用),沿用既有 amber(危險)/green(安全) 色系,
+     不引入新色彩,維持與 tier1/tier2 標籤一致的視覺語言 */
+  .rc-attack-demo {
+    margin-top: 10px;
+  }
+  .rc-attack-demo summary {
+    font-size: 11px;
+    color: var(--text-dimmer);
+    cursor: pointer;
+    letter-spacing: 0.02em;
+    user-select: none;
+  }
+  .rc-attack-demo summary:hover { color: var(--amber-text); }
+  .rc-attack-demo[open] summary { margin-bottom: 10px; }
+
+  .attack-demo-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  @media (max-width: 560px) {
+    .attack-demo-grid { grid-template-columns: 1fr; }
+  }
+  .attack-demo-card {
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+  }
+  .attack-demo-card.attack-demo-evil {
+    border-color: rgba(212,161,95,0.35);
+  }
+  .attack-demo-head {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-dim);
+    margin-bottom: 8px;
+  }
+  .attack-demo-evil .attack-demo-head { color: var(--amber-text); }
+  .attack-demo-req {
+    font-family: inherit;
+    font-size: 11.5px;
+    color: var(--text-dimmer);
+    background: var(--bg);
+    border-radius: 5px;
+    padding: 6px 8px;
+    margin-bottom: 8px;
+    word-break: break-all;
+  }
+  .attack-id-legit { color: var(--green-text); font-weight: 600; }
+  .attack-id-evil { color: var(--amber-text); font-weight: 600; }
+  .attack-demo-result-label {
+    font-size: 11px;
+    color: var(--text-dimmer);
+    margin-bottom: 4px;
+  }
+  .attack-demo-danger-text { color: var(--amber-text) !important; }
+  .attack-demo-result {
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 6px 8px;
+    font-size: 12px;
+  }
+  .attack-demo-result-danger {
+    border-color: rgba(212,161,95,0.35);
+    background: var(--amber-bg);
+  }
+  .attack-demo-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 2px 0;
+    color: var(--text-dim);
+  }
+  .attack-demo-note {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: flex-start;
+    gap: 6px;
+    line-height: 1.5;
+  }
+
+  /* 金鑰影響範圍展示(supabase_service_role / supabase_anon / M1一般金鑰能力清單共用),
+     單卡列表強調破壞力,雙欄對比強調條件性差異,兩者共用同一套 amber 危險色系 */
+  .key-impact-card {
+    border-radius: 8px;
+    padding: 10px 12px;
+    border: 1px solid var(--border);
+    background: var(--bg-input);
+  }
+  .key-impact-card.key-impact-danger {
+    border-color: rgba(212,161,95,0.35);
+    background: var(--amber-bg);
+  }
+  .key-impact-head {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--amber-text);
+    margin-bottom: 10px;
+  }
+  .key-impact-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .key-impact-row {
+    font-size: 12.5px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .key-impact-row.key-impact-bad { color: var(--amber-text); }
+  .key-impact-icon {
+    font-style: normal;
+    font-size: 11px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(212,161,95,0.15);
+    flex-shrink: 0;
+  }
+
+
+  .results-summary {
+    font-size: 11.5px;
+    color: var(--text-dimmer);
+    margin-bottom: 10px;
+    letter-spacing: 0.02em;
+  }
+
+  /* ---------- Cannot-detect fixed block ---------- */
+  .cannot-block {
+    margin-top: 1.4rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-raised);
+    overflow: hidden;
+  }
+  .cannot-block .cb-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 0.7rem 1.2rem;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-dimmer);
+    font-weight: 600;
+    cursor: pointer;
+    user-select: none;
+    list-style: none;
+  }
+  .cannot-block .cb-label::-webkit-details-marker { display: none; }
+  .cannot-block .cb-label::before {
+    content: '▸';
+    display: inline-block;
+    transition: transform 0.15s ease;
+    color: var(--text-dimmer);
+  }
+  .cannot-block[open] .cb-label::before { transform: rotate(90deg); }
+  .cannot-block .cb-label:hover { color: var(--text-dim); }
+  .cannot-block[open] .cb-label { border-bottom: 1px solid var(--border); }
+  .cannot-block p {
+    margin: 0;
+    padding: 0.9rem 1.2rem 1rem;
+    font-size: 12px;
+    color: var(--text-dimmer);
+    line-height: 1.8;
+  }
+
+  /* ---------- Footer ---------- */
+  footer {
+    margin-top: 3rem;
+    padding: 1.8rem 0 3rem;
+    border-top: 1px solid var(--border);
+    font-size: 11.5px;
+    color: var(--text-dimmer);
+    line-height: 1.8;
+  }
+  footer a { color: var(--text-dim); text-decoration: underline; text-decoration-color: var(--border); text-underline-offset: 3px; }
+  footer a:hover { color: var(--amber); }
+
+  .sr-only {
+    position: absolute; width: 1px; height: 1px;
+    padding: 0; margin: -1px; overflow: hidden;
+    clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+  }
+
+  @media (max-width: 480px) {
+    header.hero { padding: 2.6rem 0 2rem; }
+    .controls { flex-direction: column; }
+    .controls button { width: 100%; }
+  }
+
+  /* ================= 改版新增: 主題切換按鈕 ================= */
+  .theme-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+  }
+  .theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 0.4rem 0.75rem;
+    border-radius: 999px;
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .theme-toggle:hover { border-color: var(--amber); color: var(--amber-text); }
+  .theme-toggle .ti { font-size: 13px; line-height: 1; }
+
+  /* ================= 改版新增: Tab 導覽系統 ================= */
+  .top-tabs {
+    display: flex;
+    gap: 0;
+    margin-bottom: 1.8rem;
+    border-bottom: 1px solid var(--border);
+  }
+  .top-tab {
+    appearance: none;
+    background: none;
+    border: none;
+    color: var(--text-dimmer);
+    font-size: 13px;
+    font-family: inherit;
+    padding: 0.7rem 0.2rem;
+    margin-right: 1.5rem;
+    cursor: pointer;
+    position: relative;
+    letter-spacing: 0.01em;
+  }
+  .top-tab:hover { color: var(--text-dim); }
+  .top-tab[aria-selected="true"] {
+    color: var(--amber-text);
+    font-weight: 600;
+  }
+  .top-tab[aria-selected="true"]::after {
+    content: '';
+    position: absolute;
+    left: 0; right: 0; bottom: -1px;
+    height: 2px;
+    background: var(--amber);
+    border-radius: 2px 2px 0 0;
+  }
+  .tab-panel[hidden] { display: none; }
+
+  /* ================= 改版新增: 首屏精簡引導列 ================= */
+  .quick-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin: 0.8rem 0 1.4rem;
+  }
+  .quick-link-btn {
+    appearance: none;
+    background: var(--bg-raised);
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: inherit;
+    font-size: 12px;
+    padding: 0.45rem 0.85rem;
+    border-radius: 999px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: border-color 0.15s ease, color 0.15s ease;
+  }
+  .quick-link-btn:hover {
+    border-color: var(--amber);
+    color: var(--amber-text);
+  }
+  .quick-link-btn .qi { opacity: 0.7; }
+
+  /* ================= 改版新增: 說明頁 / 教學頁通用排版 ================= */
+  .info-page-head { margin-bottom: 1.4rem; }
+  .info-page-head h2 {
+    font-size: 20px;
+    margin: 0 0 0.4rem;
+    color: var(--text);
+  }
+  .info-page-head p {
+    font-size: 13px;
+    color: var(--text-dim);
+    margin: 0;
+    max-width: 60ch;
+    line-height: 1.7;
+  }
+  .back-to-scan {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    color: var(--text-dim);
+    background: none;
+    border: none;
+    font-family: inherit;
+    cursor: pointer;
+    padding: 0;
+    margin-bottom: 1.2rem;
+  }
+  .back-to-scan:hover { color: var(--amber-text); }
+
+</style><body>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="theme-row">
+      <div class="eyebrow"><span class="dot" aria-hidden="true"></span> 純前端執行・內容不外送・無追蹤腳本</div>
+      <button type="button" class="theme-toggle" id="themeToggle" aria-label="切換淺色／深色主題">
+        <span class="ti" id="themeIcon" aria-hidden="true">&#9788;</span>
+        <span id="themeLabel">淺色模式</span>
+      </button>
+    </div>
+    <h1 class="title">看見 AI 網頁的程式過錯。</h1>
+    <p class="lede">錯與過，不該是我的鍋——貼上程式碼，掃描常見的 AI 產出資安問題。</p>
+  </header>
+
+  <nav class="top-tabs" role="tablist" aria-label="頁面切換">
+    <button type="button" class="top-tab" id="tab-btn-scan" role="tab" aria-selected="true" aria-controls="tab-panel-scan">開始掃描</button>
+    <button type="button" class="top-tab" id="tab-btn-boundary" role="tab" aria-selected="false" aria-controls="tab-panel-boundary">查得到／查不到什麼</button>
+    <button type="button" class="top-tab" id="tab-btn-howto" role="tab" aria-selected="false" aria-controls="tab-panel-howto">怎麼拿到程式碼</button>
+  </nav>
+
+  <!-- ============ Tab 1: 掃描（預設頁，首屏） ============ -->
+  <div id="tab-panel-scan" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-scan">
+
+    <section class="scanner" aria-labelledby="scanner-h">
+    <div class="scanner-head">
+      <h2 id="scanner-h">貼上程式碼開始掃描</h2>
+      <span class="hint">內容只在瀏覽器記憶體處理，不會送出</span>
+    </div>
+
+    <div class="quick-links">
+        <button type="button" class="quick-link-btn" data-goto-tab="tab-btn-boundary">
+          <span class="qi">&#9680;</span> 這工具查得到什麼、查不到什麼？
+        </button>
+        <button type="button" class="quick-link-btn" data-goto-tab="tab-btn-howto">
+          <span class="qi">&#10209;</span> 不知道怎麼複製程式碼？
+        </button>
+      </div>
+
+    <div class="input-frame">
+      <div class="bar">
+        <span class="dot" aria-hidden="true"></span>
+        <span class="dot" aria-hidden="true"></span>
+        <span class="dot" aria-hidden="true"></span>
+        <span class="barlabel">code-input</span>
+      </div>
+      <label for="codeInput" class="sr-only">貼上要掃描的程式碼</label>
+      <textarea id="codeInput" placeholder="貼上你的程式碼…"></textarea>
+      <div class="scan-sweep" id="scanSweep" aria-hidden="true"></div>
+    </div>
+
+    <!--
+      ⚠️ 修補紀錄(2026,補齊多檔案掃描的UI):
+      原本這個demo只有單一textarea,使用者若要掃描拆分成多個檔案的前端專案
+      (例如前端一個檔案、後端一個檔案,或元件拆分成好幾個檔案),沒有介面可用。
+      scan-orchestrator.js的runMultiFileScan(files)邏輯原本就存在,但完全沒
+      被UI呼叫過。這裡新增「多檔案模式」切換,不動既有單一textarea的預設體驗
+      (單一輸入是本工具主要使用情境,多數人只需要貼一段程式碼),多檔案模式
+      是選用的擴充,切換時用display控制顯示/隱藏,兩種模式不會同時送出。
+    -->
+    <div class="multi-file-toggle">
+      <label class="mf-toggle-label">
+        <input type="checkbox" id="multiFileToggle">
+        <span>多檔案模式（適合拆分成多個檔案的前端專案，例如前端／後端分開，或元件拆成好幾個檔案）</span>
+      </label>
+    </div>
+
+    <div id="multiFileContainer" class="multi-file-container" hidden>
+      <div id="multiFileList"></div>
+      <button id="addFileBtn" type="button" class="btn-ghost mf-add-btn">+ 新增檔案</button>
+      <p class="mf-hint">每個檔案各自跑完整分析後合併結果，並額外比對「同一個敏感欄位在不同檔案的輸出是否遮罩不一致」（例如前端有遮罩、後端沒遮罩）。檔名只用來標示發現位置，不影響偵測邏輯本身。</p>
+    </div>
+
+    <div class="controls">
+      <button id="scanBtn" type="button">掃描</button>
+      <button id="sampleBtn" type="button" class="btn-ghost">載入範例</button>
+      <button id="clearBtn" type="button" class="btn-ghost">清除</button>
+    </div>
+    <div class="status-line" id="statusLine" role="status" aria-live="polite"></div>
+
+    <div id="results" aria-live="polite"></div>
+  </section>
+
+    <footer>
+    <p>本工具僅做靜態文字／模式比對，不執行、不上傳、不儲存你貼上的任何內容。適用於快速自我檢查，不能取代正式的資安審查或滲透測試。</p>
+    <p>建議規則：金鑰＋CSP＋弱雜湊為第一層高信心度發現；疑似擁有權驗證缺漏為第二層建議複查，请自行對照程式邏輯判斷。</p>
+    <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a></p>
+  </footer>
+
+  </div>
+
+  <!-- ============ Tab 2: 查得到／查不到什麼 ============ -->
+  <div id="tab-panel-boundary" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-boundary" hidden>
+    <button type="button" class="back-to-scan" data-goto-tab="tab-btn-scan">&larr; 回到掃描</button>
+    <div class="info-page-head">
+      <h2>這個工具查得到什麼、查不到什麼</h2>
+      <p>使用前先看這頁，避免對掃描結果有錯誤期待。「工具沒標記」不代表「沒問題」。</p>
+    </div>
+    <section class="boundary" aria-labelledby="boundary-h">
+      <div class="boundary-grid">
+        <div class="boundary-col can">
+          <div class="label">可以，且相對可靠</div>
+          <ul>
+            <li>已知格式的明文 API 金鑰（OpenAI／Anthropic／Gemini／Firebase／Line／AWS）</li>
+            <li>HTML 頁面是否設定 Content Security Policy（含 Next.js／Nuxt 等框架設定檔的初步比對）</li>
+            <li>密碼是否用 MD5／SHA1 這類不適合存密碼的雜湊函式</li>
+            <li>Supabase／JWT 格式金鑰，並區分 anon（可公開）與 service_role（絕不可公開）兩種風險等級</li>
+          </ul>
+        </div>
+        <div class="boundary-col cannot">
+          <div class="label">做不到 / 僅供保守提示</div>
+          <ul>
+            <li>字串拆分組合而成的金鑰</li>
+            <li>協定層級漏洞、需動態執行才能確認的邏輯漏洞</li>
+            <li>疑似缺少擁有權驗證（IDOR）— 只是模式比對，主要針對 JavaScript／Express 語法，不保證抓到、也一定會有誤判</li>
+            <li>疑似自訂密鑰／權杖變數含明文字串、疑似內部服務端點 URL 寫死、環境變數讀取帶明文 fallback — 沒有固定格式可比對，僅按變數命名與字串特徵猜測，誤判率高於已知金鑰格式</li>
+            <li>.env 格式內容需直接貼上該檔案文字才會被掃描到，本工具不會、也無法自動讀取你的檔案系統</li>
+            <li>後端是否真的驗證了前端送出的密鑰／權杖 — 這屬於後端邏輯，本工具只看得到你貼上的這份程式碼</li>
+          </ul>
+        </div>
+      </div>
+      <p class="honesty-note">「工具沒標記」不代表「沒問題」。第二層的「建議人工複查」結果，意義只是「這裡看起來可疑」，需要自行對照程式邏輯確認，不是漏洞確診。第二層規則主要針對 JavaScript／TypeScript／Python 常見寫法設計，對其他語言的涵蓋有限，掃描後會依貼上內容的語言特徵動態提示。</p>
+    </section>
+  </div>
+
+  <!-- ============ Tab 3: 怎麼拿到程式碼 ============ -->
+  <div id="tab-panel-howto" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-howto" hidden>
+    <button type="button" class="back-to-scan" data-goto-tab="tab-btn-scan">&larr; 回到掃描</button>
+    <div class="info-page-head">
+      <h2>怎麼拿到「要貼進去的內容」</h2>
+      <p>這個工具沒辦法直接輸入網址幫你檢查，需要你自己複製內容貼進掃描框。</p>
+    </div>
+    <div class="howto-block-content">
+      
+      <div class="howto-body">
+        <p class="howto-intro">這個工具沒辦法直接輸入網址幫你檢查——瀏覽器的安全機制不允許網頁擅自讀取別人網站的內容，就算是你自己的網站也一樣會被擋下來。你需要先自己把內容複製出來，貼進上面的框裡。以下兩種方法任選一種：</p>
+
+        <div class="howto-method">
+          <div class="howto-method-title"><span class="howto-num">方法一</span>你的網站是直接用網頁做的（沒有用 GitHub 管理）</div>
+          <ol class="howto-steps">
+            <li>打開你想檢查的網頁</li>
+            <li>在頁面空白處按滑鼠右鍵，選擇「檢視網頁原始碼」（英文版通常寫 <em>View Page Source</em>）；找不到的話也可以直接在網址列前面加上 <code>view-source:</code> 再打開</li>
+            <li>整頁會變成一大片文字，按 <code>Ctrl+A</code>（Mac 是 <code>Cmd+A</code>）全選，再按 <code>Ctrl+C</code>（Mac 是 <code>Cmd+C</code>）複製</li>
+            <li>回到這個頁面，貼進上面的框裡</li>
+          </ol>
+          <p class="howto-note">⚠️ 如果你的網站是用 v0.dev、Next.js 這類工具做的，「檢視網頁原始碼」看到的內容可能是打包壓縮過的程式碼，跟開發時寫的原始檔案長得不一樣，工具能抓到的問題會變少。這種情況建議改用方法二。</p>
+        </div>
+
+        <div class="howto-method">
+          <div class="howto-method-title"><span class="howto-num">方法二</span>你的專案有放在 GitHub 上</div>
+          <ol class="howto-steps">
+            <li>打開你的 GitHub 專案頁面，找到你想檢查的檔案（例如 <code>index.html</code>、<code>app.js</code>，或任何看起來會有程式邏輯的檔案）</li>
+            <li>點進那個檔案，畫面右上角通常有一個「Copy raw content」或看起來像複製圖示的按鈕，點下去就會複製整份檔案內容</li>
+            <li>找不到那個按鈕的話，也可以直接把檔案裡的內容整段選取（點進檔案內容區域按 <code>Ctrl+A</code> / <code>Cmd+A</code>）再複製</li>
+            <li>回到這個頁面，貼進上面的框裡；如果你想檢查好幾個檔案，可以一個一個分開貼上分別掃描，或者接著貼在同一段後面一起掃</li>
+          </ol>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const codeInput = document.getElementById('codeInput');
+  const scanBtn = document.getElementById('scanBtn');
+  const sampleBtn = document.getElementById('sampleBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const results = document.getElementById('results');
+  const statusLine = document.getElementById('statusLine');
+  const scanSweep = document.getElementById('scanSweep');
+  // 多檔案模式(2026新增修補)相關元素
+  const multiFileToggle = document.getElementById('multiFileToggle');
+  const multiFileContainer = document.getElementById('multiFileContainer');
+  const multiFileList = document.getElementById('multiFileList');
+  const addFileBtn = document.getElementById('addFileBtn');
+  const inputFrame = document.querySelector('.input-frame');
+
+  // 12 個獨立模組檔案,透過 <script src> 載入(見 </head> 前的載入清單)。
+  // 若瀏覽器成功載入,以下函式/常數已在全域作用域可用:
+  // keyDetector, jwtAnalyzer, hashDetector, secretHeuristics, cspDetector,
+  // idorDetectorWithMeta, languageDetector, findingRenderer, sqlInjectionDetector,
+  // insecureDeserializeDetector, rateLimitCoverageDetector,
+  // fieldMaskingConsistencyDetector, looksLikeJsxOrTypeScript 等。
+
+
+  // ⚠️ 修正紀錄(2026,真實AI產出程式碼實測發現的問題):
+  // M6(idor-detector)在AST解析失敗時(常見於含TypeScript型別標註的.tsx)會
+  // 退回涵蓋率較低的正則版,原本這個降級狀態對使用者完全不可見。
+  // 這則文字只在「程式碼看起來像JSX/TS,但這次IDOR分析沒有用到AST版」時
+  // 附加在languageCaveat後面,提醒使用者這次的IDOR偵測涵蓋率可能較低。
+  const IDOR_AST_DEGRADED_NOTICE = '此外,本次程式碼含 JSX 或 TypeScript 型別語法特徵，但「疑似缺少擁有權驗證」這項偵測這次使用的是涵蓋範圍較窄的正則比對版本（無法辨識箭頭函式等寫法），不是更精確的語法樹分析版本——這通常是因為程式碼包含 interface、型別標註等 TypeScript 專屬語法，目前的分析能力不支援這部分語法。若這份程式碼裡有用到參數查詢資料的箭頭函式，建議額外自行確認。';
+
+  // ── 畫面層 render:呼叫模組 M8(findingRenderer)+ M7(languageDetector)組字串,再寫入 DOM ──
+  function render(findings, hadInput, code, idorAstUsed) {
+    if (!hadInput) {
+      results.innerHTML = '';
+      return;
+    }
+
+    let languageCaveat = languageDetector(code);
+    // idorAstUsed 為 false 且程式碼看起來含JSX/TS特徵時,附加降級提示,
+    // 避免對本來就不預期AST涵蓋的語言(如Python)也顯示不相關的提示文字。
+    if (!idorAstUsed && looksLikeJsxOrTypeScript(code)) {
+      languageCaveat = languageCaveat ? languageCaveat + ' ' + IDOR_AST_DEGRADED_NOTICE : IDOR_AST_DEGRADED_NOTICE;
+    }
+    results.innerHTML = findingRenderer(findings, languageCaveat);
+    bindCopyButtons();
+  }
+
+  function bindCopyButtons() {
+    results.querySelectorAll('.rc-copy-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const wrapper = document.getElementById(btn.dataset.copyTarget);
+        if (!wrapper) return;
+        const textEl = wrapper.querySelector('.rc-handoff-text');
+        const text = textEl ? textEl.textContent : '';
+
+        if (!wrapper.classList.contains('expanded')) {
+          wrapper.classList.add('expanded');
+          return;
+        }
+
+        const finishCopy = function(ok) {
+          if (!ok) return;
+          btn.textContent = '已複製 ✓';
+          btn.classList.add('copied');
+          window.setTimeout(function() {
+            btn.textContent = '複製指令';
+            btn.classList.remove('copied');
+          }, 2000);
+        };
+
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(text).then(function() { finishCopy(true); }).catch(function() {
+            fallbackCopy(text, finishCopy);
+          });
+        } else {
+          fallbackCopy(text, finishCopy);
+        }
+      });
+    });
+  }
+
+  function fallbackCopy(text, cb) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      cb(true);
+    } catch (e) {
+      cb(false);
+    }
+    document.body.removeChild(ta);
+  }
+
+  // ── 多檔案模式(2026新增修補):清單管理 ──
+  let mfFileCounter = 0;
+
+  function createFileItem(filename, code) {
+    mfFileCounter++;
+    const id = 'mf-item-' + mfFileCounter;
+    const item = document.createElement('div');
+    item.className = 'mf-file-item';
+    item.dataset.itemId = id;
+    item.innerHTML =
+      '<div class="mf-file-header">' +
+        '<input type="text" class="mf-filename-input" placeholder="檔名（例如 pages/api/orders.js）" value="' + escapeHtmlAttr(filename || '') + '">' +
+        '<button type="button" class="mf-remove-btn">移除</button>' +
+      '</div>' +
+      '<textarea placeholder="貼上這個檔案的程式碼…">' + escapeHtmlText(code || '') + '</textarea>';
+    item.querySelector('.mf-remove-btn').addEventListener('click', function() {
+      // 至少保留一個檔案項目,不能全部移除到剩0個(空清單沒有意義,使用者應該
+      // 切回單一模式而不是留一個空的多檔案清單)
+      if (multiFileList.children.length > 1) {
+        item.remove();
+      }
+    });
+    return item;
+  }
+
+  // innerHTML 賦值時,屬性值與文字內容需要各自正確跳脫,避免使用者貼上
+  // 含雙引號或HTML特殊字元的內容(甚至是程式碼本身,例如貼上含<script>字樣
+  // 的字串)破壞DOM結構或造成XSS——這是輸入框本身的跳脫,跟M8 finding-renderer
+  // 對輸出結果的escapeHtml是不同的兩件事,兩處都需要正確處理。
+  function escapeHtmlAttr(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+  function escapeHtmlText(str) {
+    return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function addFileItem(filename, code) {
+    multiFileList.appendChild(createFileItem(filename, code));
+  }
+
+  function collectFilesFromUI() {
+    return [...multiFileList.querySelectorAll('.mf-file-item')].map(item => ({
+      filename: item.querySelector('.mf-filename-input').value.trim() || null,
+      code: item.querySelector('textarea').value
+    }));
+  }
+
+  function isMultiFileMode() {
+    return multiFileToggle.checked;
+  }
+
+  multiFileToggle.addEventListener('change', function() {
+    if (isMultiFileMode()) {
+      inputFrame.style.display = 'none';
+      multiFileContainer.hidden = false;
+      if (multiFileList.children.length === 0) {
+        addFileItem('', '');
+        addFileItem('', '');
+      }
+    } else {
+      inputFrame.style.display = '';
+      multiFileContainer.hidden = true;
+    }
+    results.innerHTML = '';
+    statusLine.textContent = '';
+  });
+
+  addFileBtn.addEventListener('click', function() {
+    addFileItem('', '');
+  });
+
+  function runScan() {
+    if (isMultiFileMode()) {
+      runMultiScan();
+    } else {
+      runSingleScan();
+    }
+  }
+
+  function runSingleScan() {
+    const code = codeInput.value;
+    scanBtn.disabled = true;
+    statusLine.textContent = '掃描中…';
+    scanSweep.classList.remove('running');
+    void scanSweep.offsetWidth;
+    scanSweep.classList.add('running');
+
+    window.setTimeout(function() {
+      // 等同 scan-orchestrator.js 的 runScan(code) 流程:依序呼叫 M1-M6、M9-M10、M12,合併結果。
+      // 唯一相依:M4(secretHeuristics) 需要 M1(keyDetector) 的輸出做去重複。
+      const m1 = keyDetector(code);
+      const m2 = jwtAnalyzer(code);
+      const m3 = hashDetector(code);
+      const m4 = secretHeuristics(code, m1);
+      const m5 = cspDetector(code);
+      const m6Meta = idorDetectorWithMeta(code);
+      const m9 = sqlInjectionDetector(code);
+      const m10 = insecureDeserializeDetector(code);
+      const m12 = rateLimitCoverageDetector(code);
+      const findings = [...m1, ...m2, ...m3, ...m4, ...m5, ...m6Meta.findings, ...m9, ...m10, ...m12];
+      render(findings, code.trim().length > 0, code, m6Meta.astUsed);
+      scanBtn.disabled = false;
+      statusLine.textContent = code.trim().length > 0 ? '掃描完成。' : '請先貼上程式碼再掃描。';
+    }, 320);
+  }
+
+  /**
+   * 多檔案模式的掃描流程,等同 scan-orchestrator.js 的 runMultiFileScan(files):
+   * 逐檔案跑單檔案模組(M1-M10、M12),幫每筆Finding貼上filename標籤,再額外
+   * 跑跨檔案模組M11(field-masking-consistency-detector),languageCaveat
+   * 收集每個檔案各自的提示並標註是哪個檔案的。
+   */
+  function runMultiScan() {
+    const files = collectFilesFromUI();
+    const hasAnyCode = files.some(f => (f.code || '').trim().length > 0);
+
+    scanBtn.disabled = true;
+    statusLine.textContent = '掃描中…';
+
+    window.setTimeout(function() {
+      if (!hasAnyCode) {
+        results.innerHTML = '';
+        scanBtn.disabled = false;
+        statusLine.textContent = '請先貼上至少一個檔案的程式碼再掃描。';
+        return;
+      }
+
+      const isMultiFile = files.length > 1;
+      let allFindings = [];
+      const caveatParts = [];
+
+      files.forEach((f, idx) => {
+        const code = f.code || '';
+        const filename = f.filename || ('檔案' + (idx + 1));
+
+        const m1 = keyDetector(code);
+        const m2 = jwtAnalyzer(code);
+        const m3 = hashDetector(code);
+        const m4 = secretHeuristics(code, m1);
+        const m5 = cspDetector(code);
+        const m6Meta = idorDetectorWithMeta(code);
+        const m9 = sqlInjectionDetector(code);
+        const m10 = insecureDeserializeDetector(code);
+        const m12 = rateLimitCoverageDetector(code);
+        const fileFindings = [...m1, ...m2, ...m3, ...m4, ...m5, ...m6Meta.findings, ...m9, ...m10, ...m12];
+
+        const taggedFindings = isMultiFile
+          ? fileFindings.map(finding => Object.assign({}, finding, { filename }))
+          : fileFindings;
+        allFindings = allFindings.concat(taggedFindings);
+
+        let fileCaveat = languageDetector(code);
+        if (!m6Meta.astUsed && looksLikeJsxOrTypeScript(code)) {
+          fileCaveat = fileCaveat ? fileCaveat + ' ' + IDOR_AST_DEGRADED_NOTICE : IDOR_AST_DEGRADED_NOTICE;
+        }
+        if (fileCaveat) {
+          caveatParts.push(isMultiFile ? ('【' + filename + '】' + fileCaveat) : fileCaveat);
+        }
+      });
+
+      // 跨檔案模組:M11(field-masking-consistency-detector),files.length<2時內部直接回傳空陣列
+      const filesForM11 = files.map((f, idx) => ({
+        filename: f.filename || ('檔案' + (idx + 1)),
+        code: f.code || ''
+      }));
+      const m11 = fieldMaskingConsistencyDetector(filesForM11);
+      allFindings = allFindings.concat(m11);
+
+      const languageCaveat = caveatParts.length > 0 ? caveatParts.join(' ') : null;
+      results.innerHTML = findingRenderer(allFindings, languageCaveat);
+      bindCopyButtons();
+
+      scanBtn.disabled = false;
+      statusLine.textContent = '掃描完成（' + files.length + ' 個檔案）。';
+    }, 320);
+  }
+
+  function buildSampleCode() {
+    // ⚠️ 修正紀錄(2026):原本的範例過於陽春(單一md5密碼雜湊+假OpenAI金鑰+
+    // 簡化版IDOR),沒有反映真實AI生成程式碼(Lovable/Bolt/v0這類工具)常見的
+    // 實際寫法。改用貼近真實案例的風格:Supabase service層物件方法(而非單一
+    // function宣告)、xxxId駝峰命名參數(propertyId,而非裸id)、真實形狀的
+    // Supabase JWT金鑰(觸發正確的service_role高風險分層判斷),讓使用者一次
+    // 看到tier1(高信心度發現)與tier2(建議複查)的實際差異,也順便展示這次
+    // 修補過的能力:xxxId駝峰命名的IDOR偵測、JWT金鑰的正確角色分層判斷。
+    // 金鑰本身故意用片段組合而非明文常值寫入原始碼,避免這份原始碼本身
+    // 部署前被同一份規則誤判為「含有外洩金鑰」。
+    const keyPart1 = ['eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9', 'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByb2plY3RyZWYiLCJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjIwMTU1NzYwMDB9', 'fakeSignatureForDemoOnlyNotARealKey12345'].join('.');
+    return [
+      'import { createClient } from "@supabase/supabase-js";',
+      '',
+      '// 這組金鑰是 service_role(最高權限,可繞過RLS),絕不應出現在前端程式碼中',
+      'const supabase = createClient(',
+      '  "https://exampleproj.supabase.co",',
+      '  "' + keyPart1 + '"',
+      ');',
+      '',
+      'export const propertiesService = {',
+      '  async deleteProperty(propertyId) {',
+      '    // 只用參數查詢/刪除,沒有先確認 propertyId 是否真的屬於目前登入的使用者',
+      '    const { error } = await supabase',
+      '      .from("properties")',
+      '      .delete()',
+      '      .eq("id", propertyId);',
+      '    if (error) throw error;',
+      '    return true;',
+      '  },',
+      '};',
+      '',
+      'function hashPassword(password) {',
+      '  return md5(password);',
+      '}'
+    ].join('\n');
+  }
+
+  scanBtn.addEventListener('click', runScan);
+  sampleBtn.addEventListener('click', function() {
+    if (isMultiFileMode()) {
+      // 多檔案模式下的範例:模擬「前端有遮罩、後端沒遮罩」的M11典型案例,
+      // 順便示範拆分檔案時金鑰/IDOR等單檔案規則依然照常運作。
+      multiFileList.innerHTML = '';
+      addFileItem('frontend/api.js', [
+        'const OPENAI_KEY = "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890";',
+        '',
+        'function publicRoom(room) {',
+        '  return json({ id: room.id, state: maskState(room.state) });',
+        '}'
+      ].join('\n'));
+      addFileItem('backend/history.js', [
+        'function getOrder(req, res) {',
+        '  const order = db.find(req.params.id);',
+        '  res.json(order);',
+        '}',
+        '',
+        'function publicHistoryRow(row) {',
+        '  return json({ id: row.id, state: row.state });',
+        '}'
+      ].join('\n'));
+    } else {
+      codeInput.value = buildSampleCode();
+      codeInput.focus();
+    }
+  });
+  clearBtn.addEventListener('click', function() {
+    if (isMultiFileMode()) {
+      multiFileList.innerHTML = '';
+      addFileItem('', '');
+      addFileItem('', '');
+    } else {
+      codeInput.value = '';
+      codeInput.focus();
+    }
+    results.innerHTML = '';
+    statusLine.textContent = '';
+  });
+})();
+</script>
+
+<script>
+// ── 淺色／深色主題切換(改版新增,獨立作用域) ──
+(function() {
+  'use strict';
+  var STORAGE_KEY = 'ai-scanner-theme';
+  var root = document.documentElement;
+  var toggleBtn = document.getElementById('themeToggle');
+  var iconEl = document.getElementById('themeIcon');
+  var labelEl = document.getElementById('themeLabel');
+
+  function applyTheme(theme) {
+    if (theme === 'light') {
+      root.setAttribute('data-theme', 'light');
+      iconEl.innerHTML = '&#9789;';
+      labelEl.textContent = '深色模式';
+    } else {
+      root.removeAttribute('data-theme');
+      iconEl.innerHTML = '&#9788;';
+      labelEl.textContent = '淺色模式';
+    }
+  }
+
+  var saved = null;
+  try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) { }
+  if (!saved) {
+    var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
+    saved = prefersLight ? 'light' : 'dark';
+  }
+  applyTheme(saved);
+
+  toggleBtn.addEventListener('click', function() {
+    var current = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+    var next = current === 'light' ? 'dark' : 'light';
+    applyTheme(next);
+    try { localStorage.setItem(STORAGE_KEY, next); } catch (e) { }
+  });
+})();
+
+// ── Tab 導覽切換邏輯(改版新增,獨立作用域,不影響上方掃描主邏輯) ──
+(function() {
+  'use strict';
+
+  var tabButtons = [].slice.call(document.querySelectorAll('.top-tab'));
+  var quickLinkButtons = [].slice.call(document.querySelectorAll('[data-goto-tab]'));
+
+  function activateTab(targetBtnId) {
+    tabButtons.forEach(function(btn) {
+      var isActive = btn.id === targetBtnId;
+      btn.setAttribute('aria-selected', isActive ? 'true' : 'false');
+      var panel = document.getElementById(btn.getAttribute('aria-controls'));
+      if (panel) panel.hidden = !isActive;
+    });
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+
+  tabButtons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      activateTab(btn.id);
+    });
+  });
+
+  quickLinkButtons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      activateTab(btn.getAttribute('data-goto-tab'));
+    });
+  });
+})();
+</script>
+</body>
+</html>
