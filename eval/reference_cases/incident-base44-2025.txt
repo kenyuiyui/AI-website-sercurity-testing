@@ -1,0 +1,38 @@
+===SOURCE===
+非真實蒐集樣本。依已公開發表的技術報告改寫,非逐字複製任何真實程式碼:
+Base44 平台層級認證繞過事件(2025年7月),由 Wiz Research 揭露並在24小時內修復。
+公開技術分析(The Hacker News、SecurityWeek 等)指出:註冊與OTP驗證兩個API端點
+完全不需要任何身分驗證,攻擊者只要取得公開可見的 app_id(顯示在應用程式URL與
+manifest.json路徑中)就能為該應用程式建立一個已驗證帳號,進而繞過SSO與所有既有
+存取控制。本案例依這個「用一個公開可見的識別碼當作隱性存取憑證」的問題模式改寫成
+一段簡化示範路由程式碼,不是Base44或任何真實應用程式的原始碼。
+
+⚠️ 已知邊界(2026,驗證此案例時發現): 本案例用 Express 路由掛載寫法
+(app.post(path, async (req,res)=>{...})),函式主體是直接傳給 app.post 的
+箭頭函式 callback,不是具名 function 宣告。目前 M6(idor-detector)正則保底版
+不涵蓋這種寫法,因此本案例在正則保底版下會漏判。與 incident-moltbook-2026.txt
+是同一類邊界,保留作為記錄,暫不修改規則本身。
+
+===CATEGORY===
+以公開可見識別碼(app_id)作為隱性存取控制,缺少真正的身分驗證(對照 Base44 事件問題模式改寫)
+
+===EXPECTED===
+possible_idor
+
+===CODE===
+app.post('/api/apps/:appId/auth/register', async (req, res) => {
+  const { appId } = req.params;
+  const { email, password } = req.body;
+  const user = await db.users.create({ appId, email, password });
+  res.json({ userId: user.id });
+});
+
+app.post('/api/apps/:appId/auth/verify-otp', async (req, res) => {
+  const { appId } = req.params;
+  const { otp } = req.body;
+  const record = await db.otps.findOne({ appId });
+  if (record.code === otp) {
+    return res.json({ verified: true, accessGranted: true });
+  }
+  res.status(400).json({ verified: false });
+});

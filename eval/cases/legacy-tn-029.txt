@@ -1,0 +1,13 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: JSX/React元件片段裡出現script字樣相關的變數名,不是完整HTML頁面,不該被CSP規則誤判
+
+===CATEGORY===
+JSX/React元件片段裡出現script字樣相關的變數名,不是完整HTML頁面,不該被CSP規則誤判
+
+===EXPECTED===
+NONE
+
+===CODE===
+function ScriptLoader({ scriptSrc }) {
+  return <div data-script={scriptSrc}>Loading...</div>;
+}

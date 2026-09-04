@@ -1,0 +1,15 @@
+===SOURCE===
+既有案例集(改版前),依 Veracode 2026 GenAI Code Security Report / Georgia Tech Vibe Security Radar / Lovable IDOR 事件等公開報告改寫,非逐字複製真實外洩程式碼。原始描述: AI常用的Express箭頭函式寫法,同樣缺少擁有權驗證
+
+===CATEGORY===
+Broken Access Control / IDOR(箭頭函式版)
+
+===EXPECTED===
+possible_idor
+
+===CODE===
+const deleteOrder = async (req, res) => {
+  const order = await db.orders.get(req.params.orderId);
+  await db.orders.delete(req.params.orderId);
+  res.json({ success: true });
+};

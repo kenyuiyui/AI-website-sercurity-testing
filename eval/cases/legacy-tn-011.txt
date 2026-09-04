@@ -1,0 +1,17 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: 正確做了擁有權比較檢查(owner !== user.id)
+
+===CATEGORY===
+正確做了擁有權比較檢查(owner !== user.id)
+
+===EXPECTED===
+NONE
+
+===CODE===
+async function getOrder(req, res) {
+  const order = await db.orders.find(req.params.id);
+  if (order.owner !== req.user.id) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  res.json(order);
+}

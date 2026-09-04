@@ -1,0 +1,15 @@
+===SOURCE===
+既有案例集(改版前),依 Veracode 2026 GenAI Code Security Report / Georgia Tech Vibe Security Radar / Lovable IDOR 事件等公開報告改寫,非逐字複製真實外洩程式碼。原始描述: Python Flask常見的f-string拼接SQL
+
+===CATEGORY===
+SQL Injection(Python版)
+
+===EXPECTED===
+possible_sql_injection
+
+===CODE===
+@app.route('/user/<user_id>')
+def get_user(user_id):
+    query = f"SELECT * FROM users WHERE id={user_id}"
+    cursor.execute(query)
+    return cursor.fetchone()

@@ -1,0 +1,16 @@
+===SOURCE===
+既有案例集(改版前),依 Veracode 2026 GenAI Code Security Report / Georgia Tech Vibe Security Radar / Lovable IDOR 事件等公開報告改寫,非逐字複製真實外洩程式碼。原始描述: AI常見誤把service_role金鑰放進前端環境變數的錯誤示範
+
+===CATEGORY===
+Supabase service_role金鑰外洩
+
+===EXPECTED===
+supabase_service_role
+
+===CODE===
+import { createClient } from '@supabase/supabase-js';
+
+const supabaseUrl = 'https://xyzcompany.supabase.co';
+const supabaseKey = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNjE2MjM5MDIyfQ.abcdefghijklmnopqrstuvwxyz1234567890";
+
+export const supabase = createClient(supabaseUrl, supabaseKey);

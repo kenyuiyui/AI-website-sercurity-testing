@@ -1,0 +1,13 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: 使用ORM方法查詢,完全不是手寫SQL字串
+
+===CATEGORY===
+使用ORM方法查詢,完全不是手寫SQL字串
+
+===EXPECTED===
+NONE
+
+===CODE===
+async function getUserOrders(userId) {
+  return await Order.findAll({ where: { userId: userId } });
+}

@@ -1,0 +1,25 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: 一段完整的、多處都做對防護措施的典型後端路由程式碼
+
+===CATEGORY===
+一段完整的、多處都做對防護措施的典型後端路由程式碼
+
+===EXPECTED===
+NONE
+
+===CODE===
+const bcrypt = require('bcrypt');
+
+async function getUserProfile(req, res) {
+  const apiKey = process.env.INTERNAL_API_KEY;
+  const profile = await db.query('SELECT * FROM profiles WHERE id = ?', [req.params.id]);
+  if (profile.ownerId !== req.user.id) {
+    return res.status(403).json({ error: 'Forbidden' });
+  }
+  res.json(profile);
+}
+
+async function registerUser(username, password) {
+  const hashed = await bcrypt.hash(password, 12);
+  return db.users.insert({ username, password: hashed });
+}

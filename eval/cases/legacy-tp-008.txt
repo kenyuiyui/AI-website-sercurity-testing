@@ -1,0 +1,14 @@
+===SOURCE===
+既有案例集(改版前),依 Veracode 2026 GenAI Code Security Report / Georgia Tech Vibe Security Radar / Lovable IDOR 事件等公開報告改寫,非逐字複製真實外洩程式碼。原始描述: AI生成的動態配置載入功能,常見用eval處理JSON-like字串
+
+===CATEGORY===
+不安全反序列化
+
+===EXPECTED===
+insecure_eval
+
+===CODE===
+function loadUserPreferences(prefString) {
+  const prefs = eval('(' + prefString + ')');
+  return prefs;
+}

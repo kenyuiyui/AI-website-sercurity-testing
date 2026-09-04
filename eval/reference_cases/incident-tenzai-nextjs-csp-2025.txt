@@ -1,0 +1,31 @@
+===SOURCE===
+非真實蒐集樣本。依已公開發表的技術報告改寫,非逐字複製任何真實程式碼:
+Tenzai 2025年12月研究(測試 Cursor、Claude Code、Replit、Devin、OpenAI Codex 五種
+AI程式碼生成工具,各自建置3個應用程式,共15個應用程式)發現「零個應用程式設定了
+安全標頭(包括 Content-Security-Policy、Strict-Transport-Security、X-Frame-Options)」,
+這個發現被多份獨立報導引用(CSO Online、Cloud Security Alliance研究報告等)。技術部落格
+(checkvibe.dev)進一步以 Next.js 專案為例,說明 AI 生成的 next.config.ts 通常只包含功能性
+設定、不包含安全標頭設定這個典型模式。本案例依此問題模式改寫成一段簡化的 Next.js 設定檔
+示範,不是任何真實專案的原始碼。
+
+===CATEGORY===
+Next.js 設定檔缺少安全標頭設定(對照 Tenzai 2025研究「0/15應用程式設定安全標頭」的發現改寫)
+
+===EXPECTED===
+no_csp_config
+
+===CODE===
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  images: {
+    domains: ['example-cdn.com'],
+  },
+  async rewrites() {
+    return [
+      { source: '/api/:path*', destination: 'https://backend.example.com/:path*' },
+    ];
+  },
+};
+
+module.exports = nextConfig;

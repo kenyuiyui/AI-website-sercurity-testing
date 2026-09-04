@@ -1,0 +1,12 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: JWT從環境變數讀取,不是寫死的明文字串(格式判斷不受影響,但這是常見安全寫法)
+
+===CATEGORY===
+JWT從環境變數讀取,不是寫死的明文字串(格式判斷不受影響,但這是常見安全寫法)
+
+===EXPECTED===
+NONE
+
+===CODE===
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
+const supabase = createClient(supabaseUrl, supabaseKey);

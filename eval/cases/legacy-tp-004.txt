@@ -1,0 +1,14 @@
+===SOURCE===
+既有案例集(改版前),依 Veracode 2026 GenAI Code Security Report / Georgia Tech Vibe Security Radar / Lovable IDOR 事件等公開報告改寫,非逐字複製真實外洩程式碼。原始描述: AI生成的登入功能,常見的字串拼接查詢寫法
+
+===CATEGORY===
+SQL Injection
+
+===EXPECTED===
+possible_sql_injection
+
+===CODE===
+function login(username, password) {
+  const query = "SELECT * FROM users WHERE username='" + username + "' AND password='" + password + "'";
+  return db.query(query);
+}

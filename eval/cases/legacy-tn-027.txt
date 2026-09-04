@@ -1,0 +1,17 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: 函式參數與變數命名不遵循id/userId慣例,但邏輯上仍正確做了擁有權檢查,測試規則命名假設是否過度嚴格導致漏判被誤記成別的問題
+
+===CATEGORY===
+函式參數與變數命名不遵循id/userId慣例,但邏輯上仍正確做了擁有權檢查,測試規則命名假設是否過度嚴格導致漏判被誤記成別的問題
+
+===EXPECTED===
+NONE
+
+===CODE===
+function fetchResource(request, response) {
+  const item = db.find(request.params.identifier);
+  if (item.belongsTo !== request.user.id) {
+    return response.status(403).end();
+  }
+  response.json(item);
+}

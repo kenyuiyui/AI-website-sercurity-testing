@@ -1,0 +1,11 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: SQL關鍵字(SELECT)出現在一般文字說明字串裡,不是真正的查詢語句拼接
+
+===CATEGORY===
+SQL關鍵字(SELECT)出現在一般文字說明字串裡,不是真正的查詢語句拼接
+
+===EXPECTED===
+NONE
+
+===CODE===
+const helpText = "Use SELECT statements carefully" + userNote;

@@ -1,0 +1,15 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: Python正確使用json.loads處理資料,不是pickle或eval
+
+===CATEGORY===
+Python正確使用json.loads處理資料,不是pickle或eval
+
+===EXPECTED===
+NONE
+
+===CODE===
+import json
+
+def parse_webhook_payload(raw_body):
+    data = json.loads(raw_body)
+    return data.get('event_type')

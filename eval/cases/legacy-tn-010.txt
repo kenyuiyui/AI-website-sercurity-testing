@@ -1,0 +1,13 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: 單純的JS函式片段,既不是HTML也不是框架設定檔,不該被誤判為缺少CSP
+
+===CATEGORY===
+單純的JS函式片段,既不是HTML也不是框架設定檔,不該被誤判為缺少CSP
+
+===EXPECTED===
+NONE
+
+===CODE===
+function calculateTotal(items) {
+  return items.reduce((sum, item) => sum + item.price, 0);
+}

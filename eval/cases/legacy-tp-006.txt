@@ -1,0 +1,20 @@
+===SOURCE===
+既有案例集(改版前),依 Veracode 2026 GenAI Code Security Report / Georgia Tech Vibe Security Radar / Lovable IDOR 事件等公開報告改寫,非逐字複製真實外洩程式碼。原始描述: AI生成的密碼儲存邏輯,常見使用MD5(訓練資料裡大量舊教學都這樣寫)
+
+===CATEGORY===
+弱雜湊演算法
+
+===EXPECTED===
+weak_hash
+
+===CODE===
+const crypto = require('crypto');
+
+function hashPassword(password) {
+  return crypto.createHash('md5').update(password).digest('hex');
+}
+
+function registerUser(username, password) {
+  const hashed = md5(password);
+  db.users.insert({ username, password: hashed });
+}

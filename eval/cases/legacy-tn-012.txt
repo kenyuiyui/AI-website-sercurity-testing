@@ -1,0 +1,18 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: 箭頭函式版本,同樣正確做了擁有權比較(測試AST版邏輯是否也正確放行)
+
+===CATEGORY===
+箭頭函式版本,同樣正確做了擁有權比較(測試AST版邏輯是否也正確放行)
+
+===EXPECTED===
+NONE
+
+===CODE===
+const deleteOrder = async (req, res) => {
+  const order = await db.orders.get(req.params.orderId);
+  if (order.userId !== req.session.userId) {
+    return res.status(403).end();
+  }
+  await db.orders.delete(req.params.orderId);
+  res.json({ success: true });
+};

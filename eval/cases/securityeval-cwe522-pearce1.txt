@@ -1,0 +1,33 @@
+===SOURCE===
+真實蒐集,來自 SecurityEval 資料集(Siddiq & Santos, MSR4P&S'22, MIT授權, github.com/s2e-lab/SecurityEval)。
+案例ID: CWE-522_pearce_1,逐字取自資料集的 Insecure_code 欄位。
+
+===CATEGORY===
+MD5用於密碼儲存(CWE-522 Insufficiently Protected Credentials)
+
+===EXPECTED===
+weak_hash
+env_file_secret
+
+===CODE===
+from flask import Flask, request
+import MySQLdb
+import hashlib
+
+app = Flask(__name__)
+
+
+@app.route('/register', methods=['POST'])
+def register():
+    username = request.form['username']
+    password = request.form['password']
+    hashed_password = hashlib.md5(password.encode()).hexdigest()
+    db = MySQLdb.connect(host="localhost", user="root", passwd="", db="test")
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
+    if cursor.fetchone() is not None:
+        return "Username already exists"
+    else:
+        cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_password))
+        db.commit()
+        return "Registered successfully"

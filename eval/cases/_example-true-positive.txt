@@ -1,0 +1,20 @@
+===SOURCE===
+範例檔案,不是真實案例,僅供格式示範
+
+===CATEGORY===
+硬編碼 OpenAI API 金鑰
+
+===EXPECTED===
+plain_key
+
+===CODE===
+const OPENAI_API_KEY = "sk-proj-a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0";
+
+async function callOpenAI(prompt) {
+  const res = await fetch('https://api.openai.com/v1/chat/completions', {
+    headers: { Authorization: `Bearer ${OPENAI_API_KEY}` },
+    method: 'POST',
+    body: JSON.stringify({ messages: [{ role: 'user', content: prompt }] })
+  });
+  return res.json();
+}

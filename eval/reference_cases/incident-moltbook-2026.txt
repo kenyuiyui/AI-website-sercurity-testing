@@ -1,0 +1,39 @@
+===SOURCE===
+非真實蒐集樣本。依已公開發表的技術報告改寫,非逐字複製任何真實程式碼:
+Moltbook 事件(2026年1月),AI 生成社群平台,創辦人公開表示「沒有寫過一行程式碼」,
+安全研究人員發現該平台暴露150萬組驗證權杖與3.5萬組電子郵件地址。多份技術分析
+(例如 Museum of Vibe Coding 的事件記錄)指出根本原因是「AI正確生成了認證
+middleware,但沒有把它接到會回傳敏感資料的端點上」——這是一種元件正確、但元件
+之間的整合缺口造成的存取控制問題,不是單一元件本身寫錯。本案例依這個問題模式
+改寫成一段簡化示範,不是任何真實應用程式的原始碼。
+
+⚠️ 已知邊界(2026,驗證此案例時發現): 本案例用 Express 路由掛載寫法
+(app.get(path, middleware, (req,res)=>{...})),漏洞邏輯位於傳給 app.get 的
+箭頭函式 callback 內。目前 M6(idor-detector)正則保底版鎖定的形態是具名
+function 宣告或指派給變數的箭頭函式(如 const deleteOrder = async (req,res)=>{}),
+不涵蓋直接以 callback 形式傳給 app.get/post 的寫法,因此本案例在正則保底版下
+會漏判(AST版理論上可辨識,但未在此驗證環境下實測)。這是目前工具正則規則
+的已知邊界,保留此案例作為邊界記錄,暫不修改規則本身。
+
+===CATEGORY===
+認證 middleware 存在但未套用到敏感端點(對照 Moltbook 事件問題模式改寫)
+
+===EXPECTED===
+possible_idor
+
+===CODE===
+function requireAuth(req, res, next) {
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  next();
+}
+
+app.get('/api/auth/status', requireAuth, (req, res) => {
+  res.json({ ok: true });
+});
+
+app.get('/api/users/:userId/token', async (req, res) => {
+  const record = await db.tokens.findOne({ userId: req.params.userId });
+  res.json({ token: record.authToken, email: record.email });
+});

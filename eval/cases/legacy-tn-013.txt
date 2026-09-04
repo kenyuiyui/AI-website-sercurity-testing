@@ -1,0 +1,13 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: 正確使用參數化查詢(?佔位符),不是字串拼接
+
+===CATEGORY===
+正確使用參數化查詢(?佔位符),不是字串拼接
+
+===EXPECTED===
+NONE
+
+===CODE===
+function getUser(userId) {
+  return db.query('SELECT * FROM users WHERE id = ?', [userId]);
+}

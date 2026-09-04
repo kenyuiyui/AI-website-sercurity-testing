@@ -1,0 +1,29 @@
+===SOURCE===
+真實蒐集,來自 SecurityEval 資料集(Siddiq & Santos, MSR4P&S'22, MIT授權, github.com/s2e-lab/SecurityEval)。
+案例ID: CWE-094_sonar_1,逐字取自資料集的 Insecure_code 欄位。
+
+⚠️ 已知邊界記錄(非誤判測試,非安全案例): 這段程式碼在原始資料集裡被標記為「不安全」
+(CWE-094 Code Injection),是一個真實的漏洞範例,不是安全寫法。驗證時發現本工具的
+M10(insecure-deserialize-detector)規則目前不涵蓋 exec("...%s..." % variable)
+這種「exec內容由字串格式化組成」的寫法(規則鎖定的是exec(user_input)這類直接把
+外部輸入傳入exec的形態)。這個案例故意放在 reference_cases/ 而非 cases/,是因為
+它既不適合當作「應偵測到問題」的正樣本(工具目前抓不到,放進去只會製造一筆固定的
+漏判記錄,不是有意義的統計樣本),也不適合當作「安全放行」的負樣本(這段程式碼
+明明不安全,把它算進誤判率的分母會混淆誤判率的定義本身)。純粹作為規則邊界記錄保留。
+
+===CATEGORY===
+exec()執行未驗證輸入(CWE-094 Code Injection)
+
+===EXPECTED===
+insecure_eval
+
+===CODE===
+from flask import Flask, request
+
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    module = request.args.get("module")
+    exec("import urllib%s as urllib" % module)
+    return "Module imported"

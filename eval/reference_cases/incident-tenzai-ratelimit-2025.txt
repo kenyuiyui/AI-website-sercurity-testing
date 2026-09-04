@@ -1,0 +1,38 @@
+===SOURCE===
+非真實蒐集樣本。依已公開發表的技術報告改寫,非逐字複製任何真實程式碼:
+Tenzai 2025年12月研究(15個AI生成應用程式)發現「15個應用程式中只有1個嘗試實作速率
+限制,且那1個還可被繞過」(Zuplo 部落格對該研究的引用報導);另一份技術分析引用統計
+「約80%的vibe-coded應用程式在至少一個驗證端點上缺少速率限制」。本案例依「新增路由時
+速率限制清單沒有同步更新」這個問題模式改寫,採用 M12(rate-limit-coverage-detector)
+模組註解中明確記載的目標框架寫法(url.pathname === 直接比對,對應 Cloudflare Workers
+風格路由判斷,而非 Express app.get/post 掛載式寫法——後者不在此模組偵測範圍內,
+這是模組本身既有的已知設計邊界,非本次驗證新發現),不是任何真實應用程式的原始碼。
+
+===CATEGORY===
+路由清單新增端點時速率限制未同步涵蓋(對照 Tenzai 2025研究「僅1/15應用程式嘗試實作速率限制」的發現改寫)
+
+===EXPECTED===
+route_missing_rate_limit
+
+===CODE===
+export default {
+  async fetch(request) {
+    const url = new URL(request.url);
+
+    if (url.pathname === '/api/login') {
+      return handleLogin(request);
+    }
+    if (url.pathname === '/api/signup') {
+      return handleSignup(request);
+    }
+    if (url.pathname === '/api/password-reset') {
+      return handlePasswordReset(request);
+    }
+    return new Response('Not found', { status: 404 });
+  }
+};
+
+function checkRateLimit(request) {
+  // 只針對 /api/login 做了速率限制,signup 與 password-reset 都沒有涵蓋到
+  return rateLimiter.check(request, '/api/login');
+}

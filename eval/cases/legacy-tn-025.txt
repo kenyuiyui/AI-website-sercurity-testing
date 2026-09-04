@@ -1,0 +1,14 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: MD5/SHA1規則對大小寫不敏感,測試在安全情境下(不含password/pwd等關鍵字的變數名)是否仍會誤判
+
+===CATEGORY===
+MD5/SHA1規則對大小寫不敏感,測試在安全情境下(不含password/pwd等關鍵字的變數名)是否仍會誤判
+
+===EXPECTED===
+NONE
+
+===CODE===
+const crypto = require('crypto');
+function getEtag(content) {
+  return crypto.createHash('MD5').update(content).digest('hex');
+}

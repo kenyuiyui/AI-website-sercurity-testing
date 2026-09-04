@@ -1,0 +1,16 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: Django官方標準寫法:Model.objects.raw()搭配%s佔位符與params陣列(依Django官方文件查證)
+
+===CATEGORY===
+Django官方標準寫法:Model.objects.raw()搭配%s佔位符與params陣列(依Django官方文件查證)
+
+===EXPECTED===
+NONE
+
+===CODE===
+from django.contrib.auth.models import User
+
+def search_users(request):
+    last_name = request.GET.get('last_name')
+    users = User.objects.raw('SELECT * FROM auth_user WHERE last_name = %s', [last_name])
+    return users

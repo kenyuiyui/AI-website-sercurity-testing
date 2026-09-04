@@ -1,0 +1,14 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: MD5用於非密碼用途(檔案完整性校驗,這是MD5的合理使用場景)
+
+===CATEGORY===
+MD5用於非密碼用途(檔案完整性校驗,這是MD5的合理使用場景)
+
+===EXPECTED===
+NONE
+
+===CODE===
+const crypto = require('crypto');
+function getFileChecksum(fileBuffer) {
+  return crypto.createHash('md5').update(fileBuffer).digest('hex');
+}

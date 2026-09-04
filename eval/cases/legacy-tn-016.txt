@@ -1,0 +1,14 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: Python正確使用yaml.safe_load,不是不安全的yaml.load
+
+===CATEGORY===
+Python正確使用yaml.safe_load,不是不安全的yaml.load
+
+===EXPECTED===
+NONE
+
+===CODE===
+import yaml
+def load_config(file_path):
+    with open(file_path) as f:
+        return yaml.safe_load(f)

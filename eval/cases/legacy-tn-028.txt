@@ -1,0 +1,11 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: 一般公開API文件連結裡含token字樣,不是內部端點URL外洩
+
+===CATEGORY===
+一般公開API文件連結裡含token字樣,不是內部端點URL外洩
+
+===EXPECTED===
+NONE
+
+===CODE===
+const docsLink = "https://api.example.com/docs/how-to-get-a-token";

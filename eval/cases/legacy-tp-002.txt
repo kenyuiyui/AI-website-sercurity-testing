@@ -1,0 +1,18 @@
+===SOURCE===
+既有案例集(改版前),依 Veracode 2026 GenAI Code Security Report / Georgia Tech Vibe Security Radar / Lovable IDOR 事件等公開報告改寫,非逐字複製真實外洩程式碼。原始描述: 參照Lovable真實外洩事件模式:任何使用者可讀取他人專案資料,只檢查登入而非擁有權
+
+===CATEGORY===
+Broken Access Control / IDOR
+
+===EXPECTED===
+possible_idor
+
+===CODE===
+export async function getProjectData(req, res) {
+  const { projectId } = req.params;
+  const project = await db.projects.findOne({ id: projectId });
+  if (!req.session.userId) {
+    return res.status(401).json({ error: 'Not authenticated' });
+  }
+  res.json(project);
+}

@@ -1,0 +1,16 @@
+===SOURCE===
+既有誤判測試案例集(改版前),依官方文件(Django/Flask等)查證撰寫的安全/正確寫法範例。原始描述: Flask路由正確做了擁有權比較檢查(Python語法,雖然M6規則主要針對JS設計,測試是否會對Python程式碼誤判)
+
+===CATEGORY===
+Flask路由正確做了擁有權比較檢查(Python語法,雖然M6規則主要針對JS設計,測試是否會對Python程式碼誤判)
+
+===EXPECTED===
+NONE
+
+===CODE===
+@app.route('/orders/<order_id>')
+def get_order(order_id):
+    order = db.orders.find(order_id)
+    if order.owner_id != current_user.id:
+        abort(403)
+    return jsonify(order)

@@ -1,0 +1,20 @@
+===SOURCE===
+既有案例集(改版前),依 Veracode 2026 GenAI Code Security Report / Georgia Tech Vibe Security Radar / Lovable IDOR 事件等公開報告改寫,非逐字複製真實外洩程式碼。原始描述: AI生成的AWS Lambda IAM policy,常見給予過寬的萬用字元權限。這是JSON設定檔,不是程式碼,目前工具完全不涵蓋這類雲端IAM設定檢查,放進來是為了誠實驗證「這類問題工具真的抓不到」,而非遺漏測試
+
+===CATEGORY===
+過度寬鬆權限(IAM/角色) — 刻意放入的「工具涵蓋範圍外」對照組
+
+===EXPECTED===
+NONE
+
+===CODE===
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "*",
+      "Resource": "*"
+    }
+  ]
+}

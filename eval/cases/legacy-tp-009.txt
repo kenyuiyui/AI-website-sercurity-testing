@@ -1,0 +1,21 @@
+===SOURCE===
+既有案例集(改版前),依 Veracode 2026 GenAI Code Security Report / Georgia Tech Vibe Security Radar / Lovable IDOR 事件等公開報告改寫,非逐字複製真實外洩程式碼。原始描述: AI生成的基礎HTML模板,完全沒有安全標頭設定
+
+===CATEGORY===
+CSP缺失
+
+===EXPECTED===
+no_csp_html
+
+===CODE===
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>My App</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+</body>
+</html>

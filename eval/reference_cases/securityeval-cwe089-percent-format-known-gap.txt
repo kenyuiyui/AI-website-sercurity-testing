@@ -1,0 +1,30 @@
+===SOURCE===
+真實蒐集,來自 SecurityEval 資料集(Siddiq & Santos, MSR4P&S'22, MIT授權, github.com/s2e-lab/SecurityEval)。
+案例ID: CWE-089_codeql_1,逐字取自資料集的 Insecure_code 欄位。
+
+⚠️ 已知邊界記錄(非誤判測試,非安全案例): 這是一段真實的 SQL Injection 漏洞範例
+(CWE-089),用 Python 的 %s 字串格式化組成 SQL 查詢語句(等同 C 語言的 printf 風格
+格式化,不是參數化查詢)。驗證時發現本工具 M9(sql-injection-detector)目前只涵蓋
+字串拼接(+ 號)、JS 模板字面值插值(`...${}...`)、Python f-string 插值(f"...{}...")
+三種模式,完全不涵蓋 Python 的 % 格式化字串語法("...%s..." % variable)這種同樣常見
+的不安全寫法。這個案例故意放在 reference_cases/ 而非 cases/,理由與
+securityeval-cwe094-sonar1-known-gap.txt 相同:這是漏洞被漏判,不是安全案例,
+不該混進誤判率統計,純粹作為規則邊界記錄保留,供之後考慮是否擴充 M9 涵蓋範圍。
+
+===CATEGORY===
+SQL查詢使用%s字串格式化組成(CWE-089 SQL Injection),M9規則目前不涵蓋此語法
+
+===EXPECTED===
+possible_sql_injection
+
+===CODE===
+import mysql.connector
+
+def get_connection():
+    return mysql.connector.connect(host="localhost", user="", passwd="")
+
+def show_user(username):
+    cursor = get_connection().cursor()
+    cursor.execute("SELECT * FROM users WHERE username = '%s'" % username)
+    user = cursor.fetchone()
+    return user
