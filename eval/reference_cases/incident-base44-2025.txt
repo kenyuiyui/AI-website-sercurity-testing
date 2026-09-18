@@ -7,11 +7,9 @@ manifest.json路徑中)就能為該應用程式建立一個已驗證帳號,進�
 存取控制。本案例依這個「用一個公開可見的識別碼當作隱性存取憑證」的問題模式改寫成
 一段簡化示範路由程式碼,不是Base44或任何真實應用程式的原始碼。
 
-⚠️ 已知邊界(2026,驗證此案例時發現): 本案例用 Express 路由掛載寫法
-(app.post(path, async (req,res)=>{...})),函式主體是直接傳給 app.post 的
-箭頭函式 callback,不是具名 function 宣告。目前 M6(idor-detector)正則保底版
-不涵蓋這種寫法,因此本案例在正則保底版下會漏判。與 incident-moltbook-2026.txt
-是同一類邊界,保留作為記錄,暫不修改規則本身。
+修正紀錄: 本案例用 Express 路由掛載寫法(app.post(path, async (req,res)=>{...})),
+驗證時發現 M6 正則保底版不涵蓋這種 callback 形態而漏判(與 incident-moltbook-2026.txt
+同一類)。已新增 ROUTE_CALLBACK_PATTERN 規則修正,正則版與 AST 版現在都會命中。
 
 ===CATEGORY===
 以公開可見識別碼(app_id)作為隱性存取控制,缺少真正的身分驗證(對照 Base44 事件問題模式改寫)

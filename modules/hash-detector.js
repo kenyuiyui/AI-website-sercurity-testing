@@ -11,9 +11,14 @@
  * 不排除 md5(passwordHash) 這類非直接雜湊密碼本身的情境,見規格文件。
  */
 
+// Python hashlib.new('md5') 先建構、再 .update(password) 分兩段餵入的寫法
+// (SecurityEval CWE-759_mitre_1)。同樣要求 update 的參數名含 password/pwd/pass,
+// 避免誤傷 hashlib.new('md5') 用於檔案校驗等非密碼用途(見 legacy-tn-006)。
 const HASH_RULES = [
   { name: 'MD5 用於密碼儲存（疑似）', re: /md5\s*\(\s*(password|pwd|pass)/gi },
   { name: 'SHA1 用於密碼儲存（疑似）', re: /sha1\s*\(\s*(password|pwd|pass)/gi },
+  { name: 'MD5 用於密碼儲存（疑似，hashlib.new 兩段式寫法）', re: /hashlib\.new\(\s*['"]md5['"]\s*\)[\s\S]{0,200}?\.update\s*\(\s*(password|pwd|pass)/gi },
+  { name: 'SHA1 用於密碼儲存（疑似，hashlib.new 兩段式寫法）', re: /hashlib\.new\(\s*['"]sha1['"]\s*\)[\s\S]{0,200}?\.update\s*\(\s*(password|pwd|pass)/gi },
 ];
 
 /**

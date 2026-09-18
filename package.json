@@ -1,0 +1,17 @@
+{
+  "name": "ai-website-security-testing",
+  "private": true,
+  "description": "純前端靜態資安檢查工具：貼上 AI 產出的程式碼，掃描常見資安問題",
+  "license": "MIT",
+  "scripts": {
+    "eval": "cd eval && node run_scaled_eval.js",
+    "eval:ast": "cd eval && node -e \"global.acorn=require('acorn');require('./run_scaled_eval.js');\"",
+    "eval:fp": "cd eval && node run_fp_eval.js",
+    "test": "cd eval && node run_rule_regression.js && node -e \"global.acorn=require('acorn');require('./run_rule_regression.js');\"",
+    "build:single": "node scripts/build-single.js",
+    "check:single": "node scripts/build-single.js --check"
+  },
+  "devDependencies": {
+    "acorn": "8.11.3"
+  }
+}

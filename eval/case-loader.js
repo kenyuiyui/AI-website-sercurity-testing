@@ -17,6 +17,7 @@ const VALID_KINDS = new Set([
   'possible_idor',
   'possible_sql_injection', 'insecure_eval', 'insecure_exec',
   'insecure_function_constructor', 'insecure_pickle', 'insecure_yaml_load',
+  'insecure_python_exec',
   'route_missing_rate_limit', 'route_uses_default_rate_limit',
   'inconsistent_field_masking'
 ]);

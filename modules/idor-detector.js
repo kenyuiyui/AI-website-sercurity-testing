@@ -51,8 +51,62 @@
 // 個分支涵蓋駝峰 xxxId 命名,要求 Id 是大寫開頭(符合JS駝峰慣例),避免誤傷
 // valid/avoid/grid/solid 這類字尾剛好是小寫id、但語意無關的單字。
 const IDOR_PATTERN = /(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s+\w+\s*\([^)]*\b(id|userId|req|[a-zA-Z_$][a-zA-Z0-9_$]*Id)\b[^)]*\)(?:\s*:\s*[\w.<>\[\]| ]+)?\s*{([^}]{0,300})}/g;
-const DB_CALL_PATTERN = /\.(find|get|query|select|delete|update)\s*\(/i;
+// findOne/findById 與 AST 版的 DB_METHOD_NAMES 對齊(Mongoose/Sequelize 常見寫法)
+const DB_CALL_PATTERN = /\.(find|findOne|findById|get|query|select|delete|update)\s*\(/i;
 const AUTH_CHECK_PATTERN = /\b(owner|user\.id|session|auth|permission|role)\b/i;
+
+// ⚠️ 修正紀錄(2026,reference_cases/incident-moltbook-2026、incident-base44-2025 發現):
+// IDOR_PATTERN 只認具名 function 宣告,Express/Koa 路由最常見的「callback 直接當參數」
+// 寫法 app.get(path, async (req, res) => {...}) 與 app.get(path, function (req, res) {...})
+// 完全抓不到(AST 版沒有這個問題,只影響 acorn 無法載入時的保底路徑)。
+// 這條規則只比對 callback 的開頭,不要求參數名是 id/xxxId——路由 callback 的簽名固定是
+// (req, res),實際查詢用的 ID 在 req.params 裡。也順帶涵蓋指派給變數的箭頭函式
+// (const deleteOrder = async (req, res) => {...})。
+// 函式主體改用大括號配對取出(extractBraceBody),不沿用 IDOR_PATTERN 的 [^}]{0,300}:
+// 路由 callback 幾乎一定含 { appId } 解構或 findOne({...}) 這類物件字面值,
+// [^}] 會在第一個 } 就截斷主體,導致後面的 DB 呼叫看不到而漏判。
+const ROUTE_CALLBACK_PATTERN = /(?:\(\s*(?:req|request)\s*,\s*(?:res|response)(?:\s*,\s*next)?\s*\)\s*=>|\bfunction\s*\(\s*(?:req|request)\s*,\s*(?:res|response)(?:\s*,\s*next)?\s*\))\s*\{/g;
+const MAX_CALLBACK_BODY_LENGTH = 2000;
+
+/**
+ * 從 openIdx(必須是 '{')開始做大括號配對,回傳主體內容(不含外層大括號)。
+ * 會跳過字串/模板字面值內的大括號;超過 maxLength 仍未配對完成就回傳已讀到的部分,
+ * 避免對超長或語法殘缺的貼上內容做無上限掃描。
+ */
+function extractBraceBody(code, openIdx, maxLength) {
+  let depth = 0;
+  let quote = null;
+  const end = Math.min(code.length, openIdx + maxLength);
+  for (let i = openIdx; i < end; i++) {
+    const ch = code[i];
+    if (quote) {
+      if (ch === '\\') i++;
+      else if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === '`') quote = ch;
+    else if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return code.slice(openIdx + 1, i);
+    }
+  }
+  return code.slice(openIdx + 1, end);
+}
+
+function bodyLooksLikeIdor(body) {
+  return DB_CALL_PATTERN.test(body) && !AUTH_CHECK_PATTERN.test(body);
+}
+
+function makeRegexIdorFinding() {
+  return {
+    tier: 2,
+    category: '建議人工複查',
+    name: '疑似缺少擁有權驗證',
+    kind: 'possible_idor',
+    evidence: '此函式用參數查詢資料，但未偵測到權限比對邏輯（正則比對）'
+  };
+}
 
 function idorDetectorRegex(code) {
   const findings = [];
@@ -60,17 +114,14 @@ function idorDetectorRegex(code) {
   let m;
 
   while ((m = re.exec(code)) !== null) {
-    const body = m[2];
-    const hasDbCall = DB_CALL_PATTERN.test(body);
-    const hasAuthCheck = AUTH_CHECK_PATTERN.test(body);
-    if (hasDbCall && !hasAuthCheck) {
-      findings.push({
-        tier: 2,
-        category: '建議人工複查',
-        name: '疑似缺少擁有權驗證',
-        kind: 'possible_idor',
-        evidence: '此函式用參數查詢資料，但未偵測到權限比對邏輯（正則比對）'
-      });
+    if (bodyLooksLikeIdor(m[2])) findings.push(makeRegexIdorFinding());
+  }
+
+  const routeRe = new RegExp(ROUTE_CALLBACK_PATTERN.source, ROUTE_CALLBACK_PATTERN.flags);
+  while ((m = routeRe.exec(code)) !== null) {
+    const openIdx = m.index + m[0].length - 1;
+    if (bodyLooksLikeIdor(extractBraceBody(code, openIdx, MAX_CALLBACK_BODY_LENGTH))) {
+      findings.push(makeRegexIdorFinding());
     }
   }
 
@@ -400,6 +451,8 @@ if (typeof module !== 'undefined' && module.exports) {
   extractDbCallInfo,
   extractIdParamName,
   IDOR_PATTERN,
+  ROUTE_CALLBACK_PATTERN,
+  extractBraceBody,
   DB_CALL_PATTERN,
   AUTH_CHECK_PATTERN,
   DB_METHOD_NAMES,

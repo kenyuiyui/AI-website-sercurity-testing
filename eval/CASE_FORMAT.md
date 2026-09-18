@@ -55,7 +55,8 @@
 **注入 / 反序列化**
 - `possible_sql_injection` — SQL Injection
 - `insecure_eval` — 不安全的 eval
-- `insecure_exec` — 不安全的 exec
+- `insecure_exec` — 不安全的 exec（Node.js exec/execSync 命令注入）
+- `insecure_python_exec` — Python exec() 執行格式化字串組成的程式碼
 - `insecure_function_constructor` — 不安全的 Function constructor
 - `insecure_pickle` — 不安全的 pickle
 - `insecure_yaml_load` — 不安全的 yaml.load

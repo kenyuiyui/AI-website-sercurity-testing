@@ -1,17 +1,18 @@
 /**
  * eval-orchestrator.js — 供 eval/ 底下的驗證腳本使用的協調層。
  *
- * 這份檔案的邏輯與實際上線版本(demo_split/index.html 內的主邏輯 script)完全一致，
+ * 這份檔案的邏輯與實際上線版本(根目錄 index.html 內的主邏輯 script)完全一致，
  * 只是把「呼叫 12 個模組、合併結果」這件事抽成獨立可 require 的函式，
  * 方便 run_eval.js / run_fp_eval.js 重新驗證 EVAL_REPORT.md 與
  * FALSE_POSITIVE_REPORT.md 裡的數字。
  *
- * 模組本體一律從 ../demo_split/modules 讀取，不依賴任何未公開的內部開發檔案，
- * 確保任何人 clone 這個 repo 下來都能直接執行、得到與報告一致的結果。
+ * 模組本體一律從 ../modules 讀取(與上線版 index.html 載入的是同一批檔案)，
+ * 不依賴任何未公開的內部開發檔案，確保任何人 clone 這個 repo 下來都能直接執行、
+ * 得到與報告一致的結果。
  */
 
 const path = require('path');
-const modulesDir = path.join(__dirname, '..', 'demo_split', 'modules');
+const modulesDir = path.join(__dirname, '..', 'modules');
 
 const { keyDetector } = require(path.join(modulesDir, 'key-detector'));
 const { jwtAnalyzer } = require(path.join(modulesDir, 'jwt-analyzer'));

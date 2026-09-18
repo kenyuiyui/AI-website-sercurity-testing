@@ -23,6 +23,12 @@ const INSECURE_DESERIALIZE_RULES = [
   { name: 'Python yaml.load() 未使用安全模式（應改用 yaml.safe_load 或指定 SafeLoader）', re: /\byaml\.load\s*\((?![^)]*Loader\s*=\s*yaml\.SafeLoader)/g, kind: 'insecure_yaml_load' },
   { name: 'Node.js exec()/execSync() 執行動態組成的指令（疑似命令注入）', re: /\b(exec|execSync)\s*\(\s*[a-zA-Z_$][\w$]*/g, kind: 'insecure_exec' },
   { name: 'Function 建構子動態執行程式碼字串（等同 eval 的風險）', re: /new\s+Function\s*\(/g, kind: 'insecure_function_constructor' },
+  // Python exec() 直接執行程式碼字串(語意接近 eval,不是 shell 指令),與上面 Node.js 的
+  // exec/execSync 分開成獨立 kind。只認 Python 專屬的動態組字串語法:% 格式化、f-string、
+  // .format(),固定字串常值 exec("print(1)") 不會觸發。字串拼接(+)刻意不涵蓋,因為
+  // exec("..." + x) 在 JS 裡是命令注入、在 Python 裡是程式碼注入,單看這一行分不出語言。
+  // (SecurityEval CWE-094_sonar_1)
+  { name: 'Python exec() 執行由格式化字串組成的程式碼（疑似程式碼注入）', re: /\bexec\s*\(\s*(?:(["'])(?:(?!\1)[^\n])*%[sdr](?:(?!\1)[^\n])*\1\s*%|[fF]["']|(["'])(?:(?!\2)[^\n])*\2\s*\.format\s*\()/g, kind: 'insecure_python_exec' },
 ];
 
 /**

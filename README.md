@@ -23,15 +23,15 @@
 
 ```bash
 git clone https://github.com/kenyuiyui/AI-website-sercurity-testing.git
-cd AI-website-sercurity-testing/demo_split
+cd AI-website-sercurity-testing
 python3 -m http.server 8000   # 然後開 http://localhost:8000
 ```
 
-或直接下載 `demo_split/` 整個資料夾（含 `index.html` 與 `modules/`），瀏覽器開啟即可用。
+拆分版需要 `index.html` 與 `modules/` 放在一起，並透過本機伺服器開啟。
 
-> ⚠️ 若直接雙擊開啟 `index.html` 沒反應，是瀏覽器對 `file://` 頁面限制了 `<script src>` 載入，改用上面的本機伺服器方式。
+> ⚠️ 若直接雙擊開啟 `index.html` 沒反應，是瀏覽器對 `file://` 頁面限制了 `<script src>` 載入，改用上面的本機伺服器方式，或改用單檔版 `referencesingle/index.html`（邏輯全部內嵌，雙擊即可開啟）。
 
-部署到 GitHub Pages：把 `demo_split/` 內的 `index.html` 與 `modules/` 放到 repo 根目錄（或設定 Pages 發布目錄指向 `demo_split/`）。
+部署到 GitHub Pages：repo 根目錄就是發布內容（`index.html` + `modules/`），Pages 發布來源設為 `main` 分支根目錄即可。
 
 ---
 
@@ -39,16 +39,32 @@ python3 -m http.server 8000   # 然後開 http://localhost:8000
 
 ```
 .
-├── demo_split/              # 拆分版(推薦)
-│   ├── index.html
-│   └── modules/              # M1~M12,各自獨立的偵測模組
-├── reference/                # 單檔打包版(邏輯內嵌，下載即用)
+├── index.html                # 拆分版主頁(推薦，GitHub Pages 發布的就是這份)
+├── modules/                  # M1~M12，各自獨立的偵測模組
+├── referencesingle/
+│   └── index.html            # 單檔版(由 scripts/build-single.js 產生，請勿手改)
+├── scripts/
+│   └── build-single.js       # 拆分版 → 單檔版建置腳本
 ├── eval/                     # 準確度驗證報告與測試案例
 │   ├── CASE_FORMAT.md         # 新增案例前先看這份
-│   ├── run_scaled_eval.js     # 規模化驗證,算信賴區間
+│   ├── run_scaled_eval.js     # 規模化驗證，算信賴區間
+│   ├── run_rule_regression.js # 規則邊界回歸測試
 │   ├── cases/                 # 持續擴充的驗證案例
 │   └── reference_cases/       # 真實事件改寫案例(不計入統計)
+├── package.json               # npm scripts(驗證、建置)
 └── README.md
+```
+
+### 修改模組後
+
+單檔版是由拆分版產生的，**只改 `modules/` 與根目錄 `index.html`**，改完執行：
+
+```bash
+npm install          # 第一次執行，安裝 AST 版驗證需要的 acorn
+npm test             # 規則回歸測試(正則版 + AST 版)
+npm run eval         # 規模化驗證(正則保底版)
+npm run eval:ast     # 規模化驗證(AST 完整版)
+npm run build:single # 重新產生 referencesingle/index.html
 ```
 
 模組對照表：M1 key-detector（明文金鑰）／M2 jwt-analyzer（JWT/Supabase）／M3 hash-detector（弱雜湊）／M4 secret-heuristics（自訂密鑰啟發式）／M5 csp-detector（CSP 缺失）／M6 idor-detector（IDOR）／M7 language-detector／M8 finding-renderer（結果呈現）／M9 sql-injection-detector／M10 insecure-deserialize-detector／M11 field-masking-consistency-detector（多檔案模式）／M12 rate-limit-coverage-detector。
@@ -63,10 +79,11 @@ python3 -m http.server 8000   # 然後開 http://localhost:8000
 
 - 已知格式的明文 API 金鑰（OpenAI／Anthropic／Gemini／Firebase／Line／AWS）
 - HTML／框架設定檔是否有 CSP
-- 密碼是否用 MD5／SHA1 這類弱雜湊
+- 密碼是否用 MD5／SHA1 這類弱雜湊（含 Python `hashlib.new('md5')` 再 `.update(password)` 的兩段式寫法）
 - Supabase／JWT 金鑰，區分 `anon`（可公開）與 `service_role`（絕不可公開）
 - SQL Injection（字串拼接、模板插值、f-string、Python `%` 格式化）
 - 不安全的反序列化／動態執行（eval／exec／pickle／yaml.load，含 Python `exec()` 格式化字串注入）
+- 疑似缺少擁有權驗證（IDOR），含 Express 路由 `app.get(path, (req, res) => {...})` 寫法
 
 ### 做不到 / 僅供保守提示
 
@@ -133,18 +150,18 @@ M1(key-detector) 判斷 Google／Gemini API Key 的規則是「符合 `AIzaSy` �
 
 | 驗證方向 | 案例數 | 正則保底版 | AST 完整版 |
 |---|---|---|---|
-| 真實案例命中率 | 20 個（真實蒐集，含 SecurityEval 學術資料集） | 95.2% | 100% |
+| 真實案例命中率 | 20 個（真實蒐集，含 SecurityEval 學術資料集；共 21 個應偵測項目） | 95.2%（20/21） | 100%（21/21） |
 | 誤判率 | 29 個（含邊界值測試） | 0% | 0% |
 
-正則保底版是「使用者瀏覽器連不上 Acorn CDN 時（企業網路限制、離線、CDN 故障）一定做得到」的水準；AST 版是條件允許時的最佳水準。
+正則保底版是「使用者瀏覽器連不上 Acorn CDN 時（企業網路限制、離線、CDN 故障）一定做得到」的水準；AST 版是條件允許時的最佳水準。正則版唯一的漏判是 `legacy-tp-002`：函式裡出現 `session` 字樣就會被正則版當成「已檢查權限」，分辨不出只是登入檢查、而非擁有權檢查，這是正則能力的天花板，AST 版沒有這個問題。
 
 ```bash
-cd eval
-node run_scaled_eval.js                                                    # 正則保底版
-node -e "global.acorn=require('acorn');require('./run_scaled_eval.js');"   # AST 完整版
+npm install          # 安裝 acorn(AST 版需要)
+npm run eval         # 正則保底版
+npm run eval:ast     # AST 完整版
 ```
 
-`eval-orchestrator.js` 直接從 `../demo_split/modules` 讀取偵測邏輯，跟上線版本完全同源。新增驗證案例只需在 `eval/cases/` 新增 `.txt` 檔案，格式見 `eval/CASE_FORMAT.md`。`eval/reference_cases/` 是依真實事件改寫的參考案例，刻意不計入統計（避免改寫帶入預期偏誤），細節見該資料夾 README。
+`eval-orchestrator.js` 直接從 `../modules` 讀取偵測邏輯，跟上線版本完全同源。新增驗證案例只需在 `eval/cases/` 新增 `.txt` 檔案，格式見 `eval/CASE_FORMAT.md`。`eval/reference_cases/` 是依真實事件改寫的參考案例，刻意不計入統計（避免改寫帶入預期偏誤），細節見該資料夾 README。
 
 樣本規模仍有限（相較 Gitleaks、TruffleHog 等工具的數千至數萬案例），歡迎提交真實案例協助擴充。
 

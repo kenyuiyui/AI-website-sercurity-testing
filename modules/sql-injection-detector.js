@@ -6,8 +6,8 @@
  *
  * 這是純函式,不依賴任何其他模組,可完全獨立開發與測試。
  *
- * 判斷邏輯:找出「含SQL關鍵字的字串」且緊接著有「字串拼接運算」(+ 號)
- * 或「模板字面值/f-string插值」的模式。這個做法與 M6(idor-detector)同源:
+ * 判斷邏輯:找出「含SQL關鍵字的字串」且緊接著有「字串拼接運算」(+ 號)、
+ * 「模板字面值/f-string插值」或「Python % 格式化」的模式。這個做法與 M6(idor-detector)同源:
  * 字串拼接是可從語法特徵直接判斷的模式,相對可靠,誤判率低於IDOR這類
  * 需要理解程式邏輯意圖的判斷。
  *
@@ -69,10 +69,21 @@ const FSTRING_PATTERN = new RegExp(
   'i'
 );
 
+// 模式4: Python % 格式化 — "...SQL...%s..." % var (SecurityEval CWE-089_codeql_1)
+// 同樣要求兩個SQL關鍵字都出現,避免誤判一般字串格式化("%d items found" % count)
+// 或只提到SQL關鍵字的日誌訊息。引號後的 % 運算子必須接「變數名+結尾符號」或「(」,
+// 才能區分字串外的格式化運算子與字串內的佔位符(例如 WHERE name = '%s' 的 '%s、
+// LIKE '%foo%'),否則參數化查詢 execute("... '%s'", [x]) 也會被誤判。
+const PERCENT_FORMAT_PATTERN = new RegExp(
+  `\\b${SQL_KEYWORD_PATTERN}\\b[\\s\\S]{0,60}?\\b${SQL_SECOND_KEYWORD_PATTERN}\\b[\\s\\S]{0,80}?["']\\s*%\\s*(?:\\(|[A-Za-z_]\\w*\\s*(?:[),.\\[]|$))`,
+  'i'
+);
+
 const SQL_INJECTION_RULES = [
   { name: 'SQL 查詢使用字串拼接組成（疑似 SQL Injection）', re: CONCAT_PATTERN },
   { name: 'SQL 查詢使用模板字面值插值組成（疑似 SQL Injection）', re: TEMPLATE_INTERP_PATTERN },
   { name: 'SQL 查詢使用 Python f-string 插值組成（疑似 SQL Injection）', re: FSTRING_PATTERN },
+  { name: 'SQL 查詢使用 Python % 格式化字串組成（疑似 SQL Injection）', re: PERCENT_FORMAT_PATTERN },
 ];
 
 /**
@@ -108,5 +119,5 @@ function sqlInjectionDetector(code) {
 
 // ── 環境相容匯出:Node.js(require)與瀏覽器(<script src>)共用同一份檔案 ──
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { sqlInjectionDetector, SQL_INJECTION_RULES, CONCAT_PATTERN, TEMPLATE_INTERP_PATTERN, FSTRING_PATTERN };
+  module.exports = { sqlInjectionDetector, SQL_INJECTION_RULES, CONCAT_PATTERN, TEMPLATE_INTERP_PATTERN, FSTRING_PATTERN, PERCENT_FORMAT_PATTERN };
 }

@@ -13,7 +13,7 @@
  * 會在瀏覽器與 Node.js 兩種環境下都直接噴 ReferenceError。
  * 因此不再宣稱「不依賴任何其他模組」,改為明確處理跨模組依賴:
  * 瀏覽器端要求 index.html 必須在 jwt-analyzer.js 之前載入 key-detector.js
- * (demo_split/index.html 的載入順序已符合這個要求);Node.js 環境則直接
+ * (根目錄 index.html 的載入順序已符合這個要求);Node.js 環境則直接
  * require key-detector.js 取得 maskMatch。
  * 輸入/輸出介面不變:輸入 code(string),輸出 Finding[]。
  */
@@ -23,10 +23,13 @@ const JWT_KEY_PATTERN = /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z
 // ── 環境相容取得 maskMatch(定義於 M1 key-detector.js) ──
 // 瀏覽器: key-detector.js 以 <script src> 先載入後,maskMatch 已在全域(window)作用域可用。
 // Node.js: module 物件存在,直接 require 同目錄下的 key-detector.js 取得 maskMatch。
+// 單檔版(referencesingle/,全部模組內嵌在同一個函式作用域): maskMatch 已是同作用域的
+// 函式宣告,window 上沒有;這時不能再賦值,否則會被蓋成 undefined,所以只在
+// window.maskMatch 真的是函式時才取用。
 var maskMatch;
 if (typeof module !== 'undefined' && module.exports) {
   maskMatch = require('./key-detector').maskMatch;
-} else if (typeof window !== 'undefined') {
+} else if (typeof window !== 'undefined' && typeof window.maskMatch === 'function') {
   maskMatch = window.maskMatch;
 }
 

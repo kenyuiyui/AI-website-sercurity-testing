@@ -1,5 +1,12 @@
 # 規則邊界修正 — 交接文件
 
+> ✅ **狀態：四項已全部完成（2026-09-19）。** 這份文件保留作為修正紀錄。實作與原建議的差異：
+> - 路徑已更新：拆分版在根目錄 `modules/`，單檔版 `referencesingle/index.html` 改由 `scripts/build-single.js` 自動產生，不再手動同步。
+> - **M9**：原建議的 `PERCENT_FORMAT_PATTERN` 會把字串內部的 `'%s'` 佔位符誤當成格式化運算子（例如參數化查詢 `execute("... = '%s'", (x,))` 也會命中），實作時收緊成「引號後的 `%` 必須接變數名或括號」。
+> - **M10**：新 kind `insecure_python_exec` 只涵蓋 `%`／f-string／`.format()`，不涵蓋字串拼接 `+`——`exec("..." + x)` 在 JS 與 Python 語意不同，單行無法分辨語言。
+> - **M6**：原建議的 `[^}]{0,300}` 在 `{ appId }` 解構或 `findOne({...})` 處就會截斷，實際上兩個事件案例都抓不到；改為大括號配對取出完整主體，`DB_CALL_PATTERN` 也補上 `findOne`／`findById`。
+> - 手寫的正負向邊界測試收在 `eval/run_rule_regression.js`，沒有放進 `cases/`（避免影響統計）。
+
 這份文件整理四個已驗證存在、待修正的規則邊界，供接手的人（AI 或工程師）直接動手，不需要重新調查。每一項都附：問題重現方式、精確的程式碼位置、建議修法、以及修完後怎麼驗證。
 
 **背景**：這四項是在拿真實資安事件改寫案例、以及 [SecurityEval](https://github.com/s2e-lab/SecurityEval) 學術資料集（MIT 授權，逐字取用）驗證工具時發現的。詳細案例與原始驗證紀錄見 `eval/reference_cases/README.md` 與該資料夾內對應的 `*-known-gap.txt` 檔案。

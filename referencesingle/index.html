@@ -1362,12 +1362,32 @@ if (typeof module !== 'undefined' && module.exports) {
  * 輸入: code (string)
  * 輸出: Finding[]
  *
- * 這是純函式,不依賴任何其他模組,可完全獨立開發與測試。
- * 注意: role=anon 是 tier2(設計上可公開), role=service_role 是 tier1(高風險),
- * 角色未知時保守歸為 tier2、不可略過不報。
+ * ⚠️ 修正紀錄(2026,拆分成獨立檔案後才暴露的問題):
+ * 本模組的 evidence 文字組裝依賴 M1(key-detector)的 maskMatch() 遮罩函式。
+ * 單檔版把全部模組寫在同一個 <script> 作用域內時,這個依賴不會出錯,但拆成
+ * 獨立檔案後,若載入順序不含 key-detector.js,或本檔案被單獨抽出使用,
+ * 會在瀏覽器與 Node.js 兩種環境下都直接噴 ReferenceError。
+ * 因此不再宣稱「不依賴任何其他模組」,改為明確處理跨模組依賴:
+ * 瀏覽器端要求 index.html 必須在 jwt-analyzer.js 之前載入 key-detector.js
+ * (根目錄 index.html 的載入順序已符合這個要求);Node.js 環境則直接
+ * require key-detector.js 取得 maskMatch。
+ * 輸入/輸出介面不變:輸入 code(string),輸出 Finding[]。
  */
 
 const JWT_KEY_PATTERN = /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g;
+
+// ── 環境相容取得 maskMatch(定義於 M1 key-detector.js) ──
+// 瀏覽器: key-detector.js 以 <script src> 先載入後,maskMatch 已在全域(window)作用域可用。
+// Node.js: module 物件存在,直接 require 同目錄下的 key-detector.js 取得 maskMatch。
+// 單檔版(referencesingle/,全部模組內嵌在同一個函式作用域): maskMatch 已是同作用域的
+// 函式宣告,window 上沒有;這時不能再賦值,否則會被蓋成 undefined,所以只在
+// window.maskMatch 真的是函式時才取用。
+var maskMatch;
+if (typeof module !== 'undefined' && module.exports) {
+  maskMatch = require('./key-detector').maskMatch;
+} else if (typeof window !== 'undefined' && typeof window.maskMatch === 'function') {
+  maskMatch = window.maskMatch;
+}
 
 /**
  * base64url decode,相容瀏覽器(atob)與 Node.js(Buffer)環境
@@ -1484,9 +1504,14 @@ if (typeof module !== 'undefined' && module.exports) {
  * 不排除 md5(passwordHash) 這類非直接雜湊密碼本身的情境,見規格文件。
  */
 
+// Python hashlib.new('md5') 先建構、再 .update(password) 分兩段餵入的寫法
+// (SecurityEval CWE-759_mitre_1)。同樣要求 update 的參數名含 password/pwd/pass,
+// 避免誤傷 hashlib.new('md5') 用於檔案校驗等非密碼用途(見 legacy-tn-006)。
 const HASH_RULES = [
   { name: 'MD5 用於密碼儲存（疑似）', re: /md5\s*\(\s*(password|pwd|pass)/gi },
   { name: 'SHA1 用於密碼儲存（疑似）', re: /sha1\s*\(\s*(password|pwd|pass)/gi },
+  { name: 'MD5 用於密碼儲存（疑似，hashlib.new 兩段式寫法）', re: /hashlib\.new\(\s*['"]md5['"]\s*\)[\s\S]{0,200}?\.update\s*\(\s*(password|pwd|pass)/gi },
+  { name: 'SHA1 用於密碼儲存（疑似，hashlib.new 兩段式寫法）', re: /hashlib\.new\(\s*['"]sha1['"]\s*\)[\s\S]{0,200}?\.update\s*\(\s*(password|pwd|pass)/gi },
 ];
 
 /**
@@ -1788,8 +1813,62 @@ if (typeof module !== 'undefined' && module.exports) {
 // 個分支涵蓋駝峰 xxxId 命名,要求 Id 是大寫開頭(符合JS駝峰慣例),避免誤傷
 // valid/avoid/grid/solid 這類字尾剛好是小寫id、但語意無關的單字。
 const IDOR_PATTERN = /(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s+\w+\s*\([^)]*\b(id|userId|req|[a-zA-Z_$][a-zA-Z0-9_$]*Id)\b[^)]*\)(?:\s*:\s*[\w.<>\[\]| ]+)?\s*{([^}]{0,300})}/g;
-const DB_CALL_PATTERN = /\.(find|get|query|select|delete|update)\s*\(/i;
+// findOne/findById 與 AST 版的 DB_METHOD_NAMES 對齊(Mongoose/Sequelize 常見寫法)
+const DB_CALL_PATTERN = /\.(find|findOne|findById|get|query|select|delete|update)\s*\(/i;
 const AUTH_CHECK_PATTERN = /\b(owner|user\.id|session|auth|permission|role)\b/i;
+
+// ⚠️ 修正紀錄(2026,reference_cases/incident-moltbook-2026、incident-base44-2025 發現):
+// IDOR_PATTERN 只認具名 function 宣告,Express/Koa 路由最常見的「callback 直接當參數」
+// 寫法 app.get(path, async (req, res) => {...}) 與 app.get(path, function (req, res) {...})
+// 完全抓不到(AST 版沒有這個問題,只影響 acorn 無法載入時的保底路徑)。
+// 這條規則只比對 callback 的開頭,不要求參數名是 id/xxxId——路由 callback 的簽名固定是
+// (req, res),實際查詢用的 ID 在 req.params 裡。也順帶涵蓋指派給變數的箭頭函式
+// (const deleteOrder = async (req, res) => {...})。
+// 函式主體改用大括號配對取出(extractBraceBody),不沿用 IDOR_PATTERN 的 [^}]{0,300}:
+// 路由 callback 幾乎一定含 { appId } 解構或 findOne({...}) 這類物件字面值,
+// [^}] 會在第一個 } 就截斷主體,導致後面的 DB 呼叫看不到而漏判。
+const ROUTE_CALLBACK_PATTERN = /(?:\(\s*(?:req|request)\s*,\s*(?:res|response)(?:\s*,\s*next)?\s*\)\s*=>|\bfunction\s*\(\s*(?:req|request)\s*,\s*(?:res|response)(?:\s*,\s*next)?\s*\))\s*\{/g;
+const MAX_CALLBACK_BODY_LENGTH = 2000;
+
+/**
+ * 從 openIdx(必須是 '{')開始做大括號配對,回傳主體內容(不含外層大括號)。
+ * 會跳過字串/模板字面值內的大括號;超過 maxLength 仍未配對完成就回傳已讀到的部分,
+ * 避免對超長或語法殘缺的貼上內容做無上限掃描。
+ */
+function extractBraceBody(code, openIdx, maxLength) {
+  let depth = 0;
+  let quote = null;
+  const end = Math.min(code.length, openIdx + maxLength);
+  for (let i = openIdx; i < end; i++) {
+    const ch = code[i];
+    if (quote) {
+      if (ch === '\\') i++;
+      else if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === '`') quote = ch;
+    else if (ch === '{') depth++;
+    else if (ch === '}') {
+      depth--;
+      if (depth === 0) return code.slice(openIdx + 1, i);
+    }
+  }
+  return code.slice(openIdx + 1, end);
+}
+
+function bodyLooksLikeIdor(body) {
+  return DB_CALL_PATTERN.test(body) && !AUTH_CHECK_PATTERN.test(body);
+}
+
+function makeRegexIdorFinding() {
+  return {
+    tier: 2,
+    category: '建議人工複查',
+    name: '疑似缺少擁有權驗證',
+    kind: 'possible_idor',
+    evidence: '此函式用參數查詢資料，但未偵測到權限比對邏輯（正則比對）'
+  };
+}
 
 function idorDetectorRegex(code) {
   const findings = [];
@@ -1797,17 +1876,14 @@ function idorDetectorRegex(code) {
   let m;
 
   while ((m = re.exec(code)) !== null) {
-    const body = m[2];
-    const hasDbCall = DB_CALL_PATTERN.test(body);
-    const hasAuthCheck = AUTH_CHECK_PATTERN.test(body);
-    if (hasDbCall && !hasAuthCheck) {
-      findings.push({
-        tier: 2,
-        category: '建議人工複查',
-        name: '疑似缺少擁有權驗證',
-        kind: 'possible_idor',
-        evidence: '此函式用參數查詢資料，但未偵測到權限比對邏輯（正則比對）'
-      });
+    if (bodyLooksLikeIdor(m[2])) findings.push(makeRegexIdorFinding());
+  }
+
+  const routeRe = new RegExp(ROUTE_CALLBACK_PATTERN.source, ROUTE_CALLBACK_PATTERN.flags);
+  while ((m = routeRe.exec(code)) !== null) {
+    const openIdx = m.index + m[0].length - 1;
+    if (bodyLooksLikeIdor(extractBraceBody(code, openIdx, MAX_CALLBACK_BODY_LENGTH))) {
+      findings.push(makeRegexIdorFinding());
     }
   }
 
@@ -2137,6 +2213,8 @@ if (typeof module !== 'undefined' && module.exports) {
   extractDbCallInfo,
   extractIdParamName,
   IDOR_PATTERN,
+  ROUTE_CALLBACK_PATTERN,
+  extractBraceBody,
   DB_CALL_PATTERN,
   AUTH_CHECK_PATTERN,
   DB_METHOD_NAMES,
@@ -2397,6 +2475,15 @@ const FINDING_GUIDE = {
       '2. 評估是否有不需要呼叫系統指令的替代做法（例如用對應的程式語言函式庫直接完成同樣的操作，而不是透過 shell 指令）。\n' +
       '3. 如果必須執行系統指令，改用 execFile() 或 spawn()（Node.js）並把參數以陣列形式個別傳入，而不是拼接成一整串字串，這樣可以避免 shell 對特殊字元的額外解讀。同時對輸入內容做嚴格的白名單驗證，只允許預期的字元或格式通過。\n' +
       '完成後請告訴我：這個指令原本的用途是什麼，以及變數的實際來源。'
+  },
+  insecure_python_exec: {
+    plain: 'Python 的 exec() 會把傳進去的文字當成 Python 程式碼直接執行，而這裡傳進去的文字是用 % 格式化、f-string 或 .format() 把變數組進去的。如果組進去的變數來自使用者輸入（例如網址參數、表單內容），使用者就能在裡面夾帶任意 Python 程式碼，讓伺服器照著執行，這叫程式碼注入（Code Injection），風險等級跟 eval() 相同，嚴重時可能取得整台伺服器的控制權。',
+    handoff:
+      '我的 Python 程式碼裡使用了 exec()，而且傳入的程式碼字串是用 % 格式化、f-string 或 .format() 把變數組進去的，這樣的寫法如果變數來自使用者輸入會有程式碼注入的風險。請幫我：\n' +
+      '1. 先確認組進 exec() 的變數是否可能來自使用者輸入或外部資料，如果是，這是需要優先處理的高風險問題。\n' +
+      '2. 找出這段程式碼原本想達成的目的，改用不需要執行任意程式碼的做法（例如要動態載入模組就用 importlib.import_module 並搭配白名單，要動態取屬性就用 getattr 並搭配白名單），而不是組字串再 exec()。\n' +
+      '3. 檢查專案裡還有沒有其他地方使用 exec() 或 eval()。\n' +
+      '完成後請告訴我：原本 exec() 的用途是什麼，以及你改用了什麼替代方案。'
   },
   insecure_function_constructor: {
     plain: '程式碼裡用 new Function(...) 動態建立函式，這跟 eval() 的風險本質上相同——傳入的字串內容會被當成程式碼執行。如果這段字串包含使用者輸入或外部資料，等於讓使用者有機會執行任意程式碼。',
@@ -2770,8 +2857,8 @@ if (typeof module !== 'undefined' && module.exports) {
  *
  * 這是純函式,不依賴任何其他模組,可完全獨立開發與測試。
  *
- * 判斷邏輯:找出「含SQL關鍵字的字串」且緊接著有「字串拼接運算」(+ 號)
- * 或「模板字面值/f-string插值」的模式。這個做法與 M6(idor-detector)同源:
+ * 判斷邏輯:找出「含SQL關鍵字的字串」且緊接著有「字串拼接運算」(+ 號)、
+ * 「模板字面值/f-string插值」或「Python % 格式化」的模式。這個做法與 M6(idor-detector)同源:
  * 字串拼接是可從語法特徵直接判斷的模式,相對可靠,誤判率低於IDOR這類
  * 需要理解程式邏輯意圖的判斷。
  *
@@ -2833,10 +2920,21 @@ const FSTRING_PATTERN = new RegExp(
   'i'
 );
 
+// 模式4: Python % 格式化 — "...SQL...%s..." % var (SecurityEval CWE-089_codeql_1)
+// 同樣要求兩個SQL關鍵字都出現,避免誤判一般字串格式化("%d items found" % count)
+// 或只提到SQL關鍵字的日誌訊息。引號後的 % 運算子必須接「變數名+結尾符號」或「(」,
+// 才能區分字串外的格式化運算子與字串內的佔位符(例如 WHERE name = '%s' 的 '%s、
+// LIKE '%foo%'),否則參數化查詢 execute("... '%s'", [x]) 也會被誤判。
+const PERCENT_FORMAT_PATTERN = new RegExp(
+  `\\b${SQL_KEYWORD_PATTERN}\\b[\\s\\S]{0,60}?\\b${SQL_SECOND_KEYWORD_PATTERN}\\b[\\s\\S]{0,80}?["']\\s*%\\s*(?:\\(|[A-Za-z_]\\w*\\s*(?:[),.\\[]|$))`,
+  'i'
+);
+
 const SQL_INJECTION_RULES = [
   { name: 'SQL 查詢使用字串拼接組成（疑似 SQL Injection）', re: CONCAT_PATTERN },
   { name: 'SQL 查詢使用模板字面值插值組成（疑似 SQL Injection）', re: TEMPLATE_INTERP_PATTERN },
   { name: 'SQL 查詢使用 Python f-string 插值組成（疑似 SQL Injection）', re: FSTRING_PATTERN },
+  { name: 'SQL 查詢使用 Python % 格式化字串組成（疑似 SQL Injection）', re: PERCENT_FORMAT_PATTERN },
 ];
 
 /**
@@ -2872,7 +2970,7 @@ function sqlInjectionDetector(code) {
 
 // ── 環境相容匯出:Node.js(require)與瀏覽器(<script src>)共用同一份檔案 ──
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { sqlInjectionDetector, SQL_INJECTION_RULES, CONCAT_PATTERN, TEMPLATE_INTERP_PATTERN, FSTRING_PATTERN };
+  module.exports = { sqlInjectionDetector, SQL_INJECTION_RULES, CONCAT_PATTERN, TEMPLATE_INTERP_PATTERN, FSTRING_PATTERN, PERCENT_FORMAT_PATTERN };
 }
 
   // ── 模組: insecure-deserialize-detector.js ──
@@ -2901,6 +2999,12 @@ const INSECURE_DESERIALIZE_RULES = [
   { name: 'Python yaml.load() 未使用安全模式（應改用 yaml.safe_load 或指定 SafeLoader）', re: /\byaml\.load\s*\((?![^)]*Loader\s*=\s*yaml\.SafeLoader)/g, kind: 'insecure_yaml_load' },
   { name: 'Node.js exec()/execSync() 執行動態組成的指令（疑似命令注入）', re: /\b(exec|execSync)\s*\(\s*[a-zA-Z_$][\w$]*/g, kind: 'insecure_exec' },
   { name: 'Function 建構子動態執行程式碼字串（等同 eval 的風險）', re: /new\s+Function\s*\(/g, kind: 'insecure_function_constructor' },
+  // Python exec() 直接執行程式碼字串(語意接近 eval,不是 shell 指令),與上面 Node.js 的
+  // exec/execSync 分開成獨立 kind。只認 Python 專屬的動態組字串語法:% 格式化、f-string、
+  // .format(),固定字串常值 exec("print(1)") 不會觸發。字串拼接(+)刻意不涵蓋,因為
+  // exec("..." + x) 在 JS 裡是命令注入、在 Python 裡是程式碼注入,單看這一行分不出語言。
+  // (SecurityEval CWE-094_sonar_1)
+  { name: 'Python exec() 執行由格式化字串組成的程式碼（疑似程式碼注入）', re: /\bexec\s*\(\s*(?:(["'])(?:(?!\1)[^\n])*%[sdr](?:(?!\1)[^\n])*\1\s*%|[fF]["']|(["'])(?:(?!\2)[^\n])*\2\s*\.format\s*\()/g, kind: 'insecure_python_exec' },
 ];
 
 /**
@@ -2933,8 +3037,6 @@ function insecureDeserializeDetector(code) {
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = { insecureDeserializeDetector, INSECURE_DESERIALIZE_RULES };
 }
-
-
 
   // ── 模組: rate-limit-coverage-detector.js ──
 /**
@@ -3660,18 +3762,17 @@ if (typeof module !== 'undefined' && module.exports) {
   function applyTheme(theme) {
     if (theme === 'light') {
       root.setAttribute('data-theme', 'light');
-      iconEl.innerHTML = '&#9789;'; // 月亮圖示,提示點擊可切回深色
+      iconEl.innerHTML = '&#9789;';
       labelEl.textContent = '深色模式';
     } else {
       root.removeAttribute('data-theme');
-      iconEl.innerHTML = '&#9788;'; // 太陽圖示,提示點擊可切到淺色
+      iconEl.innerHTML = '&#9788;';
       labelEl.textContent = '淺色模式';
     }
   }
 
-  // 初始化:優先讀取使用者先前的選擇,否則跟隨系統偏好
   var saved = null;
-  try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) { /* 無痕模式等情況下略過 */ }
+  try { saved = localStorage.getItem(STORAGE_KEY); } catch (e) { }
   if (!saved) {
     var prefersLight = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches;
     saved = prefersLight ? 'light' : 'dark';
@@ -3682,7 +3783,7 @@ if (typeof module !== 'undefined' && module.exports) {
     var current = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
     var next = current === 'light' ? 'dark' : 'light';
     applyTheme(next);
-    try { localStorage.setItem(STORAGE_KEY, next); } catch (e) { /* 無痕模式等情況下略過 */ }
+    try { localStorage.setItem(STORAGE_KEY, next); } catch (e) { }
   });
 })();
 
@@ -3700,7 +3801,6 @@ if (typeof module !== 'undefined' && module.exports) {
       var panel = document.getElementById(btn.getAttribute('aria-controls'));
       if (panel) panel.hidden = !isActive;
     });
-    // 切換分頁時捲動回頂部,避免使用者停在上個分頁的捲動位置看不到新內容開頭
     window.scrollTo({ top: 0, behavior: 'auto' });
   }
 
@@ -3710,7 +3810,6 @@ if (typeof module !== 'undefined' && module.exports) {
     });
   });
 
-  // 首屏內「這工具查得到什麼」「怎麼拿到程式碼」快速連結按鈕,行為等同點擊對應分頁
   quickLinkButtons.forEach(function(btn) {
     btn.addEventListener('click', function() {
       activateTab(btn.getAttribute('data-goto-tab'));
