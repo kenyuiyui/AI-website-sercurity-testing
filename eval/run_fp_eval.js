@@ -2,7 +2,7 @@
  * 誤判率評測腳本(False Positive Rate Evaluation)
  * 執行方式:
  *   node eval/run_fp_eval.js                                    (正則保底版)
- *   node -e "global.acorn=require('acorn');require('./eval/run_fp_eval.js')"  (AST版)
+ *   node -e "require('./eval/load-ast');require('./eval/run_fp_eval.js')"  (AST版)
  */
 
 const { runScan } = require('./eval-orchestrator');

@@ -505,39 +505,144 @@ function buildLineTagHtml(f) {
   return `<button type="button" class="rc-line-tag" data-start="${f.start}" data-end="${f.end}"${fileAttr} title="在輸入框中選取這一段">第 ${f.line} 行</button>`;
 }
 
+// 層級的白話名稱(畫面、報告共用)
 const TIER_META = {
-  1: { cls: 'tier1', tag: '發現', label: '高信心度發現', showCategory: true },
-  2: { cls: 'tier2', tag: '建議複查', label: '建議複查', showCategory: false },
-  3: { cls: 'tier3', tag: '資訊提示', label: '資訊提示', showCategory: false }
+  1: { cls: 'tier1', tag: '需要處理', label: '需要處理' },
+  2: { cls: 'tier2', tag: '請你確認', label: '請你確認' },
+  3: { cls: 'tier3', tag: '參考', label: '參考' }
 };
+
+// 每種 kind 的白話標題與一句話處理方式(卡片標題、摘要、報告共用)。新增 kind 時必須補上(verify 會檢查)。
+const PLAIN_TITLES = {
+  plain_key: { title: f => `${vendorLabel(f)}金鑰直接寫在程式碼裡`, action: '到該服務後台撤銷並重新產生金鑰，程式改從環境變數讀取' },
+  firebase_config_exposed: { title: 'Firebase 設定（可公開，但要確認資料庫規則）', action: '到 Firebase 主控台確認 Security Rules 不是「全部開放」' },
+  supabase_service_role: { title: '資料庫最高權限金鑰被放進網頁程式碼', action: '立即到 Supabase 後台重新產生 service_role 金鑰，前端只保留 anon 金鑰' },
+  supabase_anon: { title: 'Supabase 公開金鑰（可公開，但要確認資料表權限）', action: '到 Supabase 確認每張資料表都已啟用 RLS' },
+  jwt_unknown_role: { title: '一段看起來像登入憑證（JWT）的字串', action: '確認這是哪個服務的憑證、權限有多大' },
+  line_bot_token_suspected: { title: '可能是 LINE Bot 的存取權杖（不確定）', action: '確認是否為 LINE 權杖；是的話到 LINE Developers 重新產生' },
+  weak_hash: { title: '密碼用了容易被破解的加密方式（MD5／SHA1）', action: '改用 bcrypt 或 argon2 儲存密碼' },
+  custom_secret_var: { title: '疑似密碼或密鑰直接寫在程式碼裡', action: '確認是否為真實密鑰；是的話改用環境變數並更換' },
+  endpoint_url: { title: '內部服務網址（Webhook 等）直接寫在程式碼裡', action: '確認這個網址有驗證機制，必要時重新產生網址' },
+  env_fallback: { title: '讀取環境變數時帶了一組明文備用值', action: '移除明文備用值，缺少設定時讓程式直接報錯' },
+  env_file_secret: { title: '.env 設定檔裡有疑似真實的密鑰', action: '確認 .env 沒有上傳到 GitHub；已上傳就更換密鑰' },
+  no_csp_html: { title: '網頁沒有設定額外的安全防線（CSP）', action: '為網頁加上 Content Security Policy' },
+  no_csp_config: { title: '框架設定檔裡沒看到安全防線設定（CSP）', action: '確認是否在其他設定檔或部署平台設定了 CSP' },
+  possible_idor: { title: '登入的人可能看得到或改得到別人的資料', action: '查詢資料前，比對這筆資料的擁有者是不是目前登入的人' },
+  possible_sql_injection: { title: '資料庫查詢可能被使用者輸入竄改（SQL Injection）', action: '改用參數化查詢（? 佔位符或 ORM 方法）' },
+  insecure_eval: { title: '程式會把文字當成程式碼執行（eval）', action: '移除 eval，改用 JSON.parse 或明確的邏輯' },
+  insecure_pickle: { title: '用不安全的方式讀取外部資料（pickle）', action: '改用 JSON 等安全的資料格式' },
+  insecure_yaml_load: { title: 'YAML 讀取方式不安全', action: '改用 yaml.safe_load' },
+  insecure_exec: { title: '程式會執行動態組成的系統指令', action: '不要拼接指令字串，改用參數陣列並驗證輸入' },
+  insecure_python_exec: { title: 'Python 會執行動態組成的程式碼', action: '移除 exec，改用明確的邏輯' },
+  insecure_function_constructor: { title: '程式會把文字當成程式碼執行（new Function）', action: '移除 new Function，改用明確的邏輯' },
+  route_missing_rate_limit: { title: '有 API 路由完全沒有流量限制', action: '為這個路由加上速率限制' },
+  route_uses_default_rate_limit: { title: '有 API 路由使用預設的流量限制', action: '確認預設值是否適合這個路由' },
+  inconsistent_field_masking: { title: '同一個敏感欄位在不同檔案的遮罩方式不一致', action: '確認每個輸出路徑都做了相同的遮罩處理' }
+};
+
+// 報告裡可以附上遮罩後識別字串的 kind(evidence 已經過 maskMatch);其他 kind 的 evidence 可能含程式碼片段,報告不輸出
+const MASKED_EVIDENCE_KINDS = new Set(['plain_key', 'firebase_config_exposed', 'supabase_service_role', 'supabase_anon', 'jwt_unknown_role', 'line_bot_token_suspected']);
+// 需要到服務後台撤銷的外洩類 kind(決定行動步驟)
+const LEAKED_KEY_KINDS = new Set(['plain_key', 'supabase_service_role']);
+
+function vendorLabel(f) {
+  const n = String(f.name || '').replace(/\s*(API Key|Access Key ID)\s*$/i, '').trim();
+  return n ? n + ' ' : '';
+}
+
+function plainTitle(f) {
+  const p = PLAIN_TITLES[f.kind];
+  if (!p) return f.name;
+  return typeof p.title === 'function' ? p.title(f) : p.title;
+}
+
+function plainAction(f) {
+  const p = PLAIN_TITLES[f.kind];
+  return p ? p.action : '';
+}
+
+function sortFindings(findings) {
+  return (findings || [])
+    .filter(f => TIER_META[f.tier])
+    .map((f, i) => ({ f, i }))
+    .sort((a, b) => (a.f.tier - b.f.tier) || ((a.f.filename || '') > (b.f.filename || '') ? 1 : (a.f.filename || '') < (b.f.filename || '') ? -1 : 0) || ((a.f.line || 1e9) - (b.f.line || 1e9)) || (a.i - b.i))
+    .map(x => x.f);
+}
+
+function countByTier(findings) {
+  const counts = { 1: 0, 2: 0, 3: 0 };
+  findings.forEach(f => { if (counts[f.tier] !== undefined) counts[f.tier]++; });
+  return counts;
+}
+
+/**
+ * 一句話結論 + 行動步驟(畫面與報告共用)
+ * @returns {{headline: string, calm: string|null, steps: string[]}}
+ */
+function buildVerdict(findings, notices) {
+  const c = countByTier(findings);
+  const hasLeak = findings.some(f => LEAKED_KEY_KINDS.has(f.kind));
+  if (c[1] > 0) {
+    const steps = [];
+    if (hasLeak) steps.push('先到外洩金鑰所屬的服務後台「撤銷並重新產生」金鑰——只改程式碼的話，舊金鑰仍然有效。');
+    steps.push('按「複製全部修正指令」，貼給你用的 AI（Claude、ChatGPT 或 Lovable／Bolt 內建的 AI），請它照指令修改程式。');
+    steps.push('改完後回到這裡再掃一次，確認「需要處理」的項目都消失了。');
+    return {
+      headline: `有 ${c[1]} 件事需要處理` + (c[2] > 0 ? `，另有 ${c[2]} 件請你確認` : '') + '。',
+      calm: '先別慌：這些都是 AI 產生的程式碼常見的問題，有標準的修法，照下面的步驟做就好。',
+      steps
+    };
+  }
+  if (c[2] > 0) {
+    return {
+      headline: `沒有確定的問題，但有 ${c[2]} 件請你確認。`,
+      calm: '「請你確認」代表看起來可疑、不一定真的有問題。',
+      steps: [
+        '逐項展開下方說明，判斷是否符合你的情況。',
+        '不確定的話，按「複製全部修正指令」貼給 AI，請它幫你檢查。'
+      ]
+    };
+  }
+  if ((notices || []).some(n => n.id === 'minified')) {
+    return { headline: '金鑰檢查沒有發現問題，但權限、SQL 這類邏輯無法判斷。', calm: '原因見下方提示：這段是打包壓縮過的程式碼。', steps: [], partial: true };
+  }
+  return { headline: '沒有比對到已知的問題模式。', calm: null, steps: [] };
+}
+
+function buildNoticesHtml(notices) {
+  if (!notices || notices.length === 0) return '';
+  const warn = notices.filter(n => n.level === 'warn');
+  const info = notices.filter(n => n.level !== 'warn');
+  let html = '';
+  warn.forEach(n => { html += `<div class="rs-notice warn" role="note">${escapeHtml(n.text)}</div>`; });
+  if (info.length) {
+    html += `<details class="rs-notice info"><summary>本次檢查的限制（${info.length}）</summary>${info.map(n => `<p>${escapeHtml(n.text)}</p>`).join('')}</details>`;
+  }
+  return html;
+}
 
 function buildCardHtml(f, idx) {
   const meta = TIER_META[f.tier];
-  const title = meta.showCategory ? `${escapeHtml(f.category)} — ${escapeHtml(f.name)}` : escapeHtml(f.name);
   return `<div class="result-card ${meta.cls}" id="finding-${idx}" tabindex="-1">
-      <div class="rc-title"><span class="rc-tag">${meta.tag}</span><span class="rc-title-text">${title}</span>${buildFilenameTagHtml(f)}${buildLineTagHtml(f)}</div>
+      <div class="rc-title"><span class="rc-tag">${meta.tag}</span><span class="rc-title-text">${escapeHtml(plainTitle(f))}</span>${buildFilenameTagHtml(f)}${buildLineTagHtml(f)}</div>
+      <div class="rc-subtitle">${escapeHtml(f.name)}</div>
       ${buildCardBody(f)}
     </div>`;
 }
 
 /**
  * @param {Array} findings - 合併後的 Finding[](見 scan-orchestrator.js)
- * @param {string|null} languageCaveat - M7 的輸出
+ * @param {string|null} languageCaveat - 限制提示合併文字(未提供 notices 時顯示在「本工具無法檢測」區塊)
+ * @param {Array} [notices] - scan-orchestrator 的 notices;提供時顯示在結果最上方
  * @returns {string} HTML
  */
-function findingRenderer(findings, languageCaveat) {
-  findings = (findings || []).filter(f => TIER_META[f.tier]);
-  // 依嚴重度排序(穩定排序,同層維持模組順序);同層內有行號的依行號排
-  const ordered = findings
-    .map((f, i) => ({ f, i }))
-    .sort((a, b) => (a.f.tier - b.f.tier) || ((a.f.filename || '') > (b.f.filename || '') ? 1 : (a.f.filename || '') < (b.f.filename || '') ? -1 : 0) || ((a.f.line || 1e9) - (b.f.line || 1e9)) || (a.i - b.i))
-    .map(x => x.f);
-
+function findingRenderer(findings, languageCaveat, notices) {
+  const ordered = sortFindings(findings);
+  const counts = countByTier(ordered);
+  const verdict = buildVerdict(ordered, notices);
   let html = '';
-  const counts = { 1: 0, 2: 0, 3: 0 };
-  ordered.forEach(f => { counts[f.tier]++; });
 
-  // 摘要列:每個層級一個可點擊的跳轉鈕(assets/app.js 綁定),0 項的層級不可點
+  // 摘要區:結論 → 行動步驟 → 跳轉/複製/匯出(按鈕行為由 assets/app.js 綁定)
   let firstIdx = 0;
   const chips = [1, 2, 3].filter(t => t !== 3 || counts[3] > 0).map(t => {
     const target = counts[t] > 0 ? ` data-jump="finding-${firstIdx}"` : ' disabled';
@@ -545,20 +650,33 @@ function findingRenderer(findings, languageCaveat) {
     return `<button type="button" class="rs-chip ${TIER_META[t].cls}"${target}><b>${counts[t]}</b> ${TIER_META[t].label}</button>`;
   }).join('');
   const hasHandoff = ordered.some(f => { const g = getFindingGuide(f.kind); return g && g.handoff; });
-  const copyAllBtn = hasHandoff ? '<button type="button" class="rs-copy-all">複製全部修正指令</button>' : '';
-  html += `<div class="results-summary" tabindex="-1"><div class="rs-chips">${chips}</div>${copyAllBtn}</div>`;
+  const stepsHtml = verdict.steps.length ? `<ol class="rs-steps">${verdict.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ol>` : '';
+  const levelCls = counts[1] > 0 ? 'bad' : (counts[2] > 0 || verdict.partial) ? 'check' : 'ok';
+
+  html += `<div class="results-summary ${levelCls}" tabindex="-1">
+    <div class="rs-headline">${escapeHtml(verdict.headline)}</div>
+    ${verdict.calm ? `<div class="rs-calm">${escapeHtml(verdict.calm)}</div>` : ''}
+    ${stepsHtml}
+    <div class="rs-bar">
+      <div class="rs-chips">${chips}</div>
+      <div class="rs-actions">
+        ${hasHandoff ? '<button type="button" class="rs-copy-all">複製全部修正指令</button>' : ''}
+        <button type="button" class="rs-export">匯出報告</button>
+      </div>
+    </div>
+  </div>`;
+
+  html += buildNoticesHtml(notices);
 
   if (ordered.length === 0) {
     html += `<div class="result-card clean">
-      <div class="rc-title">沒有比對到已知的問題模式</div>
-      <div class="rc-plain">這只代表「沒有符合本工具規則的寫法」，<strong>不代表程式碼是安全的</strong>。建議：① 確認貼上的是原始程式碼而不是打包壓縮後的檔案；② 後端 API、資料庫權限規則（RLS／Security Rules）請另外檢查；③ 看看下方「本工具無法檢測」清單。</div>
+      <div class="rc-plain">這只代表「沒有符合本工具規則的寫法」，<strong>不代表程式碼是安全的</strong>。建議：① 確認貼上的是原始程式碼，而不是打包壓縮過的檔案；② 後端 API 與資料庫權限規則（RLS／Security Rules）請另外檢查；③ 看看下方「本工具無法檢測」清單。</div>
     </div>`;
   }
 
   ordered.forEach((f, idx) => { html += buildCardHtml(f, idx); });
 
-  const langCaveatHtml = languageCaveat ? `<p class="cb-lang">${escapeHtml(languageCaveat)}</p>` : '';
-
+  const langCaveatHtml = (!notices && languageCaveat) ? `<p class="cb-lang">${escapeHtml(languageCaveat)}</p>` : '';
   html += `<details class="cannot-block">
     <summary class="cb-label">本工具無法檢測</summary>
     <p>${CANNOT_DETECT_TEXT}</p>
@@ -568,10 +686,60 @@ function findingRenderer(findings, languageCaveat) {
   return html;
 }
 
+/**
+ * 可分享的報告(Markdown)。刻意不含原始程式碼:只輸出白話標題、位置、說明、建議,
+ * 以及金鑰類的「遮罩後」識別字串。scripts/verify.js 會檢查報告不含金鑰原文與程式碼行。
+ * @param {Array} findings
+ * @param {Array} notices
+ * @param {{generatedAt?: string, mode?: string, source?: string, toolUrl?: string}} meta
+ * @returns {string}
+ */
+function buildReportMarkdown(findings, notices, meta) {
+  meta = meta || {};
+  const ordered = sortFindings(findings);
+  const verdict = buildVerdict(ordered, notices);
+  const lines = [];
+  lines.push('# 資安自我檢查報告', '');
+  lines.push(`- 產生時間：${meta.generatedAt || new Date().toLocaleString('zh-TW')}`);
+  if (meta.source) lines.push(`- 檢查對象：${meta.source}`);
+  if (meta.mode) lines.push(`- 檢查方式：${meta.mode}`);
+  lines.push(`- 工具：看見 AI 網頁的程式過錯${meta.toolUrl ? '（' + meta.toolUrl + '）' : ''}`);
+  lines.push('', `**結論：${verdict.headline}**`, '');
+  if (verdict.steps.length) {
+    lines.push('建議步驟：');
+    verdict.steps
+      .map(s => s.replace('按「複製全部修正指令」，貼給', '把這份報告交給負責修改的人，或貼給').replace('回到這裡再掃一次', '用同一個工具再掃一次'))
+      .forEach((s, i) => lines.push(`${i + 1}. ${s}`));
+    lines.push('');
+  }
+  [1, 2, 3].forEach(tier => {
+    const group = ordered.filter(f => f.tier === tier);
+    if (!group.length) return;
+    lines.push(`## ${TIER_META[tier].label}（${group.length}）`, '');
+    group.forEach((f, i) => {
+      const where = [f.filename, typeof f.line === 'number' ? `第 ${f.line} 行` : null].filter(Boolean).join(' ');
+      lines.push(`${i + 1}. **${plainTitle(f)}**${where ? `　— ${where}` : ''}`);
+      lines.push(`   - 類型：${f.name}`);
+      const guide = getFindingGuide(f.kind);
+      if (guide && guide.plain) lines.push(`   - 說明：${guide.plain}`);
+      if (plainAction(f)) lines.push(`   - 建議：${plainAction(f)}`);
+      if (MASKED_EVIDENCE_KINDS.has(f.kind) && f.evidence) lines.push(`   - 識別：${String(f.evidence).split('　')[0]}`);
+    });
+    lines.push('');
+  });
+  if (notices && notices.length) {
+    lines.push('## 本次檢查的限制', '');
+    notices.forEach(n => lines.push(`- ${n.text}`));
+    lines.push('');
+  }
+  lines.push('---', '本報告由瀏覽器內的靜態比對產生，不含原始程式碼，金鑰只顯示遮罩後的前後幾碼。「請你確認」代表看起來可疑、不是確診；沒有列出的項目也不代表安全，不能取代正式的資安審查。');
+  return lines.join('\n');
+}
+
 // ── 環境相容匯出:Node.js(require)與瀏覽器(<script src>)共用同一份檔案 ──
 // Node 測試環境: module 物件存在 → 走 module.exports,供 require() 使用
 // 瀏覽器環境: module 不存在 → 略過這段,函式/常數已是全域作用域下的宣告,
 //            可直接被 index.html 或其他 <script> 使用
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { findingRenderer, getFindingGuide, escapeHtml, buildCardBody, buildAttackDemoHtml, buildKeyImpactHtml, buildKeyCapabilityHtml, buildFilenameTagHtml, buildLineTagHtml, KEY_CAPABILITY_KB, FINDING_GUIDE, TIER_META };
+  module.exports = { findingRenderer, buildReportMarkdown, buildVerdict, plainTitle, plainAction, getFindingGuide, escapeHtml, buildCardBody, buildAttackDemoHtml, buildKeyImpactHtml, buildKeyCapabilityHtml, buildFilenameTagHtml, buildLineTagHtml, KEY_CAPABILITY_KB, FINDING_GUIDE, PLAIN_TITLES, TIER_META };
 }

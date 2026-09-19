@@ -8,7 +8,7 @@
  *
  * 執行方式:
  *   node run_scaled_eval.js                                              (正則保底版)
- *   node -e "global.acorn=require('acorn');require('./run_scaled_eval.js');"  (AST完整版)
+ *   node -e "require('./load-ast');require('./run_scaled_eval.js');"  (AST完整版)
  *
  * 只驗證整體統計數字(不分模組),符合目前的驗證目標設定。
  * 案例來源(SOURCE 欄位)應為真實蒐集的案例,而非另外發想編寫 —— 這是信賴區間

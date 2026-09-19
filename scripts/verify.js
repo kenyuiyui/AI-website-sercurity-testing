@@ -60,7 +60,7 @@ step('模組清單一致', () => {
 
 // ── 2. kind 覆蓋 ──
 step('每個 kind 都有說明文字', () => {
-  const { FINDING_GUIDE } = require(path.join(root, 'modules', 'finding-renderer'));
+  const { FINDING_GUIDE, PLAIN_TITLES } = require(path.join(root, 'modules', 'finding-renderer'));
   const { VALID_KINDS } = require(path.join(root, 'eval', 'case-loader'));
   const kinds = new Set();
   fs.readdirSync(path.join(root, 'modules')).filter(f => f.endsWith('.js') && f !== 'finding-renderer.js').forEach(f => {
@@ -69,9 +69,11 @@ step('每個 kind 都有說明文字', () => {
   });
   const valid = new Set(VALID_KINDS);
   const noGuide = [...kinds].filter(k => !FINDING_GUIDE[k]);
+  const noTitle = [...kinds].filter(k => !PLAIN_TITLES[k]);
   const notValid = [...kinds].filter(k => !valid.has(k));
   const problems = [];
   if (noGuide.length) problems.push('finding-renderer.js 的 FINDING_GUIDE 缺少: ' + noGuide.join(', '));
+  if (noTitle.length) problems.push('finding-renderer.js 的 PLAIN_TITLES(白話標題)缺少: ' + noTitle.join(', '));
   if (notValid.length) problems.push('eval/case-loader.js 的 VALID_KINDS 缺少: ' + notValid.join(', '));
   if (problems.length) throw new Error(problems.join('\n'));
   return `${kinds.size} 種 kind`;
@@ -80,7 +82,7 @@ step('每個 kind 都有說明文字', () => {
 // ── 3. 規則回歸 ──
 step('規則回歸測試(正則版)', () => { run('node', ['run_rule_regression.js'], { cwd: path.join(root, 'eval') }); });
 step('規則回歸測試(AST 版)', () => {
-  run('node', ['-e', "global.acorn=require('acorn');require('./run_rule_regression.js');"], { cwd: path.join(root, 'eval') });
+  run('node', ['-e', "require('./load-ast');require('./run_rule_regression.js');"], { cwd: path.join(root, 'eval') });
 });
 
 // ── 4. 行為快照 ──
@@ -108,6 +110,43 @@ step(update ? '更新行為快照' : '行為快照比對', () => {
     throw new Error(`${diffs.length} 個樣本的結果改變了(若是刻意的,執行 npm run verify -- --update):\n` + diffs.slice(0, 30).join('\n'));
   }
   return `${Object.keys(current.regex).length} 個樣本 × 2 種模式無變化`;
+});
+
+// ── 4b. 報告安全 ──
+step('匯出報告不含金鑰原文與原始碼', () => {
+  const out = run('node', ['scripts/check-report.js']).trim();
+  return `${out} 份報告檢查通過`;
+});
+
+// ── 4c. GitHub 網址解析與檔案篩選 ──
+step('GitHub 匯入的網址解析與檔案篩選', () => {
+  const { parseGitHubUrl, selectGitHubFiles } = require(path.join(root, 'assets', 'github-import'));
+  const cases = [
+    ['https://github.com/a/b', { owner: 'a', repo: 'b', ref: null, path: '', singleFile: false }],
+    ['github.com/a/b.git', { owner: 'a', repo: 'b', ref: null, path: '', singleFile: false }],
+    ['a/b', { owner: 'a', repo: 'b', ref: null, path: '', singleFile: false }],
+    ['https://github.com/a/b/tree/dev/src/api', { owner: 'a', repo: 'b', ref: 'dev', path: 'src/api', singleFile: false }],
+    ['https://github.com/a/b/blob/main/src/x.ts', { owner: 'a', repo: 'b', ref: 'main', path: 'src/x.ts', singleFile: true }],
+    ['https://gitlab.com/a/b', null],
+    ['https://github.com/a', null],
+    ['', null]
+  ];
+  const problems = [];
+  cases.forEach(([input, want]) => {
+    const got = parseGitHubUrl(input);
+    if (JSON.stringify(got) !== JSON.stringify(want)) problems.push(`parseGitHubUrl(${JSON.stringify(input)}) = ${JSON.stringify(got)}`);
+  });
+  const tree = [
+    'src/api/orders.ts', 'src/App.tsx', '.env', '.env.example', 'firestore.rules', 'vercel.json',
+    'node_modules/x/index.js', 'dist/app.js', 'public/app.min.js', 'src/types.d.ts', 'package-lock.json', 'README.md', 'logo.png'
+  ].map(p => ({ path: p, type: 'blob', size: 100 }));
+  const picked = selectGitHubFiles(tree, '').files.map(f => f.path).sort().join(',');
+  const want = ['.env', 'firestore.rules', 'src/App.tsx', 'src/api/orders.ts', 'vercel.json'].sort().join(',');
+  if (picked !== want) problems.push(`selectGitHubFiles 結果 ${picked},預期 ${want}`);
+  const sub = selectGitHubFiles(tree, 'src/api').files.map(f => f.path).join(',');
+  if (sub !== 'src/api/orders.ts') problems.push(`子資料夾篩選結果 ${sub}`);
+  if (problems.length) throw new Error(problems.join('\n'));
+  return `${cases.length} 個網址、2 組篩選`;
 });
 
 // ── 5. 單檔版同步 ──

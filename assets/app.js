@@ -1,8 +1,9 @@
 /**
- * app.js — 畫面層(DOM 事件、輸入、結果互動)
+ * app.js — 畫面層(DOM 事件、輸入、結果互動、匯出)
  *
  * 掃描邏輯一律呼叫 modules/scan-orchestrator.js 的 scanCode / scanFiles,
- * 結果 HTML 一律由 modules/finding-renderer.js 產生;這裡不寫任何偵測規則。
+ * 結果 HTML 與報告文字一律由 modules/finding-renderer.js 產生;GitHub 匯入在 assets/github-import.js。
+ * 這裡不寫任何偵測規則。
  */
 (function () {
   'use strict';
@@ -19,9 +20,16 @@
   const multiFileToggle = $('multiFileToggle');
   const multiFileContainer = $('multiFileContainer');
   const multiFileList = $('multiFileList');
+  const ghUrl = $('ghUrl');
+  const ghImportBtn = $('ghImportBtn');
 
   const MAX_FILE_BYTES = 2 * 1024 * 1024; // 單檔上限,避免誤拖大型二進位檔卡住頁面
   const SCAN_DELAY_MS = 280;              // 讓掃描動畫有時間出現,非必要延遲
+  const COMPACT_THRESHOLD = 4;            // 多於這個檔案數時,檔案內容預設收合
+  const TOOL_URL = 'https://kenyuiyui.github.io/AI-website-sercurity-testing/';
+
+  let lastScan = null;     // { findings, notices, astUsed, source } 供匯出報告使用
+  let sourceLabel = null;  // 目前輸入的來源說明(GitHub 專案名、檔名…)
 
   // ───────────────────────── 工具 ─────────────────────────
 
@@ -39,7 +47,7 @@
   function legacyCopy(text) {
     const ta = document.createElement('textarea');
     ta.value = text;
-    ta.style.cssText = 'position:fixed;opacity:0';
+    ta.className = 'sr-only';
     document.body.appendChild(ta);
     ta.select();
     let ok = false;
@@ -64,38 +72,67 @@
     el.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
   }
 
+  function setStatus(text) { statusLine.textContent = text || ''; }
+
   // ───────────────────────── 輸入框資訊 ─────────────────────────
 
   function updateInputMeta() {
     const v = codeInput.value;
-    inputMeta.textContent = v ? (v.split('\n').length + ' 行 · ' + v.length.toLocaleString() + ' 字元') : 'code-input';
+    inputMeta.textContent = v ? (v.split('\n').length + ' 行 · ' + v.length.toLocaleString() + ' 字元') : '或直接貼上程式碼';
   }
-  codeInput.addEventListener('input', updateInputMeta);
+  codeInput.addEventListener('input', () => { sourceLabel = null; updateInputMeta(); });
 
   // ───────────────────────── 多檔案清單 ─────────────────────────
 
   function isMultiFileMode() { return multiFileToggle.checked; }
 
-  function createFileItem(filename, code) {
+  function setMultiFileMode(on) {
+    if (multiFileToggle.checked !== on) multiFileToggle.checked = on;
+    singleInput.hidden = on;
+    multiFileContainer.hidden = !on;
+    if (on && multiFileList.children.length === 0) resetFileList();
+  }
+
+  function updateMfSummary() {
+    const n = multiFileList.children.length;
+    $('mfSummary').textContent = (sourceLabel ? sourceLabel + ' · ' : '') + n + ' 個檔案';
+  }
+
+  function createFileItem(filename, code, compact) {
     const item = document.createElement('div');
-    item.className = 'mf-file-item';
+    item.className = 'mf-file-item' + (compact ? ' compact' : '');
     item.innerHTML =
       '<div class="mf-file-header">' +
         '<input type="text" class="mf-filename-input" placeholder="檔名（例如 pages/api/orders.js）" value="' + escapeAttr(filename || '') + '">' +
+        '<span class="mf-lines"></span>' +
+        '<button type="button" class="mf-toggle-btn">' + (compact ? '展開' : '收合') + '</button>' +
         '<button type="button" class="mf-remove-btn">移除</button>' +
       '</div>' +
       '<textarea spellcheck="false" placeholder="貼上這個檔案的程式碼…"></textarea>';
-    item.querySelector('textarea').value = code || ''; // 用 value 賦值,不經過 HTML 解析
+    const ta = item.querySelector('textarea');
+    ta.value = code || ''; // 用 value 賦值,不經過 HTML 解析
+    const lines = item.querySelector('.mf-lines');
+    const refreshLines = () => { lines.textContent = ta.value ? ta.value.split('\n').length + ' 行' : ''; };
+    refreshLines();
+    ta.addEventListener('input', refreshLines);
+    item.querySelector('.mf-toggle-btn').addEventListener('click', () => setCompact(item, !item.classList.contains('compact')));
     item.querySelector('.mf-remove-btn').addEventListener('click', () => {
       if (multiFileList.children.length > 1) item.remove();
-      else { item.querySelector('textarea').value = ''; item.querySelector('.mf-filename-input').value = ''; }
+      else { ta.value = ''; item.querySelector('.mf-filename-input').value = ''; refreshLines(); }
+      updateMfSummary();
     });
     return item;
   }
 
-  function addFileItem(filename, code) {
-    const item = createFileItem(filename, code);
+  function setCompact(item, compact) {
+    item.classList.toggle('compact', compact);
+    item.querySelector('.mf-toggle-btn').textContent = compact ? '展開' : '收合';
+  }
+
+  function addFileItem(filename, code, compact) {
+    const item = createFileItem(filename, code, compact);
     multiFileList.appendChild(item);
+    updateMfSummary();
     return item;
   }
 
@@ -103,6 +140,12 @@
     multiFileList.innerHTML = '';
     addFileItem('', '');
     addFileItem('', '');
+  }
+
+  function replaceFileList(files) {
+    multiFileList.innerHTML = '';
+    const compact = files.length > COMPACT_THRESHOLD;
+    files.forEach(f => addFileItem(f.filename, f.code, compact));
   }
 
   function collectFilesFromUI() {
@@ -114,14 +157,12 @@
 
   function clearResults() {
     results.innerHTML = '';
-    statusLine.textContent = '';
+    lastScan = null;
+    setStatus('');
   }
 
   multiFileToggle.addEventListener('change', () => {
-    const multi = isMultiFileMode();
-    singleInput.hidden = multi;
-    multiFileContainer.hidden = !multi;
-    if (multi && multiFileList.children.length === 0) resetFileList();
+    setMultiFileMode(isMultiFileMode());
     clearResults();
   });
 
@@ -150,34 +191,22 @@
     const settled = await Promise.allSettled(files.map(readFileAsText));
     const loaded = settled.filter(r => r.status === 'fulfilled').map(r => r.value);
     const errors = settled.filter(r => r.status === 'rejected').map(r => r.reason.message);
+    sourceLabel = null;
+    clearResults();
 
-    // 單一模式拖入多個檔案 → 自動切換到多檔案模式
-    if (!isMultiFileMode() && loaded.length > 1) {
-      multiFileToggle.checked = true;
-      multiFileToggle.dispatchEvent(new Event('change'));
-      multiFileList.innerHTML = '';
-    }
-
-    if (isMultiFileMode()) {
-      // 先填入空白項目,再新增
-      const empties = [...multiFileList.querySelectorAll('.mf-file-item')].filter(it => !it.querySelector('textarea').value.trim());
-      loaded.forEach(f => {
-        const slot = empties.shift();
-        if (slot) {
-          slot.querySelector('.mf-filename-input').value = f.filename;
-          slot.querySelector('textarea').value = f.code;
-        } else {
-          addFileItem(f.filename, f.code);
-        }
-      });
-      empties.forEach(it => { if (multiFileList.children.length > 1) it.remove(); });
+    if (loaded.length > 1 || isMultiFileMode()) {
+      setMultiFileMode(true);
+      // 保留使用者已經填了內容的項目,空白項目用新檔案填入
+      const kept = collectFilesFromUI().filter(f => f.code.trim());
+      replaceFileList(kept.concat(loaded));
     } else if (loaded[0]) {
       codeInput.value = loaded[0].code;
+      sourceLabel = loaded[0].filename;
       updateInputMeta();
     }
 
-    const msg = loaded.length ? '已讀取 ' + loaded.map(f => f.filename).join('、') + '，按「掃描」開始。' : '';
-    statusLine.textContent = [msg].concat(errors).filter(Boolean).join(' ');
+    const msg = loaded.length ? '已讀取 ' + loaded.map(f => f.filename).join('、') + '。按「開始檢查」。' : '';
+    setStatus([msg].concat(errors).filter(Boolean).join(' '));
   }
 
   fileInput.addEventListener('change', () => { loadFiles(fileInput.files); fileInput.value = ''; });
@@ -208,20 +237,46 @@
     });
   });
 
+  // ───────────────────────── 從 GitHub 匯入 ─────────────────────────
+
+  async function runGitHubImport() {
+    const url = ghUrl.value.trim();
+    if (!url) { setStatus('請先貼上 GitHub 專案網址。'); ghUrl.focus(); return; }
+    ghImportBtn.disabled = true;
+    ghImportBtn.textContent = '匯入中…';
+    clearResults();
+    try {
+      const r = await importFromGitHub(url, setStatus);
+      sourceLabel = 'GitHub ' + r.label;
+      setMultiFileMode(true);
+      replaceFileList(r.files);
+      setStatus('已從 ' + r.label + ' 匯入 ' + r.files.length + ' 個檔案。' + (r.notes.length ? ' ' + r.notes.join(' ') : ''));
+      runScan({ keepStatus: true });
+    } catch (e) {
+      setStatus(e instanceof GitHubImportError ? e.message : 'GitHub 匯入失敗，請稍後再試。');
+    } finally {
+      ghImportBtn.disabled = false;
+      ghImportBtn.textContent = '匯入';
+    }
+  }
+
+  ghImportBtn.addEventListener('click', runGitHubImport);
+  ghUrl.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); runGitHubImport(); } });
+
   // ───────────────────────── 掃描 ─────────────────────────
 
   function startScanUI() {
     scanBtn.disabled = true;
-    statusLine.textContent = '掃描中…';
     scanSweep.classList.remove('running');
     void scanSweep.offsetWidth; // 重新觸發動畫
     scanSweep.classList.add('running');
   }
 
-  function finishScanUI(findings, languageCaveat, fileCount) {
-    results.innerHTML = findingRenderer(findings, languageCaveat);
+  function finishScanUI(r, source, opts) {
+    lastScan = { findings: r.findings, notices: r.notices, astUsed: r.astUsed, source };
+    results.innerHTML = findingRenderer(r.findings, r.languageCaveat, r.notices);
     scanBtn.disabled = false;
-    statusLine.textContent = fileCount > 1 ? '已掃描 ' + fileCount + ' 個檔案。' : '';
+    if (!opts || !opts.keepStatus) setStatus('');
     const summary = results.querySelector('.results-summary');
     if (summary) {
       scrollIntoViewSmart(summary);
@@ -229,19 +284,19 @@
     }
   }
 
-  function runScan() {
+  function runScan(opts) {
     if (scanBtn.disabled) return;
+    if (!opts || !opts.keepStatus) setStatus('檢查中…');
     if (isMultiFileMode()) {
       const files = collectFilesFromUI();
       if (!files.some(f => (f.code || '').trim())) {
         results.innerHTML = '';
-        statusLine.textContent = '請先貼上至少一個檔案的程式碼再掃描。';
+        setStatus('請先貼上至少一個檔案的程式碼。');
         return;
       }
       startScanUI();
       window.setTimeout(() => {
-        const r = scanFiles(files);
-        finishScanUI(r.findings, r.languageCaveat, files.length);
+        finishScanUI(scanFiles(files), sourceLabel || (files.length + ' 個檔案'), opts);
       }, SCAN_DELAY_MS);
       return;
     }
@@ -249,20 +304,19 @@
     const code = codeInput.value;
     if (!code.trim()) {
       results.innerHTML = '';
-      statusLine.textContent = '請先貼上程式碼再掃描。';
+      setStatus('請先貼上程式碼，或按「看範例」試試看。');
       codeInput.focus();
       return;
     }
     startScanUI();
     window.setTimeout(() => {
-      const r = scanCode(code);
-      finishScanUI(r.findings, r.languageCaveat, 1);
+      finishScanUI(scanCode(code), sourceLabel || ('貼上的程式碼（' + code.split('\n').length + ' 行）'), opts);
     }, SCAN_DELAY_MS);
   }
 
-  scanBtn.addEventListener('click', runScan);
+  scanBtn.addEventListener('click', () => runScan());
 
-  // Ctrl/⌘ + Enter:在任何輸入框內都能直接掃描
+  // Ctrl/⌘ + Enter:在任何輸入框內都能直接檢查
   const isMac = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
   $('scanKbd').textContent = isMac ? '⌘ Enter' : 'Ctrl+Enter';
   document.addEventListener('keydown', e => {
@@ -284,6 +338,8 @@
 
   function selectRange(textarea, start, end) {
     if (!textarea) return;
+    const item = textarea.closest('.mf-file-item');
+    if (item && item.classList.contains('compact')) setCompact(item, false);
     scrollIntoViewSmart(textarea.closest('.input-frame, .mf-file-item') || textarea);
     textarea.focus({ preventScroll: true });
     textarea.setSelectionRange(start, end);
@@ -309,29 +365,86 @@
         instructions.push('【' + (title ? title.textContent : '') + '】\n' + handoff.querySelector('.rc-handoff-text').textContent);
       }
     });
-    return '我用資安檢查工具掃描了我的程式碼，發現以下問題：\n' + items.join('\n') +
+    return '我用資安檢查工具檢查了我的程式碼，發現以下問題：\n' + items.join('\n') +
       '\n\n請依序幫我處理，各類問題的處理要求如下：\n\n' + instructions.join('\n\n');
   }
 
+  // ── 匯出報告:不含原始碼、金鑰已遮罩(內容由 buildReportMarkdown 產生) ──
+
+  function currentReport() {
+    if (!lastScan) return '';
+    return buildReportMarkdown(lastScan.findings, lastScan.notices, {
+      generatedAt: new Date().toLocaleString('zh-TW', { hour12: false }),
+      source: lastScan.source,
+      mode: lastScan.astUsed ? '完整分析（含語法分析）' : '簡易比對（部分程式碼語法無法完整分析）',
+      toolUrl: TOOL_URL
+    });
+  }
+
+  function toggleExportPanel(anchorBtn) {
+    const existing = results.querySelector('.export-panel');
+    if (existing) { existing.remove(); anchorBtn.setAttribute('aria-expanded', 'false'); return; }
+    const panel = document.createElement('div');
+    panel.className = 'export-panel';
+    const canShare = typeof navigator.share === 'function';
+    panel.innerHTML =
+      '<div class="ep-head">報告內容<span class="ep-note">不含你的程式碼，金鑰只顯示前後幾碼</span></div>' +
+      '<pre class="ep-preview" tabindex="0"></pre>' +
+      '<div class="ep-actions">' +
+        '<button type="button" class="ep-copy">複製報告</button>' +
+        '<button type="button" class="ep-download btn-ghost">下載 .md 檔</button>' +
+        (canShare ? '<button type="button" class="ep-share btn-ghost">分享…</button>' : '') +
+      '</div>';
+    panel.querySelector('.ep-preview').textContent = currentReport();
+    anchorBtn.closest('.results-summary').after(panel);
+    anchorBtn.setAttribute('aria-expanded', 'true');
+  }
+
+  function downloadReport() {
+    const blob = new Blob([currentReport()], { type: 'text/markdown;charset=utf-8' });
+    const a = document.createElement('a');
+    const d = new Date();
+    const pad = n => String(n).padStart(2, '0');
+    a.href = URL.createObjectURL(blob);
+    a.download = `資安檢查報告-${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}-${pad(d.getHours())}${pad(d.getMinutes())}.md`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
   results.addEventListener('click', e => {
-    const copyBtn = e.target.closest('.rc-copy-btn');
+    const t = e.target;
+    const copyBtn = t.closest('.rc-copy-btn');
     if (copyBtn) {
       const text = copyBtn.closest('.rc-handoff').querySelector('.rc-handoff-text').textContent;
       copyText(text).then(() => flashButton(copyBtn, '已複製 ✓'), () => flashButton(copyBtn, '複製失敗'));
       return;
     }
-    const copyAll = e.target.closest('.rs-copy-all');
+    const copyAll = t.closest('.rs-copy-all');
     if (copyAll) {
       copyText(buildCopyAllText()).then(() => flashButton(copyAll, '已複製全部 ✓'), () => flashButton(copyAll, '複製失敗'));
       return;
     }
-    const chip = e.target.closest('.rs-chip[data-jump]');
+    const exportBtn = t.closest('.rs-export');
+    if (exportBtn) { toggleExportPanel(exportBtn); return; }
+    const epCopy = t.closest('.ep-copy');
+    if (epCopy) {
+      copyText(currentReport()).then(() => flashButton(epCopy, '已複製 ✓'), () => flashButton(epCopy, '複製失敗'));
+      return;
+    }
+    if (t.closest('.ep-download')) { downloadReport(); return; }
+    if (t.closest('.ep-share')) {
+      navigator.share({ title: '資安自我檢查報告', text: currentReport() }).catch(() => { /* 使用者取消分享 */ });
+      return;
+    }
+    const chip = t.closest('.rs-chip[data-jump]');
     if (chip) {
       const card = $(chip.dataset.jump);
       if (card) { scrollIntoViewSmart(card); card.focus({ preventScroll: true }); }
       return;
     }
-    const lineTag = e.target.closest('.rc-line-tag');
+    const lineTag = t.closest('.rc-line-tag');
     if (lineTag) {
       selectRange(findTextareaFor(lineTag.dataset.file), Number(lineTag.dataset.start), Number(lineTag.dataset.end));
     }
@@ -346,17 +459,16 @@
       'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByb2plY3RyZWYiLCJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjIwMTU1NzYwMDB9',
       'fakeSignatureForDemoOnlyNotARealKey12345'
     ].join('.');
-    // 範例需在「正則保底版」與「AST 版」都同時展示第一層與第二層發現
+    // 範例需同時展示「需要處理」與「請你確認」兩層(正則版與 AST 版皆然)
     return [
+      '// 範例：一段常見的 AI 產生程式碼（金鑰是假的）',
       'import { createClient } from "@supabase/supabase-js";',
       '',
-      '// 這組金鑰是 service_role(最高權限,可繞過RLS),絕不應出現在前端程式碼中',
       'const supabase = createClient(',
       '  "https://exampleproj.supabase.co",',
       '  "' + serviceRoleKey + '"',
       ');',
       '',
-      '// 只用參數刪除資料,沒有先確認 propertyId 是否屬於目前登入的使用者',
       'export async function deleteProperty(propertyId) {',
       '  const result = await supabase.from("properties").delete().eq("id", propertyId);',
       '  return result;',
@@ -370,35 +482,37 @@
 
   $('sampleBtn').addEventListener('click', () => {
     clearResults();
+    sourceLabel = '範例程式碼';
     if (isMultiFileMode()) {
       // 「前端有遮罩、後端沒遮罩」的 M11 典型案例
-      multiFileList.innerHTML = '';
-      addFileItem('frontend/api.js', [
-        'const OPENAI_KEY = "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890";',
-        '',
-        'function publicRoom(room) {',
-        '  return json({ id: room.id, state: maskState(room.state) });',
-        '}'
-      ].join('\n'));
-      addFileItem('backend/history.js', [
-        'function getOrder(req, res) {',
-        '  const order = db.find(req.params.id);',
-        '  res.json(order);',
-        '}',
-        '',
-        'function publicHistoryRow(row) {',
-        '  return json({ id: row.id, state: row.state });',
-        '}'
-      ].join('\n'));
+      replaceFileList([
+        { filename: 'frontend/api.js', code: [
+          'const OPENAI_KEY = "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890";',
+          '',
+          'function publicRoom(room) {',
+          '  return json({ id: room.id, state: maskState(room.state) });',
+          '}'
+        ].join('\n') },
+        { filename: 'backend/history.js', code: [
+          'function getOrder(req, res) {',
+          '  const order = db.find(req.params.id);',
+          '  res.json(order);',
+          '}',
+          '',
+          'function publicHistoryRow(row) {',
+          '  return json({ id: row.id, state: row.state });',
+          '}'
+        ].join('\n') }
+      ]);
     } else {
       codeInput.value = buildSampleCode();
       updateInputMeta();
-      codeInput.focus();
     }
-    statusLine.textContent = '已載入範例，按「掃描」或 Ctrl+Enter 看結果。';
+    runScan();
   });
 
   $('clearBtn').addEventListener('click', () => {
+    sourceLabel = null;
     if (isMultiFileMode()) {
       resetFileList();
     } else {
@@ -410,14 +524,14 @@
   });
 
   // ───────────────────────── 主題切換 ─────────────────────────
-  // 初始主題已由 <head> 內的行內腳本套用(避免閃爍),這裡只負責按鈕狀態與切換。
+  // 初始主題已由 assets/theme-init.js 在首次繪製前套用,這裡只負責按鈕狀態與切換。
 
   const THEME_KEY = 'ai-scanner-theme';
   const root = document.documentElement;
 
   function syncThemeButton() {
     const light = root.getAttribute('data-theme') === 'light';
-    $('themeIcon').innerHTML = light ? '&#9789;' : '&#9788;';
+    $('themeIcon').textContent = light ? '☽' : '☼';
     $('themeLabel').textContent = light ? '深色模式' : '淺色模式';
   }
 
@@ -430,9 +544,10 @@
   });
   syncThemeButton();
 
-  // ───────────────────────── 分頁(支援網址 #boundary / #howto 直接連結) ─────────────────────────
+  // ───────────────────────── 分頁(#boundary / #howto / #privacy 可直接連結) ─────────────────────────
 
   const tabButtons = [...document.querySelectorAll('.top-tab')];
+  const HASH_ALIASES = { privacy: { tab: 'boundary', focus: 'privacy' } };
 
   function activateTab(btnId, opts) {
     const target = $(btnId) || tabButtons[0];
@@ -447,13 +562,20 @@
       const hash = target.dataset.hash;
       history.replaceState(null, '', hash ? '#' + hash : location.pathname + location.search);
     }
-    if (!opts || !opts.keepScroll) window.scrollTo({ top: 0, behavior: 'auto' });
+    if (opts && opts.focusId) {
+      const el = $(opts.focusId);
+      if (el) { scrollIntoViewSmart(el); el.focus({ preventScroll: true }); }
+    } else if (!opts || !opts.keepScroll) {
+      window.scrollTo({ top: 0, behavior: 'auto' });
+    }
   }
 
-  function tabFromHash() {
+  function applyHash(keepScroll) {
     const h = location.hash.replace('#', '');
-    const btn = tabButtons.find(b => b.dataset.hash === h);
-    return btn ? btn.id : 'tab-btn-scan';
+    const alias = HASH_ALIASES[h];
+    const key = alias ? alias.tab : h;
+    const btn = tabButtons.find(b => b.dataset.hash === key);
+    activateTab(btn ? btn.id : 'tab-btn-scan', { fromHash: true, keepScroll, focusId: alias && alias.focus });
   }
 
   tabButtons.forEach((btn, i) => {
@@ -469,6 +591,14 @@
   document.querySelectorAll('[data-goto-tab]').forEach(btn => {
     btn.addEventListener('click', () => activateTab(btn.getAttribute('data-goto-tab')));
   });
-  window.addEventListener('hashchange', () => activateTab(tabFromHash(), { fromHash: true }));
-  activateTab(tabFromHash(), { fromHash: true, keepScroll: true });
+  // 同一個錨點重複點擊不會觸發 hashchange,所以站內錨點自己處理
+  document.querySelectorAll('a[href^="#"]').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      history.replaceState(null, '', a.getAttribute('href'));
+      applyHash(false);
+    });
+  });
+  window.addEventListener('hashchange', () => applyHash(false));
+  applyHash(true);
 })();

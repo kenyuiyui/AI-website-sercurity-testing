@@ -2,7 +2,7 @@
 
 > 錯與過，不該是我的鍋——貼上程式碼，掃描常見的 AI 產出資安問題。
 
-純前端、零安裝的靜態資安檢查工具，專為「用 AI 生成程式碼、不熟悉資安」的人設計。貼上程式碼，幾秒內看到常見問題提示。
+純前端、零安裝的靜態資安檢查工具，專為「用 AI 生成程式碼、不熟悉資安」的人設計。貼上程式碼、拖入檔案或貼上 GitHub 網址，幾秒內看到白話的問題說明與處理步驟。程式碼只在你的瀏覽器裡處理，頁面以 CSP 禁止背景外傳。
 
 **Live Demo：** https://kenyuiyui.github.io/AI-website-sercurity-testing/
 
@@ -21,17 +21,13 @@
 
 ## 快速開始
 
-```bash
-git clone https://github.com/kenyuiyui/AI-website-sercurity-testing.git
-cd AI-website-sercurity-testing
-python3 -m http.server 8000   # 然後開 http://localhost:8000
-```
+**直接使用：** 打開 https://kenyuiyui.github.io/AI-website-sercurity-testing/ 即可，不需要安裝任何東西。
 
-拆分版需要 `index.html`、`assets/`、`modules/` 放在一起，並透過本機伺服器開啟。
+**離線使用：** 下載 `referencesingle/index.html`，雙擊開啟（所有程式、字型都已內嵌，斷網也能用）。
 
-> ⚠️ 若直接雙擊開啟 `index.html` 沒反應，是瀏覽器對 `file://` 頁面限制了 `<script src>` 載入，改用上面的本機伺服器方式，或改用單檔版 `referencesingle/index.html`（邏輯全部內嵌，雙擊即可開啟）。
+**本機預覽拆分版：** 需要一個本機網頁伺服器（例如 `python -m http.server 8000` 後開 `http://localhost:8000`）；直接雙擊 `index.html` 會被瀏覽器的 `file://` 限制擋住。
 
-部署到 GitHub Pages：repo 根目錄就是發布內容（`index.html` + `assets/` + `modules/`），Pages 發布來源設為 `main` 分支根目錄即可。
+部署到 GitHub Pages：repo 根目錄就是發布內容（`index.html` + `assets/` + `vendor/` + `modules/`），Pages 發布來源設為 `main` 分支根目錄即可。
 
 ---
 
@@ -39,41 +35,38 @@ python3 -m http.server 8000   # 然後開 http://localhost:8000
 
 ```
 .
-├── index.html                # 拆分版主頁(GitHub Pages 發布的就是這份):只有 HTML 結構與載入順序
+├── index.html                # 拆分版主頁(GitHub Pages 發布的就是這份):HTML 結構、CSP、載入順序
 ├── assets/
 │   ├── style.css              # 全部樣式
-│   └── app.js                 # 畫面層(輸入、讀檔、結果互動)
+│   ├── fonts/                 # JetBrains Mono 字型(本站提供,不連外部字型服務)
+│   ├── theme-init.js          # 首次繪製前套用深淺色主題
+│   ├── github-import.js       # 從公開 GitHub 專案匯入檔案
+│   └── app.js                 # 畫面層(輸入、讀檔、結果互動、匯出報告)
+├── vendor/                   # acorn / acorn-jsx 本地版本與第三方授權
 ├── modules/                  # M1~M12 偵測模組 + scan-orchestrator(掃描流程唯一來源)
 ├── referencesingle/
 │   └── index.html            # 單檔版(由 scripts/build-single.js 產生，請勿手改)
-├── scripts/
-│   ├── build-single.js       # 拆分版 → 單檔版
-│   ├── verify.js             # 一鍵驗證(npm run verify)
-│   ├── snapshot.js           # 行為快照(verify 使用)
-│   └── ui-smoke.js           # 畫面冒煙測試(選用，需 playwright)
-├── eval/                     # 準確度驗證報告與測試案例
-│   ├── CASE_FORMAT.md         # 新增案例前先看這份
-│   ├── findings-snapshot.json # 所有樣本的掃描結果快照
-│   ├── cases/                 # 持續擴充的驗證案例
-│   └── reference_cases/       # 真實事件改寫案例(不計入統計)
-├── docs/CHANGELOG.md          # 變更與規則修正紀錄
+├── scripts/                  # build-single(產生單檔版)、verify(一鍵驗證)與其子步驟
+├── eval/                     # 準確度驗證報告、測試案例、行為快照
+├── docs/
+│   ├── CHANGELOG.md           # 變更與規則修正紀錄
+│   └── USER_TEST_KIT.md       # 真人測試任務腳本與觀察紀錄表
 ├── CLAUDE.md                  # 給 AI 協作者的專案說明(架構、契約、常見任務)
-└── package.json               # npm scripts
+└── package.json               # 驗證用指令(無任何相依套件)
 ```
 
-### 修改後
+### 修改與驗證
 
-單檔版是由拆分版產生的，**只改 `index.html`、`assets/`、`modules/`**，改完執行：
+**你的電腦不需要安裝 Node.js。** 驗證在兩個地方跑：
 
-```bash
-npm install            # 第一次執行，安裝 AST 版驗證需要的 acorn
-npm run build:single   # 重新產生 referencesingle/index.html
-npm run verify         # 規則回歸 + 行為快照 + 單檔版同步，全綠才算完成
-```
+- **Claude 修改時**：在雲端工作區跑 `npm run verify`，全部通過才寫回資料夾
+- **push 到 GitHub 後**（若已放入 `.github/workflows/verify.yml`）：GitHub 自動跑同一套驗證，在 commit 旁顯示通過或失敗
 
-規則是刻意調整、快照差異也確認合理時，用 `npm run verify -- --update` 更新快照。push 到 GitHub 時會自動跑同一套驗證（`.github/workflows/verify.yml`）。
+`verify` 包含：模組清單一致、每種問題都有白話說明、規則回歸測試、所有樣本的行為快照比對、匯出報告不含金鑰與原始碼、GitHub 匯入解析、單檔版同步，以及（有 playwright 時）瀏覽器畫面驗收。規則是刻意調整、快照差異也確認合理時，才用 `npm run verify -- --update` 更新快照。
 
-模組對照表：M1 key-detector（明文金鑰）／M2 jwt-analyzer（JWT/Supabase）／M3 hash-detector（弱雜湊）／M4 secret-heuristics（自訂密鑰啟發式）／M5 csp-detector（CSP 缺失）／M6 idor-detector（IDOR）／M7 language-detector／M8 finding-renderer（結果呈現）／M9 sql-injection-detector／M10 insecure-deserialize-detector／M11 field-masking-consistency-detector（多檔案模式）／M12 rate-limit-coverage-detector；scan-orchestrator 負責依序呼叫並合併結果。
+單檔版是由拆分版產生的，**只改 `index.html`、`assets/`、`vendor/`、`modules/`**，改完重新產生 `referencesingle/index.html`（`npm run build:single`）。
+
+模組對照表：M1 key-detector（明文金鑰）／M2 jwt-analyzer（JWT/Supabase）／M3 hash-detector（弱雜湊）／M4 secret-heuristics（自訂密鑰啟發式）／M5 csp-detector（CSP 缺失）／M6 idor-detector（IDOR）／M7 language-detector／M8 finding-renderer（結果呈現、報告）／M9 sql-injection-detector／M10 insecure-deserialize-detector／M11 field-masking-consistency-detector（多檔案模式）／M12 rate-limit-coverage-detector；scan-orchestrator 負責依序呼叫並合併結果。
 
 ---
 
@@ -83,7 +76,7 @@ npm run verify         # 規則回歸 + 行為快照 + 單檔版同步，全綠�
 
 ### 查得到
 
-- 已知格式的明文 API 金鑰（OpenAI／Anthropic／Gemini／Firebase／Line／AWS）
+- 已知格式的明文 API 金鑰（OpenAI／Anthropic／Gemini／Line／AWS），並依上下文分辨 Firebase 設定這類「本來就可公開」的值
 - HTML／框架設定檔是否有 CSP
 - 密碼是否用 MD5／SHA1 這類弱雜湊（含 Python `hashlib.new('md5')` 再 `.update(password)` 的兩段式寫法）
 - Supabase／JWT 金鑰，區分 `anon`（可公開）與 `service_role`（絕不可公開）
@@ -98,7 +91,8 @@ npm run verify         # 規則回歸 + 行為快照 + 單檔版同步，全綠�
 - 協定層級漏洞、需動態執行才能確認的邏輯漏洞
 - IDOR——只是模式比對，主要針對 JS／Express，AST 解析失敗時降級為涵蓋率較低的正則版
 - 疑似自訂密鑰、疑似內部端點 URL、環境變數明文 fallback——無固定格式，誤判率較高
-- `.env` 需直接貼上文字內容，工具不會讀取你的檔案系統
+- 打包壓縮過的程式碼（例如「檢視網頁原始碼」取得的）：金鑰檢查仍有效，權限、SQL 這類邏輯檢查幾乎無法判斷
+- 私人 GitHub 專案無法直接匯入（請下載後用拖放或開啟檔案）；工具不會主動讀取你電腦裡的檔案
 - 後端是否真的驗證了前端送出的密鑰／權杖——這是後端邏輯，工具只看得到你貼的這份程式碼
 - 雲端 IAM 權限設定完全不在範圍內
 
@@ -122,22 +116,18 @@ npm run verify         # 規則回歸 + 行為快照 + 單檔版同步，全綠�
 
 ## 常見問題 FAQ
 
-### 為什麼同一組 Firebase 金鑰，工具同時說它「外洩高風險」又說「本身非機密」？
+### Firebase 的 apiKey 會被當成金鑰外洩嗎？
 
-**這是已知的規則重疊問題，不是操作錯誤。**
+不會。`AIzaSy` 開頭的字串同時可能是 Firebase 設定值（設計上可公開）或 Gemini／Google API 金鑰（外洩要立刻撤銷）。工具會看上下文判斷：
 
-M1(key-detector) 判斷 Google／Gemini API Key 的規則是「符合 `AIzaSy` 開頭 39 字元格式就標記」，這是純字串比對，不看上下文；但 Firebase 的 `apiKey`（本來就設計成可公開的專案識別碼）剛好也是 `AIzaSy` 開頭的同一種 Google 平台格式。結果同一串字元會被**兩條規則各判一次**：
+- 以 `apiKey` 屬性寫在 Firebase 設定裡（附近有 `authDomain`、`projectId`、`firebaseapp.com`、`initializeApp(` 等特徵）→ 「請你確認」：本身可公開，但要確認 Firebase Security Rules
+- 其他情況（例如 `GEMINI_API_KEY = "AIzaSy..."`、傳給 Gemini SDK）→ 「需要處理」：當成外洩金鑰
 
-- M1 判成「Google / Gemini API Key 明文外洩」→ tier 1，高風險說法
-- Firebase 專屬規則判成「Firebase 設定值，本身非機密」→ tier 2，低風險說法
+同一個值只會回報一次。這是依上下文的推斷，極少數寫法仍可能判斷錯誤，看到時可對照上面兩點確認。
 
-兩個結論同時出現在一次掃描結果裡，容易讓人誤以為自己的 Gemini 金鑰外洩了，但其實那組字串是 Firebase apiKey。
+### 貼上「檢視網頁原始碼」的內容，結果可靠嗎？
 
-**怎麼判斷是哪一種：**
-1. 看這串字元出現的上下文——如果前後文是 `"apiKey": "AIzaSy..."` 且旁邊有 `authDomain`、`projectId`、`storageBucket` 這些欄位，就是 **Firebase 設定值**，本身公開沒關係，只要 Firebase Security Rules 設對就好。
-2. 如果是單獨一行、變數名像 `GEMINI_API_KEY`、`GOOGLE_API_KEY`，或用在呼叫 `generativelanguage.googleapis.com` 這類 API 端點，才是**真正的 Gemini API Key**，外洩需要立刻到 Google Cloud Console 撤銷重發。
-
-工具目前**不會自動排除這種重疊**，需要你自己核對上下文。這也是為什麼「查得到，且相對可靠」清單只承諾抓得到格式，判讀責任仍在使用者。
+一半可靠。從已上線網站拿到的通常是打包壓縮過的程式碼：**金鑰外洩的檢查仍然有效**（金鑰字串壓縮後不變），但權限、SQL 這類要看懂程式邏輯的檢查幾乎無法判斷。工具偵測到壓縮程式碼時會在結果最上方明確提醒。想完整檢查，請用 GitHub 匯入或原始檔。
 
 ### 掃到別人網站（例如公開網頁）的原始碼，跳出金鑰警示，代表那個網站真的外洩了嗎？
 
@@ -160,12 +150,11 @@ M1(key-detector) 判斷 Google／Gemini API Key 的規則是「符合 `AIzaSy` �
 | 真實案例命中率 | 20 個（真實蒐集，含 SecurityEval 學術資料集；共 21 個應偵測項目） | 95.2%（20/21） | 100%（21/21） |
 | 誤判率 | 29 個（含邊界值測試） | 0% | 0% |
 
-正則保底版是「使用者瀏覽器連不上 Acorn CDN 時（企業網路限制、離線、CDN 故障）一定做得到」的水準；AST 版是條件允許時的最佳水準。正則版唯一的漏判是 `legacy-tp-002`：函式裡出現 `session` 字樣就會被正則版當成「已檢查權限」，分辨不出只是登入檢查、而非擁有權檢查，這是正則能力的天花板，AST 版沒有這個問題。
+語法分析函式庫（Acorn、acorn-jsx）現在放在本站 `vendor/`，網頁上一律使用 AST 完整版。正則保底版仍是程式碼含 TypeScript 型別語法、語法分析無法解析時的退路；它唯一的漏判是 `legacy-tp-002`：函式裡出現 `session` 字樣就會被當成「已檢查權限」，分辨不出只是登入檢查、而非擁有權檢查，這是正則能力的天花板。
 
 ```bash
-npm install          # 安裝 acorn(AST 版需要)
 npm run eval         # 正則保底版
-npm run eval:ast     # AST 完整版
+npm run eval:ast     # AST 完整版(使用 vendor/ 內與網頁相同的檔案)
 ```
 
 `eval-orchestrator.js` 與上線版呼叫同一個 `modules/scan-orchestrator.js`，驗證結果就是上線行為。新增驗證案例只需在 `eval/cases/` 新增 `.txt` 檔案，格式見 `eval/CASE_FORMAT.md`。`eval/reference_cases/` 是依真實事件改寫的參考案例，刻意不計入統計（避免改寫帶入預期偏誤），細節見該資料夾 README。
@@ -176,20 +165,24 @@ npm run eval:ast     # AST 完整版
 
 ## 使用小技巧
 
-- `Ctrl+Enter`（Mac：`⌘ Enter`）直接掃描
-- 可把檔案拖進掃描框，或按「開啟檔案」；一次拖入多個檔案會自動切換成多檔案模式（檔案只在瀏覽器內讀取）
-- 每筆結果標有行號，點一下會在輸入框選取那一段
-- 「複製全部修正指令」把所有發現與對應的修正要求整理成一段，直接貼給 AI
-- 分頁可直接分享連結：`#boundary`（查得到什麼）、`#howto`（怎麼拿到程式碼）
+- **GitHub 專案**：把專案網址貼到最上面的欄位按「匯入」，自動抓取程式碼檔案並檢查（限公開專案；可貼子資料夾網址如 `…/tree/main/src` 縮小範圍）
+- **本機檔案**：拖進程式碼框，或按「開啟檔案」；一次拖入多個檔案會自動切換成多檔案模式
+- `Ctrl+Enter`（Mac：`⌘ Enter`）直接檢查
+- 結果最上方有一句話結論與處理步驟；每筆結果標有行號，點一下會在輸入框選取那一段
+- 「複製全部修正指令」：整理成一段，直接貼給 AI 修改
+- 「匯出報告」：可複製、下載 .md 或（手機）分享，報告**不含原始程式碼，金鑰只顯示前後幾碼**
+- 分頁可直接分享連結：`#boundary`（查得到什麼）、`#privacy`（隱私說明）、`#howto`（怎麼拿到程式碼）
 
 ---
 
 ## 技術細節
 
 - **純前端，零依賴後端**：程式碼只在瀏覽器記憶體處理，不上傳、不儲存。
-- **正則保底 + AST 疊加**：M6 用 [Acorn](https://github.com/acornjs/acorn) 做語法樹分析，CDN 載入失敗會靜默降級為正則版，不中斷其他功能。
-- **JSX 支援**：搭配 [acorn-jsx](https://github.com/acornjs/acorn-jsx)；純 TypeScript 語法（`interface`、泛型等）仍不支援，會退回正則版並顯示提示。
-- **多檔案模式**：支援同時貼上多個檔案，額外比對「同一個敏感欄位在不同檔案的輸出是否遮罩不一致」（M11）。
+- **CSP 自我保護**：頁面設定 `default-src 'none'`，只允許載入本站檔案；對外連線只允許 GitHub 匯入用的 `api.github.com` 與 `raw.githubusercontent.com`（只讀取）。單檔版以 sha256 雜湊放行內嵌的程式與樣式。
+- **零外部資源**：字型（JetBrains Mono，OFL）與語法分析函式庫（Acorn、acorn-jsx，MIT）都放在本站，授權見 `vendor/THIRD_PARTY_LICENSES.md`。
+- **正則保底 + AST 疊加**：M6 用 Acorn 做語法樹分析，搭配 acorn-jsx 支援 JSX；純 TypeScript 語法（`interface`、泛型等）仍無法解析，會退回正則版並在結果中提示。
+- **多檔案模式**：額外比對「同一個敏感欄位在不同檔案的輸出是否遮罩不一致」（M11）。
+- **GitHub 匯入**：每次匯入呼叫 2 次 GitHub API（未登入每小時上限 60 次，約 30 次匯入），檔案內容從 raw.githubusercontent.com 下載；一次最多 60 個檔案，優先挑 API、設定、資料庫相關路徑。
 
 ---
 

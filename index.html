@@ -2,28 +2,18 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
+<!--
+  本頁自己的安全政策:瀏覽器會禁止載入或連線到任何外部網站。
+  唯一例外:使用者按下「從 GitHub 匯入」時,讀取 api.github.com 與 raw.githubusercontent.com 上的公開檔案(只讀取,不送出程式碼)。
+  單檔版由 scripts/build-single.js 改寫這一行(行內 script/style 改用 sha256 雜湊、字型改用 data:)。
+-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>未發現 ≠ 安全 — AI 產出程式碼資安檢查器</title>
-<meta name="description" content="貼上程式碼，掃描已知格式的明文金鑰外洩、CSP 缺失、弱雜湊演算法、SQL Injection，並提示疑似缺少擁有權驗證的模式。純前端執行，內容不外送。">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<meta name="description" content="貼上程式碼或 GitHub 網址，檢查 AI 產出程式碼常見的資安問題：金鑰外洩、弱雜湊、SQL Injection、權限檢查缺漏。在你的瀏覽器內執行，內容不外送。">
 <link rel="stylesheet" href="assets/style.css">
-<!-- 主題要在首次繪製前套用,避免閃爍 -->
-<script>
-  (function () {
-    var t = null;
-    try { t = localStorage.getItem('ai-scanner-theme'); } catch (e) {}
-    if (!t) t = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
-    if (t === 'light') document.documentElement.setAttribute('data-theme', 'light');
-  })();
-</script>
-<!-- 選用的 AST 解析(M6 IDOR 精確度用)。CDN 失敗時 M6 自動退回正則版,其他功能不受影響。背景見 docs/CHANGELOG.md -->
-<script src="https://cdn.jsdelivr.net/npm/acorn@8.11.3/dist/acorn.min.js" defer></script>
-<script type="module">
-  import * as acornJsxModule from "https://esm.sh/acorn-jsx@5.3.2";
-  window.acornJsx = acornJsxModule.default || acornJsxModule;
-</script>
+<script src="assets/theme-init.js"></script>
 </head>
 <body>
 
@@ -31,72 +21,70 @@
 
   <header class="hero">
     <div class="theme-row">
-      <div class="eyebrow"><span class="dot" aria-hidden="true"></span> 純前端執行・內容不外送・無追蹤腳本</div>
+      <h1 class="title">看見 AI 網頁的程式過錯</h1>
       <button type="button" class="theme-toggle" id="themeToggle" aria-label="切換淺色／深色主題">
         <span class="ti" id="themeIcon" aria-hidden="true">&#9788;</span>
         <span id="themeLabel">淺色模式</span>
       </button>
     </div>
-    <h1 class="title">看見 AI 網頁的程式過錯。</h1>
-    <p class="lede">錯與過，不該是我的鍋——貼上程式碼，掃描常見的 AI 產出資安問題。</p>
+    <p class="lede">用 AI 做的網站，上線前貼上程式碼檢查一下常見的資安問題。</p>
+    <a class="trust-badge" href="#privacy"><span class="dot" aria-hidden="true"></span>程式碼只在你的瀏覽器裡檢查，頁面已設定禁止背景外傳<span class="trust-more">怎麼確認？</span></a>
   </header>
 
   <nav class="top-tabs" role="tablist" aria-label="頁面切換">
-    <button type="button" class="top-tab" id="tab-btn-scan" role="tab" aria-selected="true" aria-controls="tab-panel-scan" data-hash="">開始掃描</button>
-    <button type="button" class="top-tab" id="tab-btn-boundary" role="tab" aria-selected="false" aria-controls="tab-panel-boundary" data-hash="boundary">查得到／查不到什麼</button>
+    <button type="button" class="top-tab" id="tab-btn-scan" role="tab" aria-selected="true" aria-controls="tab-panel-scan" data-hash="">開始檢查</button>
+    <button type="button" class="top-tab" id="tab-btn-boundary" role="tab" aria-selected="false" aria-controls="tab-panel-boundary" data-hash="boundary">查得到什麼・隱私</button>
     <button type="button" class="top-tab" id="tab-btn-howto" role="tab" aria-selected="false" aria-controls="tab-panel-howto" data-hash="howto">怎麼拿到程式碼</button>
   </nav>
 
   <!-- ============ Tab 1: 掃描 ============ -->
   <div id="tab-panel-scan" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-scan">
 
-    <section class="scanner" aria-labelledby="scanner-h">
-      <div class="scanner-head">
-        <h2 id="scanner-h">貼上程式碼開始掃描</h2>
-        <span class="hint">內容只在瀏覽器記憶體處理，不會送出</span>
-      </div>
+    <section class="scanner" aria-label="檢查程式碼">
 
-      <div class="quick-links">
-        <button type="button" class="quick-link-btn" data-goto-tab="tab-btn-boundary"><span class="qi">&#9680;</span> 這工具查得到什麼、查不到什麼？</button>
-        <button type="button" class="quick-link-btn" data-goto-tab="tab-btn-howto"><span class="qi">&#10209;</span> 不知道怎麼複製程式碼？</button>
+      <div class="gh-import" id="ghImport">
+        <label for="ghUrl" class="gh-label">專案在 GitHub 上？貼網址直接匯入（限公開專案）</label>
+        <div class="gh-row">
+          <input type="url" id="ghUrl" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://github.com/帳號/專案名稱">
+          <button type="button" id="ghImportBtn" class="btn-ghost">匯入</button>
+        </div>
       </div>
 
       <div class="input-frame drop-target" id="singleInput">
         <div class="bar">
-          <span class="dot" aria-hidden="true"></span>
-          <span class="dot" aria-hidden="true"></span>
-          <span class="dot" aria-hidden="true"></span>
-          <span class="barlabel" id="inputMeta">code-input</span>
+          <span class="barlabel" id="inputMeta">或直接貼上程式碼</span>
           <button type="button" class="bar-btn" id="pickFileBtn">開啟檔案</button>
         </div>
-        <label for="codeInput" class="sr-only">貼上要掃描的程式碼</label>
-        <textarea id="codeInput" spellcheck="false" placeholder="貼上你的程式碼…&#10;也可以把檔案直接拖進這裡（檔案只在你的瀏覽器讀取，不會上傳）"></textarea>
+        <label for="codeInput" class="sr-only">貼上要檢查的程式碼</label>
+        <textarea id="codeInput" spellcheck="false" placeholder="把程式碼貼在這裡，或把檔案拖進來。&#10;不知道要貼什麼？先按下方「看範例」試試看，或看「怎麼拿到程式碼」。"></textarea>
         <div class="scan-sweep" id="scanSweep" aria-hidden="true"></div>
         <div class="drop-hint" aria-hidden="true">放開以讀取檔案</div>
       </div>
       <input type="file" id="fileInput" multiple hidden>
 
-      <div class="multi-file-toggle">
-        <label class="mf-toggle-label">
-          <input type="checkbox" id="multiFileToggle">
-          <span>多檔案模式（前端／後端分開，或元件拆成好幾個檔案時使用）</span>
-        </label>
-      </div>
-
       <div id="multiFileContainer" class="multi-file-container drop-target" hidden>
+        <div class="mf-head">
+          <span id="mfSummary">多檔案模式</span>
+        </div>
         <div id="multiFileList"></div>
         <div class="mf-actions">
           <button id="addFileBtn" type="button" class="btn-ghost mf-add-btn">+ 新增空白檔案</button>
           <button id="pickFilesBtn" type="button" class="btn-ghost mf-add-btn">開啟多個檔案</button>
         </div>
-        <p class="mf-hint">可一次拖入多個檔案。每個檔案各自完整分析後合併結果，並額外比對「同一個敏感欄位在不同檔案的輸出是否遮罩不一致」（例如前端有遮罩、後端沒遮罩）。</p>
+        <p class="mf-hint">每個檔案各自分析後合併結果，並額外比對「同一個敏感欄位在不同檔案的輸出是否遮罩不一致」。可一次拖入多個檔案。</p>
         <div class="drop-hint" aria-hidden="true">放開以加入檔案</div>
       </div>
 
       <div class="controls">
-        <button id="scanBtn" type="button">掃描 <kbd class="kbd" id="scanKbd">Ctrl+Enter</kbd></button>
-        <button id="sampleBtn" type="button" class="btn-ghost">載入範例</button>
+        <button id="scanBtn" type="button">開始檢查 <kbd class="kbd" id="scanKbd">Ctrl+Enter</kbd></button>
+        <button id="sampleBtn" type="button" class="btn-ghost">看範例</button>
         <button id="clearBtn" type="button" class="btn-ghost">清除</button>
+      </div>
+      <div class="multi-file-toggle">
+        <label class="mf-toggle-label">
+          <input type="checkbox" id="multiFileToggle">
+          <span>多檔案模式（前端、後端分開時使用）</span>
+        </label>
       </div>
       <div class="status-line" id="statusLine" role="status" aria-live="polite"></div>
 
@@ -104,85 +92,101 @@
     </section>
 
     <footer>
-      <p>本工具僅做靜態文字／模式比對，不執行、不上傳、不儲存你貼上的任何內容。適用於快速自我檢查，不能取代正式的資安審查或滲透測試。</p>
-      <p>判讀方式：「發現」為高信心度結果（明文金鑰、弱雜湊、不安全的動態執行等）；「建議複查」代表看起來可疑，請自行對照程式邏輯判斷。</p>
+      <p>本工具只做靜態比對：不執行、不上傳、不儲存你貼上的內容。適合上線前快速自我檢查，不能取代正式的資安審查或滲透測試。</p>
+      <p>「需要處理」是高信心度的結果；「請你確認」代表看起來可疑，需要你對照程式判斷。</p>
       <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a></p>
     </footer>
   </div>
 
-  <!-- ============ Tab 2: 查得到／查不到什麼(內容需與 README「能查什麼、不能查什麼」一致) ============ -->
+  <!-- ============ Tab 2: 查得到什麼・隱私(內容需與 README「能查什麼、不能查什麼」一致) ============ -->
   <div id="tab-panel-boundary" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-boundary" hidden>
-    <button type="button" class="back-to-scan" data-goto-tab="tab-btn-scan">&larr; 回到掃描</button>
+    <button type="button" class="back-to-scan" data-goto-tab="tab-btn-scan">&larr; 回到檢查</button>
     <div class="info-page-head">
       <h2>這個工具查得到什麼、查不到什麼</h2>
-      <p>使用前先看這頁，避免對掃描結果有錯誤期待。「工具沒標記」不代表「沒問題」。</p>
+      <p>使用前先看這頁，避免對結果有錯誤期待。「工具沒標記」不代表「沒問題」。</p>
     </div>
     <section class="boundary" aria-label="偵測範圍">
       <div class="boundary-grid">
         <div class="boundary-col can">
           <div class="label">查得到</div>
           <ul>
-            <li>已知格式的明文 API 金鑰（OpenAI／Anthropic／Gemini／Firebase／Line／AWS）</li>
-            <li>Supabase／JWT 金鑰，並區分 anon（可公開）與 service_role（絕不可公開）</li>
-            <li>密碼是否用 MD5／SHA1 這類弱雜湊（含 Python <code>hashlib.new('md5')</code> 兩段式寫法）</li>
-            <li>HTML／框架設定檔是否設定 Content Security Policy</li>
+            <li>已知格式的明文 API 金鑰（OpenAI／Anthropic／Gemini／AWS／LINE），並分辨 Firebase 設定這類「本來就可公開」的值</li>
+            <li>Supabase／JWT 金鑰，區分 anon（可公開）與 service_role（絕不可公開）</li>
+            <li>密碼用 MD5／SHA1 這類容易被破解的方式儲存</li>
+            <li>網頁或框架設定檔是否設定 Content Security Policy</li>
             <li>SQL Injection（字串拼接、模板插值、f-string、Python <code>%</code> 格式化）</li>
-            <li>不安全的反序列化／動態執行（eval、exec、pickle、yaml.load）</li>
-            <li>疑似缺少擁有權驗證（IDOR），含 Express 路由寫法</li>
-            <li>多檔案模式：同一敏感欄位在不同檔案的遮罩不一致、路由缺少速率限制</li>
+            <li>把文字當程式執行（eval、exec、pickle、yaml.load）</li>
+            <li>疑似缺少擁有權檢查（登入的人看得到別人的資料），含 Express 路由寫法</li>
+            <li>多檔案：同一敏感欄位在不同檔案的遮罩不一致、路由缺少流量限制</li>
           </ul>
         </div>
         <div class="boundary-col cannot">
-          <div class="label">做不到／僅供保守提示</div>
+          <div class="label">做不到／僅供參考</div>
           <ul>
-            <li>字串拆分組合而成的金鑰</li>
-            <li>協定層級漏洞、需動態執行才能確認的邏輯漏洞</li>
-            <li>IDOR 只是模式比對，主要針對 JavaScript／Express；不保證抓到，也一定會有誤判</li>
-            <li>疑似自訂密鑰、內部端點 URL、環境變數明文 fallback — 沒有固定格式，誤判率較高</li>
-            <li>.env 需直接貼上文字內容；工具不會讀取你的檔案系統（拖入的檔案也只在瀏覽器內讀取）</li>
-            <li>後端是否真的驗證了前端送出的密鑰／權杖 — 工具只看得到你貼上的這份程式碼</li>
-            <li>雲端 IAM 權限設定</li>
+            <li>字串拆開再組合的金鑰</li>
+            <li>需要實際執行才能確認的邏輯漏洞、協定層級漏洞</li>
+            <li>打包壓縮過的程式碼：金鑰檢查仍有效，權限、SQL 這類邏輯檢查幾乎無法判斷</li>
+            <li>權限檢查只是模式比對，主要針對 JavaScript／Express，一定會有漏判與誤判</li>
+            <li>疑似自訂密鑰、內部網址、環境變數明文備用值 — 沒有固定格式，誤判率較高</li>
+            <li>後端、資料庫權限規則（RLS／Security Rules）與雲端 IAM 設定</li>
+            <li>私人 GitHub 專案（請下載後用拖放或開啟檔案）</li>
           </ul>
         </div>
       </div>
-      <p class="honesty-note">「建議複查」的意思只是「這裡看起來可疑」，需要自行對照程式邏輯確認，不是漏洞確診。規則主要針對 JavaScript／TypeScript／Python 常見寫法設計，其他語言涵蓋有限，掃描後會依貼上內容的語言特徵提示。</p>
+      <p class="honesty-note">「請你確認」的意思只是「這裡看起來可疑」，需要你自行對照程式邏輯確認，不是漏洞確診。規則主要針對 JavaScript／TypeScript／Python 常見寫法設計，其他語言涵蓋有限。</p>
+    </section>
+
+    <section class="privacy" id="privacy" tabindex="-1" aria-labelledby="privacy-h">
+      <h2 id="privacy-h">隱私：你的程式碼去了哪裡？</h2>
+      <ul class="privacy-list">
+        <li><strong>哪裡都沒去。</strong>檢查完全在你的瀏覽器裡進行，程式碼只存在這個分頁的記憶體，關掉就消失。</li>
+        <li><strong>頁面本身被禁止在背景外傳。</strong>本頁設定了 Content Security Policy（內容安全政策），瀏覽器會擋下頁面在背景連到其他網站——載入外部資源、傳送資料都不行。這是瀏覽器強制執行的，不是只靠我們的承諾。</li>
+        <li><strong>唯一的例外：</strong>你按下「從 GitHub 匯入」時，頁面會向 <code>api.github.com</code> 與 <code>raw.githubusercontent.com</code> <em>讀取</em>公開專案的檔案，不會送出任何內容。</li>
+        <li><strong>沒有追蹤、沒有外部字型或 CDN。</strong>所有檔案（含字型與語法分析函式庫）都放在本站。頁面上唯一會離開本站的方式，是你自己點的連結（例如頁尾的 GitHub 專案頁面）。</li>
+      </ul>
+      <details class="privacy-verify">
+        <summary>想自己確認？（約 1 分鐘）</summary>
+        <ol>
+          <li>在這個頁面按 <code>F12</code>（Mac：<code>Cmd+Option+I</code>）打開開發人員工具，切到「Network／網路」分頁。</li>
+          <li>回到「開始檢查」，按「看範例」（會自動檢查）。</li>
+          <li>Network 分頁不會出現任何新的請求。你也可以先把網路斷線再檢查，結果完全一樣。</li>
+        </ol>
+      </details>
     </section>
   </div>
 
   <!-- ============ Tab 3: 怎麼拿到程式碼 ============ -->
   <div id="tab-panel-howto" class="tab-panel" role="tabpanel" aria-labelledby="tab-btn-howto" hidden>
-    <button type="button" class="back-to-scan" data-goto-tab="tab-btn-scan">&larr; 回到掃描</button>
+    <button type="button" class="back-to-scan" data-goto-tab="tab-btn-scan">&larr; 回到檢查</button>
     <div class="info-page-head">
-      <h2>怎麼拿到「要貼進去的內容」</h2>
-      <p>瀏覽器的安全機制不允許網頁擅自讀取別的網站內容，所以需要你先把內容複製出來（或把檔案拖進掃描框）。以下方法任選一種：</p>
+      <h2>怎麼拿到「要檢查的程式碼」</h2>
+      <p>依你的情況選一種。越上面的方法，檢查結果越完整。</p>
     </div>
     <div class="howto-body">
       <div class="howto-method">
-        <div class="howto-method-title"><span class="howto-num">方法一</span>檔案就在你的電腦上</div>
+        <div class="howto-method-title"><span class="howto-num">最推薦</span>專案有同步到 GitHub（Lovable、Bolt、v0 都可以設定）</div>
         <ol class="howto-steps">
-          <li>直接把檔案拖進掃描框，或按掃描框右上角的「開啟檔案」</li>
-          <li>有好幾個檔案（例如前端、後端分開）時，先勾選「多檔案模式」再一次拖入</li>
+          <li>打開你的 GitHub 專案頁面，複製網址列的網址（像 <code>https://github.com/帳號/專案名稱</code>）</li>
+          <li>貼到「開始檢查」頁最上面的 GitHub 欄位，按「匯入」，工具會自動抓檔案並檢查</li>
+          <li>如果專案是私人的，請用下面的方法二</li>
         </ol>
       </div>
 
       <div class="howto-method">
-        <div class="howto-method-title"><span class="howto-num">方法二</span>網站已經上線，但手邊沒有原始檔</div>
+        <div class="howto-method-title"><span class="howto-num">方法二</span>檔案在你的電腦上</div>
         <ol class="howto-steps">
-          <li>打開你想檢查的網頁</li>
-          <li>在頁面空白處按右鍵，選「檢視網頁原始碼」（<em>View Page Source</em>）；或在網址前加上 <code>view-source:</code></li>
-          <li>按 <code>Ctrl+A</code>（Mac：<code>Cmd+A</code>）全選，再按 <code>Ctrl+C</code>（Mac：<code>Cmd+C</code>）複製</li>
-          <li>回到這個頁面，貼進掃描框</li>
+          <li>把檔案直接拖進程式碼框，或按「開啟檔案」</li>
+          <li>一次選好幾個檔案時，工具會自動切換成多檔案模式</li>
         </ol>
-        <p class="howto-note">⚠️ 用 v0.dev、Next.js 這類工具做的網站，原始碼可能是打包壓縮過的，能抓到的問題會變少，建議改用方法三。</p>
       </div>
 
       <div class="howto-method">
-        <div class="howto-method-title"><span class="howto-num">方法三</span>專案放在 GitHub 上</div>
+        <div class="howto-method-title"><span class="howto-num">方法三</span>只有已上線的網址</div>
         <ol class="howto-steps">
-          <li>打開 GitHub 專案，點進想檢查的檔案（例如 <code>index.html</code>、<code>app.js</code>、API 路由檔）</li>
-          <li>按右上角的「Copy raw file」複製圖示</li>
-          <li>回到這個頁面貼上；多個檔案可用「多檔案模式」分開貼</li>
+          <li>打開你的網站，在空白處按右鍵 →「檢視網頁原始碼」（或在網址前加 <code>view-source:</code>）</li>
+          <li>按 <code>Ctrl+A</code> 全選、<code>Ctrl+C</code> 複製（Mac 用 <code>Cmd</code>），貼進程式碼框</li>
         </ol>
+        <p class="howto-note">這種方式拿到的常是打包壓縮過的程式碼：<strong>金鑰外洩的檢查仍然有效</strong>，但權限、SQL 這類邏輯檢查幾乎無法判斷。工具會自動提醒你。為什麼不能直接輸入網址？因為瀏覽器禁止網頁讀取別的網站，要繞過就得把你的網址送到我們的伺服器，這會違反「內容不外送」的原則。</p>
       </div>
     </div>
   </div>
@@ -190,10 +194,12 @@
 </div>
 
 <!--
-  偵測模組:同步載入,順序即相依順序(scan-orchestrator 必須在所有偵測模組之後、app.js 之前)。
+  載入順序即相依順序:vendor(選用的語法分析)→ 偵測模組 → scan-orchestrator → app.js。
   新增模組:這裡加一行 + modules/scan-orchestrator.js 的 getSingleFileDetectors() 加一行。
   單檔版 referencesingle/index.html 由 scripts/build-single.js 依這份清單內嵌產生。
 -->
+<script src="vendor/acorn.min.js"></script>
+<script src="vendor/acorn-jsx.min.js"></script>
 <script src="modules/key-detector.js"></script>
 <script src="modules/jwt-analyzer.js"></script>
 <script src="modules/hash-detector.js"></script>
@@ -207,6 +213,7 @@
 <script src="modules/rate-limit-coverage-detector.js"></script>
 <script src="modules/field-masking-consistency-detector.js"></script>
 <script src="modules/scan-orchestrator.js"></script>
+<script src="assets/github-import.js"></script>
 <script src="assets/app.js"></script>
 </body>
 </html>

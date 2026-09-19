@@ -3,6 +3,19 @@
 程式碼裡只留一行「為什麼」;完整背景(發現經過、當初的錯誤寫法、驗證方式)集中在這裡。
 新增紀錄時:程式碼旁寫一行 `為什麼:…(背景見 docs/CHANGELOG.md)`,細節寫在本檔對應模組底下。
 
+## 2026-09 第二輪：可信度、隱私、門檻
+
+- **Firebase 誤報修正**：`AIzaSy` 金鑰只有「以 apiKey 屬性寫在 Firebase 設定裡（附近有 authDomain／projectId／firebaseapp.com／initializeApp 等特徵）」才判為 `firebase_config_exposed`（tier2），否則仍為 Gemini／Google 金鑰外洩（tier1）。同一個值不再被兩條規則各報一次。舊的 Firebase 規則只認 JSON 雙引號寫法，JS 物件寫法反而漏掉、被當成外洩。
+- **自訂密鑰去重複修正**：M4 原本拿「已遮罩的 evidence」比對金鑰前 8 碼，遮罩後只剩前 4 碼，所以去重複從未生效（每個明文金鑰都會多一筆「自訂密鑰」）。改用模組回傳的原始片段 `match` 比對。
+- **壓縮程式碼提示**：實測壓縮後的金鑰檢查仍然有效，失效的只有權限／SQL 等邏輯檢查。偵測到壓縮程式碼時在結果最上方明確說明，不再只給「沒有比對到問題」的假安心。
+- **答非所問的提示**：「權限檢查退回簡易版」只在程式碼含資料庫查詢時才顯示（原本普通 HTML 也會出現）。語言與降級提示改為 notices，顯示在結果最上方而非收合區塊裡。
+- **零外部連線＋CSP**：acorn、acorn-jsx、字型改放本站（`vendor/`、`assets/fonts/`），移除 jsdelivr、esm.sh、Google Fonts。頁面加上 `default-src 'none'` 的 CSP，對外只允許 GitHub 匯入的兩個網域；單檔版以 sha256 雜湊放行內嵌內容。語法分析不再依賴 CDN，網頁上一律使用 AST 版。
+- **白話結果**：層級改稱「需要處理／請你確認／參考」；每種 kind 有白話標題（技術名稱改為副標）；結果最上方有一句話結論、「先別慌」說明與 2～3 個行動步驟。
+- **匯出報告**：Markdown 報告可複製、下載或分享；不含原始程式碼，金鑰只輸出遮罩後字串。verify 會對所有樣本檢查報告不含偵測原文與程式碼行。
+- **GitHub 公開專案匯入**：貼網址即抓取檔案（最多 60 個，優先 API／設定／資料庫相關路徑），私人專案與流量限制有明確說明。
+- **首屏精簡**：標語縮成一行，GitHub 匯入與輸入框直接在首屏；「看範例」會自動檢查。驗收標準寫進 `scripts/ui-smoke.js`。
+- **測試環境**：Node 驗證改用 `vendor/` 內與網頁相同的 acorn（`eval/load-ast.js`），專案不再需要任何 npm 套件。
+
 ## 2026-09 架構整理
 
 - 掃描流程抽成 `modules/scan-orchestrator.js`,瀏覽器(`assets/app.js`)與驗證腳本(`eval/eval-orchestrator.js`)共用,原本三處重複的流程合一。
@@ -11,7 +24,7 @@
 - 畫面:摘要列可跳轉、自動捲到結果、Ctrl/⌘+Enter 掃描、一鍵複製指令與「複製全部修正指令」、拖放／開啟本機檔案、手機版固定掃描列、分頁支援 `#boundary` `#howto` 連結、補上 tier3 樣式。
 - 範例改為正則保底版也能同時展示「發現」與「建議複查」兩層。
 
-## 外部依賴(原 index.html 註解)
+## 外部依賴(原 index.html 註解;第二輪後已改為本站 vendor/,以下為當時背景)
 
 - **Acorn**(jsdelivr):M6 IDOR 的語法樹分析。唯一必要的外部函式庫,只影響 IDOR 精確度;載入失敗時 `idor-detector.js` 靜默退回正則版,其他功能不受影響。只在瀏覽器本機解析,不外送程式碼。
 - **acorn-jsx**(esm.sh):Acorn 原生不認 JSX,而 Lovable/v0/Bolt 的主要產出就是 React 元件。acorn-jsx 沒有瀏覽器 UMD 版,因此透過 esm.sh 轉成 ES module 載入並掛到 `window.acornJsx`。失敗時同樣退回正則版。

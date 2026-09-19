@@ -1,9 +1,9 @@
 /**
  * scan-orchestrator — 掃描流程的唯一來源
  *
- * 職責:依序呼叫各偵測模組、合併 Finding[]、補上行號、組出語言提示。
+ * 職責:依序呼叫各偵測模組、合併 Finding[]、補上行號、組出「本次檢查的限制」提示。
  * 瀏覽器(assets/app.js)與 Node 驗證腳本(eval/eval-orchestrator.js)共用這一份,
- * 新增偵測模組時只需要改 SINGLE_FILE_DETECTORS 與 index.html 的 <script> 清單。
+ * 新增偵測模組時只需要改 getSingleFileDetectors() 與 index.html 的 <script> 清單。
  *
  * 依賴:其他 modules/*.js 必須先載入(瀏覽器靠 <script> 順序,Node 靠下方自動 require)。
  */
@@ -17,20 +17,20 @@ if (typeof module !== 'undefined' && module.exports && typeof keyDetector === 'u
   ].forEach(name => Object.assign(globalThis, require('./' + name)));
 }
 
-const IDOR_AST_DEGRADED_NOTICE = '此外，本次程式碼含 JSX 或 TypeScript 型別語法特徵，但「疑似缺少擁有權驗證」這項偵測這次使用的是涵蓋範圍較窄的正則比對版本（無法辨識箭頭函式等寫法），不是更精確的語法樹分析版本——這通常是因為程式碼包含 interface、型別標註等 TypeScript 專屬語法，目前的分析能力不支援這部分語法。若這份程式碼裡有用到參數查詢資料的箭頭函式，建議額外自行確認。';
+const IDOR_AST_DEGRADED_NOTICE = '「權限檢查」這一項這次改用較簡單的比對方式（程式碼含 TypeScript 型別語法，精確分析無法解析），箭頭函式寫法可能抓不到，建議自行確認。';
+const MINIFIED_NOTICE = '這段看起來是打包壓縮過的程式碼（常見於「檢視網頁原始碼」或 build 後的 .js 檔）。金鑰外洩的檢查仍然有效；但「權限檢查」「SQL 拼接」這類要看懂程式邏輯的項目，在壓縮後幾乎無法判斷。想檢查這些，請改用原始檔（例如用上方「從 GitHub 匯入」）。';
 
 /**
- * 單檔案偵測器清單(順序即結果顯示順序)。
- * 每個偵測器: (code, ctx) => Finding[];ctx.previous 為先前偵測器的結果,
- * 供 M4 secretHeuristics 對 M1 去重複使用。
- * 新增偵測器:在這裡加一行,並在 index.html 的 <script src="modules/..."> 清單加上檔案。
+ * 單檔案偵測器清單(順序即模組執行順序;畫面顯示順序由 finding-renderer 依嚴重度重排)。
+ * 每個偵測器: (code, ctx) => Finding[];ctx.byId 可取得先前偵測器的結果
+ * (M4 secretHeuristics 用 M1、M2 的結果去重複)。
  */
 function getSingleFileDetectors() {
   return [
     { id: 'M1', run: code => keyDetector(code) },
     { id: 'M2', run: code => jwtAnalyzer(code) },
     { id: 'M3', run: code => hashDetector(code) },
-    { id: 'M4', run: (code, ctx) => secretHeuristics(code, ctx.byId.M1) },
+    { id: 'M4', run: (code, ctx) => secretHeuristics(code, ctx.byId.M1.concat(ctx.byId.M2)) },
     { id: 'M5', run: code => cspDetector(code) },
     { id: 'M6', run: (code, ctx) => { const r = idorDetectorWithMeta(code); ctx.astUsed = r.astUsed; return r.findings; } },
     { id: 'M9', run: code => sqlInjectionDetector(code) },
@@ -51,8 +51,12 @@ function attachLocations(code, findings) {
     let len = 0;
     if (typeof f.index === 'number' && f.index >= 0) {
       start = f.index;
-      const nl = code.indexOf('\n', start);
-      len = (nl < 0 ? code.length : nl) - start;
+      if (typeof f.match === 'string' && code.substr(start, f.match.length) === f.match) {
+        len = f.match.length;
+      } else {
+        const nl = code.indexOf('\n', start);
+        len = (nl < 0 ? code.length : nl) - start;
+      }
     } else if (typeof f.match === 'string' && f.match) {
       const from = cursors[f.match] || 0;
       start = code.indexOf(f.match, from);
@@ -68,16 +72,45 @@ function attachLocations(code, findings) {
   return findings;
 }
 
-function buildLanguageCaveat(code, astUsed) {
-  const base = languageDetector(code);
-  if (astUsed || !looksLikeJsxOrTypeScript(code)) return base;
-  return base ? base + ' ' + IDOR_AST_DEGRADED_NOTICE : IDOR_AST_DEGRADED_NOTICE;
+/**
+ * 粗略判斷是否為打包壓縮過的程式碼:有超長且語句密集的單行,或平均每行很長。
+ * @param {string} code
+ * @returns {boolean}
+ */
+function looksMinified(code) {
+  if (!code || code.length < 400) return false;
+  const lines = code.split('\n');
+  const longest = lines.reduce((m, l) => Math.max(m, l.length), 0);
+  const avg = code.length / lines.length;
+  const denseLine = lines.some(l => l.length > 1000 && (l.match(/[;{}]/g) || []).length > l.length / 40);
+  return denseLine || (code.length > 2000 && avg > 300) || longest > 5000;
+}
+
+/**
+ * 本次檢查的限制提示,畫面放在結果最上方(level=warn 醒目、info 次要)。
+ * @returns {Array<{id: string, level: 'warn'|'info', text: string}>}
+ */
+function buildNotices(code, astUsed) {
+  const notices = [];
+  const minified = looksMinified(code);
+  if (minified) notices.push({ id: 'minified', level: 'warn', text: MINIFIED_NOTICE });
+  // 只在程式碼真的有資料庫查詢時,「權限檢查退回簡易版」才有意義;壓縮檔已有上面的提示
+  if (!minified && !astUsed && looksLikeJsxOrTypeScript(code) && DB_CALL_PATTERN.test(code)) {
+    notices.push({ id: 'idor-degraded', level: 'info', text: IDOR_AST_DEGRADED_NOTICE });
+  }
+  const lang = languageDetector(code);
+  if (lang) notices.push({ id: 'language', level: 'info', text: lang });
+  return notices;
+}
+
+function joinNotices(notices) {
+  return notices.length ? notices.map(n => n.text).join(' ') : null;
 }
 
 /**
  * 單檔案掃描
  * @param {string} code
- * @returns {{findings: Array, languageCaveat: string|null, astUsed: boolean}}
+ * @returns {{findings: Array, notices: Array, languageCaveat: string|null, astUsed: boolean}}
  */
 function scanCode(code) {
   code = code || '';
@@ -89,30 +122,33 @@ function scanCode(code) {
     findings = findings.concat(out);
   });
   attachLocations(code, findings);
-  return { findings, languageCaveat: buildLanguageCaveat(code, ctx.astUsed), astUsed: ctx.astUsed };
+  const notices = buildNotices(code, ctx.astUsed);
+  return { findings, notices, languageCaveat: joinNotices(notices), astUsed: ctx.astUsed };
 }
 
 /**
  * 多檔案掃描:逐檔案跑 scanCode,多於一個檔案時標上 filename,再跑跨檔案模組 M11。
  * @param {Array<{filename: string|null, code: string}>} files
- * @returns {{findings: Array, languageCaveat: string|null}}
+ * @returns {{findings: Array, notices: Array, languageCaveat: string|null, astUsed: boolean}}
  */
 function scanFiles(files) {
   files = (files || []).map((f, idx) => ({ filename: f.filename || ('檔案' + (idx + 1)), code: f.code || '' }));
   const isMultiFile = files.length > 1;
   let findings = [];
-  const caveats = [];
+  const notices = [];
+  let astUsed = files.length > 0;
 
   files.forEach(f => {
     const r = scanCode(f.code);
+    if (!r.astUsed) astUsed = false;
     findings = findings.concat(isMultiFile ? r.findings.map(x => Object.assign({}, x, { filename: f.filename })) : r.findings);
-    if (r.languageCaveat) caveats.push(isMultiFile ? '【' + f.filename + '】' + r.languageCaveat : r.languageCaveat);
+    r.notices.forEach(n => notices.push(isMultiFile ? Object.assign({}, n, { text: '【' + f.filename + '】' + n.text }) : n));
   });
 
   findings = findings.concat(fieldMaskingConsistencyDetector(files));
-  return { findings, languageCaveat: caveats.length ? caveats.join(' ') : null };
+  return { findings, notices, languageCaveat: joinNotices(notices), astUsed };
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { scanCode, scanFiles, attachLocations, buildLanguageCaveat, getSingleFileDetectors, IDOR_AST_DEGRADED_NOTICE };
+  module.exports = { scanCode, scanFiles, attachLocations, buildNotices, looksMinified, getSingleFileDetectors, IDOR_AST_DEGRADED_NOTICE, MINIFIED_NOTICE };
 }

@@ -1,4 +1,10 @@
-/* 樣式表:index.html 以 <link> 載入,單檔版由 scripts/build-single.js 內嵌。色彩一律用 :root 變數。 */
+/* 樣式表:index.html 以 <link> 載入,單檔版由 scripts/build-single.js 內嵌(字型轉為 data:)。色彩一律用 :root 變數。 */
+
+/* 字型放在本站(assets/fonts/,OFL 授權),不連外部字型服務。只含拉丁字元,中文使用系統字型。 */
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400; font-display: swap; src: url(fonts/jetbrains-mono-latin-400-normal.woff2) format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 500; font-display: swap; src: url(fonts/jetbrains-mono-latin-500-normal.woff2) format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 600; font-display: swap; src: url(fonts/jetbrains-mono-latin-600-normal.woff2) format('woff2'); }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 700; font-display: swap; src: url(fonts/jetbrains-mono-latin-700-normal.woff2) format('woff2'); }
 
 :root {
   --bg: #12151C;
@@ -47,7 +53,7 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--text);
-  font-family: 'JetBrains Mono', 'Space Mono', ui-monospace, monospace;
+  font-family: 'JetBrains Mono', ui-monospace, 'PingFang TC', 'Microsoft JhengHei', 'Noto Sans TC', monospace;
   line-height: 1.6;
   -webkit-font-smoothing: antialiased;
 }
@@ -78,8 +84,7 @@ a:focus-visible, button:focus-visible, textarea:focus-visible, summary:focus-vis
 
 /* ---------- Header / Hero ---------- */
 header.hero {
-  padding: 4rem 0 2.5rem;
-  border-bottom: 1px solid var(--border);
+  padding: 1.6rem 0 1rem;
 }
 
 .eyebrow {
@@ -100,10 +105,10 @@ header.hero {
 }
 
 h1.title {
-  font-size: clamp(28px, 5vw, 40px);
+  font-size: clamp(20px, 3.4vw, 26px);
   font-weight: 700;
   letter-spacing: -0.01em;
-  margin: 0 0 1rem;
+  margin: 0;
   color: var(--text);
 }
 h1.title .flicker {
@@ -111,11 +116,27 @@ h1.title .flicker {
 }
 
 .lede {
-  font-size: 14.5px;
+  font-size: 13.5px;
   color: var(--text-dim);
-  max-width: 58ch;
-  margin: 0 0 1.6rem;
+  margin: 0.4rem 0 0.6rem;
 }
+.trust-badge {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px 8px;
+  font-size: 12px;
+  color: var(--green-text);
+  text-decoration: none;
+}
+.trust-badge .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 3px rgba(91,140,123,0.15);
+  flex-shrink: 0;
+}
+.trust-more { color: var(--text-dim); text-decoration: underline; text-underline-offset: 3px; }
+.trust-badge:hover .trust-more { color: var(--amber-text); }
 
 /* ---------- Boundary section(收進可展開區塊,預設收合,維持頁面精簡) ---------- */
 section.boundary {
@@ -705,12 +726,6 @@ button:active { transform: translateY(1px); }
   flex-shrink: 0;
 }
 
-.results-summary {
-  font-size: 11.5px;
-  color: var(--text-dimmer);
-  margin-bottom: 10px;
-  letter-spacing: 0.02em;
-}
 
 /* ---------- Cannot-detect fixed block ---------- */
 .cannot-block {
@@ -939,14 +954,48 @@ footer a:hover { color: var(--amber); }
 
 /* ================= 結果摘要列 ================= */
 .results-summary {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-raised);
+  padding: 14px 16px;
+  margin-bottom: 12px;
   scroll-margin-top: 16px;
   outline: none;
 }
+.results-summary.bad { border-color: var(--amber); }
+.results-summary.ok { border-color: var(--green); }
+.rs-headline { font-size: 16px; font-weight: 700; color: var(--text); }
+.results-summary.bad .rs-headline { color: var(--amber-text); }
+.results-summary.ok .rs-headline { color: var(--green-text); }
+.rs-calm { font-size: 13px; color: var(--text-dim); margin-top: 4px; }
+.rs-steps { margin: 10px 0 2px; padding-left: 1.3rem; font-size: 13px; color: var(--text); line-height: 1.75; }
+.rs-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.rs-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.rs-export {
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+}
+.rs-export:hover, .rs-export[aria-expanded="true"] { border-color: var(--amber); color: var(--amber-text); }
+
+/* 本次檢查的限制 */
+.rs-notice { font-size: 12.5px; line-height: 1.75; border-radius: 8px; margin-bottom: 10px; }
+.rs-notice.warn { border: 1px solid var(--amber); background: var(--amber-bg); color: var(--amber-text); padding: 10px 14px; }
+.rs-notice.info { border: 1px solid var(--border); color: var(--text-dim); padding: 6px 14px; }
+.rs-notice.info summary { cursor: pointer; font-size: 12px; color: var(--text-dim); }
+.rs-notice.info p { margin: 6px 0; }
+
+/* 匯出報告 */
+.export-panel { border: 1px solid var(--border); border-radius: 10px; background: var(--bg-input); padding: 12px 14px; margin-bottom: 12px; }
+.ep-head { font-size: 12.5px; font-weight: 600; color: var(--text); display: flex; gap: 10px; flex-wrap: wrap; align-items: baseline; }
+.ep-note { font-weight: 400; color: var(--green-text); font-size: 11.5px; }
+.ep-preview { margin: 8px 0 10px; max-height: 240px; overflow: auto; white-space: pre-wrap; font-family: inherit; font-size: 11.5px; line-height: 1.7; color: var(--text-dim); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
+.ep-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.ep-copy { background: var(--amber); color: #1A1408; border: none; font-weight: 600; }
+.ep-copy.copied { background: var(--green); color: #0E1512; }
 .rs-chips { display: flex; gap: 6px; flex-wrap: wrap; }
 .rs-chip {
   font-size: 12px;
@@ -1026,4 +1075,72 @@ footer a:hover { color: var(--amber); }
   }
   .controls #scanBtn { flex: 1; }
   .kbd { display: none; }
+}
+
+/* ================= 第二輪:首屏精簡、GitHub 匯入、白話結果、隱私說明 ================= */
+.top-tabs { margin-bottom: 1rem; }
+section.scanner { padding-top: 0.2rem; }
+
+.gh-import { margin-bottom: 10px; }
+.gh-label { display: block; font-size: 12.5px; color: var(--text-dim); margin-bottom: 6px; }
+.gh-row { display: flex; gap: 8px; }
+.gh-row input {
+  flex: 1;
+  min-width: 0;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 0.55rem 0.8rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text);
+}
+.gh-row input:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+.gh-row input::placeholder { color: var(--text-dimmer); }
+.gh-row button { flex-shrink: 0; }
+
+.input-frame .barlabel { font-size: 12px; }
+textarea#codeInput { min-height: 170px; }
+.multi-file-toggle { margin-top: 8px; }
+
+.mf-head { font-size: 12.5px; color: var(--text-dim); margin-bottom: 8px; }
+.mf-lines { font-size: 11px; color: var(--text-dimmer); white-space: nowrap; }
+.mf-toggle-btn {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-dim);
+}
+.mf-file-item.compact textarea { display: none; }
+.mf-file-item.compact { padding-bottom: 0; }
+
+.rc-subtitle { font-size: 11px; color: var(--text-dimmer); margin: -1px 0 6px; }
+
+section.privacy {
+  margin-top: 1.6rem;
+  padding: 1.1rem 1.2rem 1.2rem;
+  border: 1px solid var(--green);
+  border-radius: 10px;
+  background: var(--green-bg);
+  scroll-margin-top: 16px;
+  outline: none;
+}
+section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-text); }
+.privacy-list { margin: 0; padding-left: 1.1rem; font-size: 13px; line-height: 1.8; color: var(--text); }
+.privacy-list li { margin-bottom: 4px; }
+.privacy-verify { margin-top: 10px; font-size: 12.5px; color: var(--text-dim); }
+.privacy-verify summary { cursor: pointer; color: var(--green-text); }
+.privacy-verify ol { padding-left: 1.2rem; line-height: 1.8; }
+
+@media (max-width: 640px) {
+  header.hero { padding: 1rem 0 0.6rem; }
+  .lede { display: none; }
+  .theme-row { flex-wrap: nowrap; }
+  h1.title { font-size: 20px; }
+  #themeLabel { display: none; }
+  .theme-toggle { padding: 0.4rem 0.6rem; }
+  textarea#codeInput { min-height: 130px; }
+  .rs-bar { flex-direction: column; align-items: stretch; }
 }

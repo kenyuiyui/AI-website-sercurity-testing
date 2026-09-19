@@ -6,9 +6,9 @@
  * 都命中 EXPECTED。這裡的正負向小片段是手寫的規則邊界測試,不是真實蒐集樣本,
  * 所以放在這裡而不是 cases/(避免影響 run_scaled_eval.js 信賴區間的統計意義)。
  *
- * 執行方式(必須用全新的 Node 進程,不能事先 require('acorn'),才是測正則保底版):
+ * 執行方式(必須用全新的 Node 進程,不能事先 require('./load-ast'),才是測正則保底版):
  *   node run_rule_regression.js
- *   node -e "global.acorn=require('acorn');require('./run_rule_regression.js');"  (AST版)
+ *   node -e "require('./load-ast');require('./run_rule_regression.js');"  (AST版)
  */
 
 const fs = require('fs');
@@ -59,6 +59,35 @@ check('function(req, res) callback', `router.delete('/o/:id', function (req, res
 check('字串內的大括號不影響主體配對', `app.get('/x/:id', (req, res) => {\n  const msg = "}}}";\n  const o = db.items.find(req.params.id);\n  res.json(o);\n});`, 'possible_idor', true);
 check('Express callback 有擁有權比較', `app.get('/o/:id', async (req, res) => {\n  const { id } = req.params;\n  const o = await db.orders.findOne({ id });\n  if (o.ownerId !== req.user.id) return res.status(403).end();\n  res.json(o);\n});`, 'possible_idor', false);
 check('Express callback 沒有 DB 呼叫', `app.get('/health', (req, res) => {\n  res.json({ ok: true });\n});`, 'possible_idor', false);
+
+// M1/M4 — Firebase 設定不當成外洩;同一個值不重複回報
+const FB_KEY = 'AIzaSy' + 'A1b2C3d4E5f6G7h8I9j0KlMnOpQrStUvW';
+const fbConfig = `const firebaseConfig = {\n  apiKey: '${FB_KEY}',\n  authDomain: 'demo.firebaseapp.com',\n  projectId: 'demo'\n};`;
+check('Firebase 設定物件 → firebase_config_exposed', fbConfig, 'firebase_config_exposed', true);
+check('Firebase 設定物件 → 不報 Gemini 外洩', fbConfig, 'plain_key', false);
+check('Firebase 設定物件 → 不重複報自訂密鑰', fbConfig, 'custom_secret_var', false);
+check('Firebase JSON 設定', `{"apiKey": "${FB_KEY}", "projectId": "demo"}`, 'firebase_config_exposed', true);
+check('GEMINI_API_KEY 變數 → 仍是明文金鑰', `const GEMINI_API_KEY = '${FB_KEY}';`, 'plain_key', true);
+check('Gemini SDK 的 apiKey(無 Firebase 特徵) → 仍是明文金鑰', `new GoogleGenerativeAI({ apiKey: '${FB_KEY}' })`, 'plain_key', true);
+check('Gemini SDK 的 apiKey → 不當成 Firebase', `new GoogleGenerativeAI({ apiKey: '${FB_KEY}' })`, 'firebase_config_exposed', false);
+check('OPENAI_API_KEY 已報明文金鑰 → 不重複報自訂密鑰', `const OPENAI_API_KEY = 'sk-proj-abcdefghijklmnopqrstuvwxyz1234567890';`, 'custom_secret_var', false);
+check('一般密碼變數仍報自訂密鑰', `const adminPassword = "hunter2hunter2";`, 'custom_secret_var', true);
+
+// 本次檢查的限制提示(notices)
+const { scanCode } = require('../modules/scan-orchestrator');
+function checkNotice(label, code, id, expected) {
+  const ok = scanCode(code).notices.some(n => n.id === id) === expected;
+  if (!ok) failCount++;
+  console.log(`${ok ? '✅' : '❌'} [notice:${id} ${expected ? '應出現' : '不應出現'}] ${label}`);
+}
+checkNotice('壓縮過的 bundle', '!function(){' + 'var a=1;b.c(d);'.repeat(200) + '}();', 'minified', true);
+checkNotice('一般多行程式碼', 'function f(x) {\n  return x + 1;\n}\n'.repeat(200), 'minified', false);
+checkNotice('普通 HTML 不出現權限檢查降級提示', '<!doctype html><html><head><title>x</title></head><body><div>hi</div></body></html>', 'idor-degraded', false);
+checkNotice('無資料庫查詢的 TSX 不出現降級提示', 'interface P { a: string }\nexport const A = ({a}: P) => <div>{a}</div>;', 'idor-degraded', false);
+checkNotice('有查詢且 AST 無法解析的 TSX 出現降級提示', "interface P { orderId: string }\nexport const A = ({orderId}: P) => { supabase.from('o').select('*').eq('id', orderId); return <div/>; };", 'idor-degraded', true);
+
+// 壓縮後金鑰檢查仍有效
+check('壓縮 bundle 內的 OpenAI 金鑰', '!function(){var t="sk-proj-abcdefghijklmnopqrstuvwxyz1234567890";' + 'a.b(c);'.repeat(300) + '}();', 'plain_key', true);
 
 // reference_cases/ 全部應命中 EXPECTED
 console.log();

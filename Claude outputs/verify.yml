@@ -1,4 +1,5 @@
-# push / PR 時自動跑 npm run verify(規則回歸、行為快照、單檔版同步)
+# push / PR 時自動跑 npm run verify(規則回歸、行為快照、報告安全、單檔版同步)
+# 本專案沒有 npm 相依套件,不需要 npm install;畫面驗收需要 playwright,CI 上會自動略過
 name: verify
 on:
   push:
@@ -14,5 +15,4 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
-      - run: npm install --ignore-scripts --no-audit --no-fund
       - run: npm run verify

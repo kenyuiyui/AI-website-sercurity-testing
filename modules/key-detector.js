@@ -23,7 +23,27 @@ const KEY_RULES = [
 ];
 
 // Firebase 設定值:官方設計為可公開的專案識別碼,不是機密,獨立處理
-const FIREBASE_CONFIG_RULE = { name: 'Firebase 設定值', re: /"apiKey"\s*:\s*"[A-Za-z0-9_-]{20,}"/g };
+// 判斷方式:AIzaSy 金鑰「以 apiKey 屬性指派」且「前後 600 字元內有 Firebase 設定特徵」才算 Firebase 設定,
+// 否則仍當成 Google / Gemini 金鑰(tier1)。同一個值只會被其中一條規則回報。
+const FIREBASE_CONFIG_RULE = {
+  name: 'Firebase 設定值',
+  keyRe: /AIzaSy[A-Za-z0-9_-]{33}/g,
+  assignedAsApiKey: /["']?apiKey["']?\s*[:=]\s*["'`]?$/,
+  context: /authDomain|firebaseapp\.com|firebaseio\.com|projectId|storageBucket|messagingSenderId|initializeApp\s*\(|firebase\/app|firebase-app/,
+  window: 600
+};
+
+/**
+ * 某個 AIzaSy 金鑰是否位於 Firebase 設定物件內
+ * @param {string} code
+ * @param {number} index - 金鑰起始位置
+ */
+function isFirebaseConfigKey(code, index) {
+  const before = code.slice(Math.max(0, index - 40), index);
+  if (!FIREBASE_CONFIG_RULE.assignedAsApiKey.test(before)) return false;
+  const around = code.slice(Math.max(0, index - FIREBASE_CONFIG_RULE.window), index + FIREBASE_CONFIG_RULE.window);
+  return FIREBASE_CONFIG_RULE.context.test(around);
+}
 
 // Line Bot Access Token:官方為不透明字串、無公開固定格式,獨立處理為 tier2 猜測式規則
 // (見上方修正紀錄2)。判斷式而非單純正則,因為需要額外排除JWT三段式格式。
@@ -49,18 +69,21 @@ function keyDetector(code) {
   const findings = [];
 
   KEY_RULES.forEach(rule => {
-    const matches = code.match(rule.re);
-    if (matches) {
-      matches.forEach(m => {
-        findings.push({
-          tier: 1,
-          category: '明文金鑰',
-          name: rule.name,
-          kind: 'plain_key',
-          evidence: maskMatch(m),
-          match: m,
-          visualData: { vendor: rule.vendor }
-        });
+    const re = new RegExp(rule.re.source, rule.re.flags);
+    let km;
+    while ((km = re.exec(code)) !== null) {
+      const m = km[0];
+      // Firebase 設定裡的 apiKey 交給 firebaseConfigDetector,不當成外洩
+      if (rule.vendor === 'google_gemini' && isFirebaseConfigKey(code, km.index)) continue;
+      findings.push({
+        tier: 1,
+        category: '明文金鑰',
+        name: rule.name,
+        kind: 'plain_key',
+        evidence: maskMatch(m),
+        match: m,
+        index: km.index,
+        visualData: { vendor: rule.vendor }
       });
     }
   });
@@ -78,17 +101,18 @@ function keyDetector(code) {
  */
 function firebaseConfigDetector(code) {
   const findings = [];
-  const matches = code.match(FIREBASE_CONFIG_RULE.re);
-  if (matches) {
-    matches.forEach(m => {
-      findings.push({
-        tier: 2,
-        category: '建議人工複查',
-        name: 'Firebase 設定值（本身非機密，但請確認 Security Rules）',
-        kind: 'firebase_config_exposed',
-        match: m,
-        evidence: maskMatch(m) + '　— Firebase apiKey 設計上就是要出現在前端程式碼中，本身外洩不構成風險，但實際的資料存取控制完全由 Firebase Security Rules 決定，建議確認'
-      });
+  const re = new RegExp(FIREBASE_CONFIG_RULE.keyRe.source, FIREBASE_CONFIG_RULE.keyRe.flags);
+  let m;
+  while ((m = re.exec(code)) !== null) {
+    if (!isFirebaseConfigKey(code, m.index)) continue;
+    findings.push({
+      tier: 2,
+      category: '建議人工複查',
+      name: 'Firebase 設定值（本身非機密，但請確認 Security Rules）',
+      kind: 'firebase_config_exposed',
+      match: m[0],
+      index: m.index,
+      evidence: maskMatch(m[0]) + '　— Firebase apiKey 設計上就是要出現在前端程式碼中，本身外洩不構成風險，但實際的資料存取控制完全由 Firebase Security Rules 決定，建議確認'
     });
   }
   return findings;
@@ -135,5 +159,5 @@ function lineBotTokenDetector(code) {
 // 瀏覽器環境: module 不存在 → 略過這段,函式/常數已是全域作用域下的宣告,
 //            可直接被 index.html 或其他 <script> 使用
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { keyDetector, firebaseConfigDetector, lineBotTokenDetector, maskMatch, KEY_RULES, FIREBASE_CONFIG_RULE, LINE_BOT_TOKEN_RULE };
+  module.exports = { isFirebaseConfigKey, keyDetector, firebaseConfigDetector, lineBotTokenDetector, maskMatch, KEY_RULES, FIREBASE_CONFIG_RULE, LINE_BOT_TOKEN_RULE };
 }

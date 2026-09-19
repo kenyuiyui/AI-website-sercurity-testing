@@ -11,7 +11,7 @@ const fs = require('fs');
 const path = require('path');
 
 const mode = process.argv[2] === 'ast' ? 'ast' : 'regex';
-if (mode === 'ast') global.acorn = require('acorn');
+if (mode === 'ast') require(path.join(__dirname, '..', 'eval', 'load-ast')); // 與瀏覽器相同的 vendor 檔案(含 JSX)
 
 const root = path.join(__dirname, '..');
 const { scanCode } = require(path.join(root, 'modules', 'scan-orchestrator'));

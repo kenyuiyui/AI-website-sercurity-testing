@@ -2,7 +2,6 @@
  "regex": {
   "cases/_example-true-negative.txt": [],
   "cases/_example-true-positive.txt": [
-   "custom_secret_var@2:1",
    "plain_key@1:1"
   ],
   "cases/_out-of-scope-tp-010.txt": [],
@@ -42,7 +41,6 @@
   "cases/legacy-tn-028.txt": [],
   "cases/legacy-tn-029.txt": [],
   "cases/legacy-tp-001.txt": [
-   "custom_secret_var@2:4",
    "plain_key@1:4"
   ],
   "cases/legacy-tp-002.txt": [],
@@ -86,7 +84,6 @@
    "possible_sql_injection@2:9"
   ],
   "cases/securityeval-cwe321-author2.txt": [
-   "custom_secret_var@2:6",
    "plain_key@1:6"
   ],
   "cases/securityeval-cwe502-codeql1.txt": [
@@ -123,7 +120,6 @@
    "route_missing_rate_limit@2:8"
   ],
   "samples.js#1": [
-   "custom_secret_var@2:5",
    "plain_key@1:5"
   ],
   "samples.js#2": [],
@@ -188,7 +184,6 @@
  "ast": {
   "cases/_example-true-negative.txt": [],
   "cases/_example-true-positive.txt": [
-   "custom_secret_var@2:1",
    "plain_key@1:1"
   ],
   "cases/_out-of-scope-tp-010.txt": [],
@@ -228,7 +223,6 @@
   "cases/legacy-tn-028.txt": [],
   "cases/legacy-tn-029.txt": [],
   "cases/legacy-tp-001.txt": [
-   "custom_secret_var@2:4",
    "plain_key@1:4"
   ],
   "cases/legacy-tp-002.txt": [
@@ -274,7 +268,6 @@
    "possible_sql_injection@2:9"
   ],
   "cases/securityeval-cwe321-author2.txt": [
-   "custom_secret_var@2:6",
    "plain_key@1:6"
   ],
   "cases/securityeval-cwe502-codeql1.txt": [
@@ -311,7 +304,6 @@
    "route_missing_rate_limit@2:8"
   ],
   "samples.js#1": [
-   "custom_secret_var@2:5",
    "plain_key@1:5"
   ],
   "samples.js#2": [

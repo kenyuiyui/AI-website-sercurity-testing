@@ -78,9 +78,9 @@ function secretHeuristics(code, existingFindings) {
   existingFindings = existingFindings || [];
 
   // 4.1 自訂密鑰變數
-  const tier1Evidences = existingFindings
-    .filter(f => f.tier === 1 && f.category === '明文金鑰')
-    .map(f => f.evidence);
+  // 去重複:同一個值已被 M1 回報(明文金鑰、Firebase 設定、Line token)就不再報一次。
+  // 用 M1 的原始片段 match 比對;evidence 已遮罩,不能拿來比對。
+  const knownValues = existingFindings.map(f => f.match).filter(Boolean);
 
   CUSTOM_SECRET_RULES.forEach(rule => {
     let cm;
@@ -89,7 +89,7 @@ function secretHeuristics(code, existingFindings) {
       const varName = cm[1];
       const val = cm[2];
       if (rule.isPlaceholder(val)) continue;
-      const alreadyFlagged = tier1Evidences.some(ev => ev.includes(val.slice(0, 8)));
+      const alreadyFlagged = knownValues.some(v => val.includes(v) || v.includes(val));
       if (alreadyFlagged) continue;
       findings.push({
         tier: 2,
