@@ -1,6 +1,5 @@
 /**
  * M3 — hash-detector
- * 詳細規格見 docs/modules/MODULE_03_hash-detector.md
  *
  * 職責:偵測用不安全雜湊演算法(MD5/SHA1)處理密碼的呼叫
  * 輸入: code (string)
@@ -37,6 +36,7 @@ function hashDetector(code) {
           category: '弱雜湊演算法',
           name: rule.name,
           kind: 'weak_hash',
+          match: m,
           evidence: m.length > 40 ? m.slice(0, 40) + '…' : m
         });
       });

@@ -1,6 +1,5 @@
 /**
  * M12 — rate-limit-coverage-detector
- * 詳細規格見 docs/modules/MODULE_12_rate-limit-coverage-detector.md
  *
  * 職責:偵測「程式碼裡定義了多條 API 路由,但速率限制規則清單沒有同步涵蓋
  *       到所有路由」的模式——新增路由時最容易忘記同步更新的手動維護清單類問題
@@ -110,6 +109,7 @@ function rateLimitCoverageDetector(code) {
         category: '資訊提示',
         name: '路由套用預設速率限制值，未特別調整',
         kind: 'route_uses_default_rate_limit',
+        match: route,
         evidence: `路由「${route}」未在速率限制函式中找到專屬的條件分支，目前套用函式的預設值（catch-all）。如果這條路由的呼叫成本或敏感程度與其他路由不同，建議確認目前的預設值是否合適，而非必然的錯誤。`
       });
     } else {
@@ -118,6 +118,7 @@ function rateLimitCoverageDetector(code) {
         category: '建議人工複查',
         name: '路由未被速率限制規則涵蓋',
         kind: 'route_missing_rate_limit',
+        match: route,
         evidence: `路由「${route}」在程式碼中有定義，但速率限制函式中找不到任何條件分支處理這個路徑，且函式也沒有預設值兜底，此路由可能完全不受速率限制保護。`
       });
     }

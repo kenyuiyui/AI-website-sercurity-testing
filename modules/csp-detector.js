@@ -1,6 +1,5 @@
 /**
  * M5 — csp-detector
- * 詳細規格見 docs/modules/MODULE_05_csp-detector.md
  *
  * 職責:判斷 Content Security Policy 是否有設定,區分 HTML 情境與框架設定檔情境
  * 輸入: code (string)

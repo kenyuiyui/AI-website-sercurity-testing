@@ -1,21 +1,11 @@
 /**
  * M2 — jwt-analyzer
- * 詳細規格見 docs/modules/MODULE_02_jwt-analyzer.md
  *
  * 職責:偵測 JWT 格式字串,解析 role 欄位決定風險分層
  * 輸入: code (string)
  * 輸出: Finding[]
  *
- * ⚠️ 修正紀錄(2026,拆分成獨立檔案後才暴露的問題):
- * 本模組的 evidence 文字組裝依賴 M1(key-detector)的 maskMatch() 遮罩函式。
- * 單檔版把全部模組寫在同一個 <script> 作用域內時,這個依賴不會出錯,但拆成
- * 獨立檔案後,若載入順序不含 key-detector.js,或本檔案被單獨抽出使用,
- * 會在瀏覽器與 Node.js 兩種環境下都直接噴 ReferenceError。
- * 因此不再宣稱「不依賴任何其他模組」,改為明確處理跨模組依賴:
- * 瀏覽器端要求 index.html 必須在 jwt-analyzer.js 之前載入 key-detector.js
- * (根目錄 index.html 的載入順序已符合這個要求);Node.js 環境則直接
- * require key-detector.js 取得 maskMatch。
- * 輸入/輸出介面不變:輸入 code(string),輸出 Finding[]。
+ * 為什麼:依賴 M1 的 maskMatch():瀏覽器靠載入順序,Node 直接 require。(背景見 docs/CHANGELOG.md)
  */
 
 const JWT_KEY_PATTERN = /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g;
@@ -99,6 +89,7 @@ function jwtAnalyzer(code) {
           category: '明文金鑰',
           name: 'Supabase service_role 金鑰（高風險）',
           kind: 'supabase_service_role',
+          match: jwt,
           evidence: maskMatch(jwt) + '　— role=service_role，具備繞過 RLS 的最高權限，絕不應出現在前端程式碼',
           visualData
         });
@@ -108,6 +99,7 @@ function jwtAnalyzer(code) {
           category: '建議人工複查',
           name: 'Supabase anon 金鑰（設計上可公開，請確認 RLS）',
           kind: 'supabase_anon',
+          match: jwt,
           evidence: maskMatch(jwt) + '　— role=anon，屬 Supabase 設計上允許出現在前端的公開金鑰，但安全性完全仰賴後端 Row Level Security 規則是否正確設定，建議自行確認',
           visualData
         });
@@ -117,6 +109,7 @@ function jwtAnalyzer(code) {
           category: '建議人工複查',
           name: '疑似 JWT 格式金鑰（角色未知）',
           kind: 'jwt_unknown_role',
+          match: jwt,
           evidence: maskMatch(jwt) + '　— 偵測到 JWT 格式字串，但無法判斷其權限角色，建議人工確認來源與用途'
         });
       }

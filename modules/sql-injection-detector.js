@@ -11,28 +11,9 @@
  * 字串拼接是可從語法特徵直接判斷的模式,相對可靠,誤判率低於IDOR這類
  * 需要理解程式邏輯意圖的判斷。
  *
- * ⚠️ 修正紀錄(來自真實案例實測發現的bug):
- * 初版 CONCAT_PATTERN 用「排除引號字元的字元類別」([^"'`]) 來界定字串邊界,
- * 目的是避免比對跨越多個不同字串。但這個做法有嚴重副作用: SQL 查詢字串
- * 內部經常自己就包含單引號(例如 "...username='" + username + "'..."),
- * 正則在字串開頭遇到內部的單引號就會提早截斷比對,導致真正的字串拼接
- * 反而被漏判。改用「限制比對長度的寬鬆匹配」([\s\S]{0,120}?)取代嚴格
- * 的引號邊界匹配,犧牲一點點精確度換取不漏判真實案例中最常見的寫法。
- * (此問題是在拿真實世界案例實測時發現,原本的單元測試案例湊巧沒有
- * 觸發這個邊界,這正是「真實案例測試」相對於「手寫假案例測試」的價值所在)
+ * 為什麼:字串拼接用限長寬鬆匹配 [\s\S]{0,120}?,不能用引號邊界(SQL 內常含單引號)。(背景見 docs/CHANGELOG.md)
  *
- * ⚠️ 修正紀錄2(誤判率驗證發現的問題,見 eval/FALSE_POSITIVE_REPORT.md fp-26):
- * 修正1解決了漏判問題,但換來另一個副作用:CONCAT_PATTERN 只要求「SQL關鍵字
- * 附近有拼接」,沒有要求這真的是一句完整的SQL語句,導致一般文字說明裡剛好
- * 提到SQL關鍵字(例如 "Use SELECT statements carefully" + userNote 這種
- * 提示文字或註解),也會被誤判為疑似SQL Injection。
- * 修正:要求SQL關鍵字後方(60字元內)還要出現對應的第二關鍵字
- * (SELECT/DELETE 對應 FROM,INSERT 對應 INTO,UPDATE 對應 SET,
- * 也接受 WHERE/VALUES 作為輔助判斷),兩者都出現才算是真正的SQL語句結構,
- * 而不只是「提到SQL關鍵字的普通文字」。用完整的既有測試集(true positive
- * 案例、eval/samples.js真實案例)驗證過,加上這個限制不會讓任何真實的
- * SQL Injection案例漏判,只排除了「關鍵字單獨出現、不構成完整語句結構」
- * 的情況。
+ * 為什麼:SQL 關鍵字需搭配第二關鍵字(FROM/INTO/SET…)才算語句,避免一般文字誤判(fp-26)。(背景見 docs/CHANGELOG.md)
  *
  * 已知限制(誠實記錄):
  * - 無法判斷拼接進SQL字串的變數是否經過消毒(sanitize)處理,只要偵測到拼接
@@ -108,6 +89,7 @@ function sqlInjectionDetector(code) {
           category: '建議人工複查',
           name: rule.name,
           kind: 'possible_sql_injection',
+          match: line,
           evidence: '偵測到 SQL 查詢字串疑似透過拼接方式組成，而非使用參數化查詢（如 ? 佔位符或 ORM 方法），建議改用參數化查詢避免 SQL Injection'
         });
       }

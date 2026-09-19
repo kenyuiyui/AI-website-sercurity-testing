@@ -1,6 +1,5 @@
 /**
  * M8 — finding-renderer
- * 詳細規格見 docs/modules/MODULE_08_finding-renderer.md
  *
  * 職責:把合併後的 Finding[] + 語言提示,轉成使用者看到的 HTML
  * 輸入: findings (Finding[]), languageCaveat (string|null)
@@ -464,14 +463,17 @@ function buildCardBody(f) {
     </details>`;
   let handoffHtml = '';
   if (guide && guide.handoff) {
-    const handoffId = 'handoff_' + Math.random().toString(36).slice(2, 10);
+    // 一鍵複製;指令全文收在 <details> 裡,想先看內容的人再展開
     handoffHtml = `
-      <div class="rc-handoff" id="${handoffId}">
+      <div class="rc-handoff" data-kind="${escapeHtml(f.kind)}">
         <div class="rc-handoff-head">
-          <span class="rc-handoff-label">可複製，直接貼給 AI（Claude／ChatGPT 等）請它幫你處理</span>
-          <button type="button" class="rc-copy-btn" data-copy-target="${handoffId}">複製指令</button>
+          <span class="rc-handoff-label">修正指令：可直接貼給 AI（Claude／ChatGPT 等）</span>
+          <button type="button" class="rc-copy-btn">複製指令</button>
         </div>
-        <div class="rc-handoff-text">${escapeHtml(guide.handoff)}</div>
+        <details class="rc-handoff-preview">
+          <summary>預覽指令內容</summary>
+          <div class="rc-handoff-text">${escapeHtml(guide.handoff)}</div>
+        </details>
       </div>`;
   }
   return plainHtml + attackDemoHtml + keyImpactHtml + keyCapabilityHtml + techHtml + handoffHtml;
@@ -492,53 +494,70 @@ function buildFilenameTagHtml(f) {
 }
 
 /**
- * @param {Array} findings - M1-M6 合併後的 Finding[]
+ * 行號標籤:只在 scan-orchestrator 成功定位(f.line 存在)時顯示。
+ * 點擊行為由 assets/app.js 綁定(選取輸入框中的對應範圍)。
+ * @param {object} f - Finding
+ * @returns {string}
+ */
+function buildLineTagHtml(f) {
+  if (typeof f.line !== 'number') return '';
+  const fileAttr = f.filename ? ` data-file="${escapeHtml(f.filename)}"` : '';
+  return `<button type="button" class="rc-line-tag" data-start="${f.start}" data-end="${f.end}"${fileAttr} title="在輸入框中選取這一段">第 ${f.line} 行</button>`;
+}
+
+const TIER_META = {
+  1: { cls: 'tier1', tag: '發現', label: '高信心度發現', showCategory: true },
+  2: { cls: 'tier2', tag: '建議複查', label: '建議複查', showCategory: false },
+  3: { cls: 'tier3', tag: '資訊提示', label: '資訊提示', showCategory: false }
+};
+
+function buildCardHtml(f, idx) {
+  const meta = TIER_META[f.tier];
+  const title = meta.showCategory ? `${escapeHtml(f.category)} — ${escapeHtml(f.name)}` : escapeHtml(f.name);
+  return `<div class="result-card ${meta.cls}" id="finding-${idx}" tabindex="-1">
+      <div class="rc-title"><span class="rc-tag">${meta.tag}</span><span class="rc-title-text">${title}</span>${buildFilenameTagHtml(f)}${buildLineTagHtml(f)}</div>
+      ${buildCardBody(f)}
+    </div>`;
+}
+
+/**
+ * @param {Array} findings - 合併後的 Finding[](見 scan-orchestrator.js)
  * @param {string|null} languageCaveat - M7 的輸出
  * @returns {string} HTML
  */
 function findingRenderer(findings, languageCaveat) {
-  findings = findings || [];
-  const tier1 = findings.filter(f => f.tier === 1);
-  const tier2 = findings.filter(f => f.tier === 2);
-  const tier3 = findings.filter(f => f.tier === 3);
-  const total = tier1.length + tier2.length + tier3.length;
+  findings = (findings || []).filter(f => TIER_META[f.tier]);
+  // 依嚴重度排序(穩定排序,同層維持模組順序);同層內有行號的依行號排
+  const ordered = findings
+    .map((f, i) => ({ f, i }))
+    .sort((a, b) => (a.f.tier - b.f.tier) || ((a.f.filename || '') > (b.f.filename || '') ? 1 : (a.f.filename || '') < (b.f.filename || '') ? -1 : 0) || ((a.f.line || 1e9) - (b.f.line || 1e9)) || (a.i - b.i))
+    .map(x => x.f);
 
   let html = '';
-  const summaryParts = [`高信心度發現 ${tier1.length} 項`, `建議複查 ${tier2.length} 項`];
-  if (tier3.length > 0) summaryParts.push(`資訊提示 ${tier3.length} 項`);
-  html += `<div class="results-summary">掃描完成 — ${summaryParts.join('，')}</div>`;
+  const counts = { 1: 0, 2: 0, 3: 0 };
+  ordered.forEach(f => { counts[f.tier]++; });
 
-  if (total === 0) {
+  // 摘要列:每個層級一個可點擊的跳轉鈕(assets/app.js 綁定),0 項的層級不可點
+  let firstIdx = 0;
+  const chips = [1, 2, 3].filter(t => t !== 3 || counts[3] > 0).map(t => {
+    const target = counts[t] > 0 ? ` data-jump="finding-${firstIdx}"` : ' disabled';
+    firstIdx += counts[t];
+    return `<button type="button" class="rs-chip ${TIER_META[t].cls}"${target}><b>${counts[t]}</b> ${TIER_META[t].label}</button>`;
+  }).join('');
+  const hasHandoff = ordered.some(f => { const g = getFindingGuide(f.kind); return g && g.handoff; });
+  const copyAllBtn = hasHandoff ? '<button type="button" class="rs-copy-all">複製全部修正指令</button>' : '';
+  html += `<div class="results-summary" tabindex="-1"><div class="rs-chips">${chips}</div>${copyAllBtn}</div>`;
+
+  if (ordered.length === 0) {
     html += `<div class="result-card clean">
-      <div class="rc-title">未發現已知格式的明文金鑰或基礎設定缺漏</div>
+      <div class="rc-title">沒有比對到已知的問題模式</div>
+      <div class="rc-plain">這只代表「沒有符合本工具規則的寫法」，<strong>不代表程式碼是安全的</strong>。建議：① 確認貼上的是原始程式碼而不是打包壓縮後的檔案；② 後端 API、資料庫權限規則（RLS／Security Rules）請另外檢查；③ 看看下方「本工具無法檢測」清單。</div>
     </div>`;
   }
 
-  tier1.forEach(f => {
-    html += `<div class="result-card tier1">
-      <div class="rc-title"><span class="rc-tag">發現</span>${escapeHtml(f.category)} — ${escapeHtml(f.name)}${buildFilenameTagHtml(f)}</div>
-      ${buildCardBody(f)}
-    </div>`;
-  });
+  ordered.forEach((f, idx) => { html += buildCardHtml(f, idx); });
 
-  tier2.forEach(f => {
-    html += `<div class="result-card tier2">
-      <div class="rc-title"><span class="rc-tag">建議複查</span>${escapeHtml(f.name)}${buildFilenameTagHtml(f)}</div>
-      ${buildCardBody(f)}
-    </div>`;
-  });
-
-  // tier3(資訊提示):視覺權重刻意比tier2更輕(見 .result-card.tier3 CSS),
-  // 避免跟真正需要人工複查的tier2項目長得一樣重、稀釋其視覺重要性。
-  // 目前唯一產生tier3的模組是 M12(rate-limit-coverage-detector)的catch-all情境。
-  tier3.forEach(f => {
-    html += `<div class="result-card tier3">
-      <div class="rc-title"><span class="rc-tag">資訊提示</span>${escapeHtml(f.name)}${buildFilenameTagHtml(f)}</div>
-      ${buildCardBody(f)}
-    </div>`;
-  });
-
-  const langCaveatHtml = languageCaveat ? `<p style="margin-top:8px; color: var(--text-dim);">${escapeHtml(languageCaveat)}</p>` : '';
+  const langCaveatHtml = languageCaveat ? `<p class="cb-lang">${escapeHtml(languageCaveat)}</p>` : '';
 
   html += `<details class="cannot-block">
     <summary class="cb-label">本工具無法檢測</summary>
@@ -554,5 +573,5 @@ function findingRenderer(findings, languageCaveat) {
 // 瀏覽器環境: module 不存在 → 略過這段,函式/常數已是全域作用域下的宣告,
 //            可直接被 index.html 或其他 <script> 使用
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { findingRenderer, getFindingGuide, escapeHtml, buildCardBody, buildAttackDemoHtml, buildKeyImpactHtml, buildKeyCapabilityHtml, buildFilenameTagHtml, KEY_CAPABILITY_KB, FINDING_GUIDE };
+  module.exports = { findingRenderer, getFindingGuide, escapeHtml, buildCardBody, buildAttackDemoHtml, buildKeyImpactHtml, buildKeyCapabilityHtml, buildFilenameTagHtml, buildLineTagHtml, KEY_CAPABILITY_KB, FINDING_GUIDE, TIER_META };
 }

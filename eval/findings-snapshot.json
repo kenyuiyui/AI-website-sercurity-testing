@@ -1,0 +1,378 @@
+{
+ "regex": {
+  "cases/_example-true-negative.txt": [],
+  "cases/_example-true-positive.txt": [
+   "custom_secret_var@2:1",
+   "plain_key@1:1"
+  ],
+  "cases/_out-of-scope-tp-010.txt": [],
+  "cases/legacy-tn-001.txt": [],
+  "cases/legacy-tn-002.txt": [],
+  "cases/legacy-tn-003.txt": [],
+  "cases/legacy-tn-004.txt": [
+   "custom_secret_var@2:1"
+  ],
+  "cases/legacy-tn-005.txt": [],
+  "cases/legacy-tn-006.txt": [],
+  "cases/legacy-tn-007.txt": [],
+  "cases/legacy-tn-008.txt": [],
+  "cases/legacy-tn-009.txt": [],
+  "cases/legacy-tn-010.txt": [],
+  "cases/legacy-tn-011.txt": [],
+  "cases/legacy-tn-012.txt": [],
+  "cases/legacy-tn-013.txt": [
+   "possible_idor@2:1"
+  ],
+  "cases/legacy-tn-014.txt": [],
+  "cases/legacy-tn-015.txt": [],
+  "cases/legacy-tn-016.txt": [],
+  "cases/legacy-tn-017.txt": [],
+  "cases/legacy-tn-018.txt": [],
+  "cases/legacy-tn-019.txt": [],
+  "cases/legacy-tn-020.txt": [],
+  "cases/legacy-tn-021.txt": [
+   "env_file_secret@2:2"
+  ],
+  "cases/legacy-tn-022.txt": [],
+  "cases/legacy-tn-023.txt": [],
+  "cases/legacy-tn-024.txt": [],
+  "cases/legacy-tn-025.txt": [],
+  "cases/legacy-tn-026.txt": [],
+  "cases/legacy-tn-027.txt": [],
+  "cases/legacy-tn-028.txt": [],
+  "cases/legacy-tn-029.txt": [],
+  "cases/legacy-tp-001.txt": [
+   "custom_secret_var@2:4",
+   "plain_key@1:4"
+  ],
+  "cases/legacy-tp-002.txt": [],
+  "cases/legacy-tp-003.txt": [
+   "possible_idor@2:1"
+  ],
+  "cases/legacy-tp-004.txt": [
+   "possible_sql_injection@2:2"
+  ],
+  "cases/legacy-tp-005.txt": [
+   "possible_sql_injection@2:3"
+  ],
+  "cases/legacy-tp-006.txt": [
+   "weak_hash@1:8"
+  ],
+  "cases/legacy-tp-007.txt": [
+   "supabase_service_role@1:4"
+  ],
+  "cases/legacy-tp-008.txt": [
+   "insecure_eval@1:2"
+  ],
+  "cases/legacy-tp-009.txt": [
+   "no_csp_html@1:-"
+  ],
+  "cases/securityeval-cwe020-author1.txt": [
+   "insecure_yaml_load@1:6"
+  ],
+  "cases/securityeval-cwe020-codeql2.txt": [
+   "insecure_pickle@1:11"
+  ],
+  "cases/securityeval-cwe089-codeql1.txt": [
+   "possible_sql_injection@2:8"
+  ],
+  "cases/securityeval-cwe094-sonar1.txt": [
+   "insecure_python_exec@1:8"
+  ],
+  "cases/securityeval-cwe095-author1.txt": [
+   "insecure_eval@1:2"
+  ],
+  "cases/securityeval-cwe200-author1.txt": [
+   "possible_sql_injection@2:9"
+  ],
+  "cases/securityeval-cwe321-author2.txt": [
+   "custom_secret_var@2:6",
+   "plain_key@1:6"
+  ],
+  "cases/securityeval-cwe502-codeql1.txt": [
+   "insecure_pickle@1:5"
+  ],
+  "cases/securityeval-cwe502-sonar1.txt": [
+   "insecure_yaml_load@1:8"
+  ],
+  "cases/securityeval-cwe522-pearce1.txt": [
+   "env_file_secret@2:11",
+   "weak_hash@1:12"
+  ],
+  "cases/securityeval-cwe759-mitre1.txt": [
+   "weak_hash@1:5"
+  ],
+  "reference_cases/incident-ai-credentials-gitguardian-2026.txt": [
+   "custom_secret_var@2:3"
+  ],
+  "reference_cases/incident-base44-2025.txt": [
+   "possible_idor@2:8"
+  ],
+  "reference_cases/incident-lovable-cve-2025-48757.txt": [
+   "supabase_anon@2:5"
+  ],
+  "reference_cases/incident-moltbook-2026.txt": [
+   "possible_idor@2:12"
+  ],
+  "reference_cases/incident-tenzai-nextjs-csp-2025.txt": [
+   "no_csp_config@2:-"
+  ],
+  "reference_cases/incident-tenzai-ratelimit-2025.txt": [
+   "route_missing_rate_limit@2:11",
+   "route_missing_rate_limit@2:5",
+   "route_missing_rate_limit@2:8"
+  ],
+  "samples.js#1": [
+   "custom_secret_var@2:5",
+   "plain_key@1:5"
+  ],
+  "samples.js#2": [],
+  "samples.js#3": [
+   "possible_idor@2:2"
+  ],
+  "samples.js#4": [
+   "possible_sql_injection@2:3"
+  ],
+  "samples.js#5": [
+   "possible_sql_injection@2:4"
+  ],
+  "samples.js#6": [
+   "weak_hash@1:9"
+  ],
+  "samples.js#7": [
+   "supabase_service_role@1:5"
+  ],
+  "samples.js#8": [
+   "insecure_eval@1:3"
+  ],
+  "samples.js#9": [
+   "no_csp_html@1:-"
+  ],
+  "samples.js#10": [],
+  "false_positive_samples.js#fp-1": [],
+  "false_positive_samples.js#fp-2": [],
+  "false_positive_samples.js#fp-3": [],
+  "false_positive_samples.js#fp-4": [
+   "custom_secret_var@2:2"
+  ],
+  "false_positive_samples.js#fp-5": [],
+  "false_positive_samples.js#fp-6": [],
+  "false_positive_samples.js#fp-7": [],
+  "false_positive_samples.js#fp-8": [],
+  "false_positive_samples.js#fp-9": [],
+  "false_positive_samples.js#fp-10": [],
+  "false_positive_samples.js#fp-11": [],
+  "false_positive_samples.js#fp-12": [],
+  "false_positive_samples.js#fp-13": [
+   "possible_idor@2:2"
+  ],
+  "false_positive_samples.js#fp-14": [],
+  "false_positive_samples.js#fp-15": [],
+  "false_positive_samples.js#fp-16": [],
+  "false_positive_samples.js#fp-17": [],
+  "false_positive_samples.js#fp-18": [],
+  "false_positive_samples.js#fp-19": [],
+  "false_positive_samples.js#fp-20": [],
+  "false_positive_samples.js#fp-21": [
+   "env_file_secret@2:3"
+  ],
+  "false_positive_samples.js#fp-22": [],
+  "false_positive_samples.js#fp-23": [],
+  "false_positive_samples.js#fp-24": [],
+  "false_positive_samples.js#fp-25": [],
+  "false_positive_samples.js#fp-26": [],
+  "false_positive_samples.js#fp-27": [],
+  "false_positive_samples.js#fp-28": [],
+  "false_positive_samples.js#fp-29": []
+ },
+ "ast": {
+  "cases/_example-true-negative.txt": [],
+  "cases/_example-true-positive.txt": [
+   "custom_secret_var@2:1",
+   "plain_key@1:1"
+  ],
+  "cases/_out-of-scope-tp-010.txt": [],
+  "cases/legacy-tn-001.txt": [],
+  "cases/legacy-tn-002.txt": [],
+  "cases/legacy-tn-003.txt": [],
+  "cases/legacy-tn-004.txt": [
+   "custom_secret_var@2:1"
+  ],
+  "cases/legacy-tn-005.txt": [],
+  "cases/legacy-tn-006.txt": [],
+  "cases/legacy-tn-007.txt": [],
+  "cases/legacy-tn-008.txt": [],
+  "cases/legacy-tn-009.txt": [],
+  "cases/legacy-tn-010.txt": [],
+  "cases/legacy-tn-011.txt": [],
+  "cases/legacy-tn-012.txt": [],
+  "cases/legacy-tn-013.txt": [
+   "possible_idor@2:1"
+  ],
+  "cases/legacy-tn-014.txt": [],
+  "cases/legacy-tn-015.txt": [],
+  "cases/legacy-tn-016.txt": [],
+  "cases/legacy-tn-017.txt": [],
+  "cases/legacy-tn-018.txt": [],
+  "cases/legacy-tn-019.txt": [],
+  "cases/legacy-tn-020.txt": [],
+  "cases/legacy-tn-021.txt": [
+   "env_file_secret@2:2"
+  ],
+  "cases/legacy-tn-022.txt": [],
+  "cases/legacy-tn-023.txt": [],
+  "cases/legacy-tn-024.txt": [],
+  "cases/legacy-tn-025.txt": [],
+  "cases/legacy-tn-026.txt": [],
+  "cases/legacy-tn-027.txt": [],
+  "cases/legacy-tn-028.txt": [],
+  "cases/legacy-tn-029.txt": [],
+  "cases/legacy-tp-001.txt": [
+   "custom_secret_var@2:4",
+   "plain_key@1:4"
+  ],
+  "cases/legacy-tp-002.txt": [
+   "possible_idor@2:1"
+  ],
+  "cases/legacy-tp-003.txt": [
+   "possible_idor@2:1"
+  ],
+  "cases/legacy-tp-004.txt": [
+   "possible_sql_injection@2:2"
+  ],
+  "cases/legacy-tp-005.txt": [
+   "possible_sql_injection@2:3"
+  ],
+  "cases/legacy-tp-006.txt": [
+   "weak_hash@1:8"
+  ],
+  "cases/legacy-tp-007.txt": [
+   "supabase_service_role@1:4"
+  ],
+  "cases/legacy-tp-008.txt": [
+   "insecure_eval@1:2"
+  ],
+  "cases/legacy-tp-009.txt": [
+   "no_csp_html@1:-"
+  ],
+  "cases/securityeval-cwe020-author1.txt": [
+   "insecure_yaml_load@1:6"
+  ],
+  "cases/securityeval-cwe020-codeql2.txt": [
+   "insecure_pickle@1:11"
+  ],
+  "cases/securityeval-cwe089-codeql1.txt": [
+   "possible_sql_injection@2:8"
+  ],
+  "cases/securityeval-cwe094-sonar1.txt": [
+   "insecure_python_exec@1:8"
+  ],
+  "cases/securityeval-cwe095-author1.txt": [
+   "insecure_eval@1:2"
+  ],
+  "cases/securityeval-cwe200-author1.txt": [
+   "possible_sql_injection@2:9"
+  ],
+  "cases/securityeval-cwe321-author2.txt": [
+   "custom_secret_var@2:6",
+   "plain_key@1:6"
+  ],
+  "cases/securityeval-cwe502-codeql1.txt": [
+   "insecure_pickle@1:5"
+  ],
+  "cases/securityeval-cwe502-sonar1.txt": [
+   "insecure_yaml_load@1:8"
+  ],
+  "cases/securityeval-cwe522-pearce1.txt": [
+   "env_file_secret@2:11",
+   "weak_hash@1:12"
+  ],
+  "cases/securityeval-cwe759-mitre1.txt": [
+   "weak_hash@1:5"
+  ],
+  "reference_cases/incident-ai-credentials-gitguardian-2026.txt": [
+   "custom_secret_var@2:3"
+  ],
+  "reference_cases/incident-base44-2025.txt": [
+   "possible_idor@2:8"
+  ],
+  "reference_cases/incident-lovable-cve-2025-48757.txt": [
+   "supabase_anon@2:5"
+  ],
+  "reference_cases/incident-moltbook-2026.txt": [
+   "possible_idor@2:12"
+  ],
+  "reference_cases/incident-tenzai-nextjs-csp-2025.txt": [
+   "no_csp_config@2:-"
+  ],
+  "reference_cases/incident-tenzai-ratelimit-2025.txt": [
+   "route_missing_rate_limit@2:11",
+   "route_missing_rate_limit@2:5",
+   "route_missing_rate_limit@2:8"
+  ],
+  "samples.js#1": [
+   "custom_secret_var@2:5",
+   "plain_key@1:5"
+  ],
+  "samples.js#2": [
+   "possible_idor@2:2"
+  ],
+  "samples.js#3": [
+   "possible_idor@2:2"
+  ],
+  "samples.js#4": [
+   "possible_sql_injection@2:3"
+  ],
+  "samples.js#5": [
+   "possible_sql_injection@2:4"
+  ],
+  "samples.js#6": [
+   "weak_hash@1:9"
+  ],
+  "samples.js#7": [
+   "supabase_service_role@1:5"
+  ],
+  "samples.js#8": [
+   "insecure_eval@1:3"
+  ],
+  "samples.js#9": [
+   "no_csp_html@1:-"
+  ],
+  "samples.js#10": [],
+  "false_positive_samples.js#fp-1": [],
+  "false_positive_samples.js#fp-2": [],
+  "false_positive_samples.js#fp-3": [],
+  "false_positive_samples.js#fp-4": [
+   "custom_secret_var@2:2"
+  ],
+  "false_positive_samples.js#fp-5": [],
+  "false_positive_samples.js#fp-6": [],
+  "false_positive_samples.js#fp-7": [],
+  "false_positive_samples.js#fp-8": [],
+  "false_positive_samples.js#fp-9": [],
+  "false_positive_samples.js#fp-10": [],
+  "false_positive_samples.js#fp-11": [],
+  "false_positive_samples.js#fp-12": [],
+  "false_positive_samples.js#fp-13": [
+   "possible_idor@2:2"
+  ],
+  "false_positive_samples.js#fp-14": [],
+  "false_positive_samples.js#fp-15": [],
+  "false_positive_samples.js#fp-16": [],
+  "false_positive_samples.js#fp-17": [],
+  "false_positive_samples.js#fp-18": [],
+  "false_positive_samples.js#fp-19": [],
+  "false_positive_samples.js#fp-20": [],
+  "false_positive_samples.js#fp-21": [
+   "env_file_secret@2:3"
+  ],
+  "false_positive_samples.js#fp-22": [],
+  "false_positive_samples.js#fp-23": [],
+  "false_positive_samples.js#fp-24": [],
+  "false_positive_samples.js#fp-25": [],
+  "false_positive_samples.js#fp-26": [],
+  "false_positive_samples.js#fp-27": [],
+  "false_positive_samples.js#fp-28": [],
+  "false_positive_samples.js#fp-29": []
+ }
+}

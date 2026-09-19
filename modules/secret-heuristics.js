@@ -1,6 +1,5 @@
 /**
  * M4 — secret-heuristics
- * 詳細規格見 docs/modules/MODULE_04_secret-heuristics.md
  *
  * 職責:一組猜測式的 tier2 規則 — 自訂密鑰變數、內部端點 URL、
  *       環境變數明文 fallback、.env 格式內容
@@ -61,6 +60,7 @@ function scanEnvFormatLines(code) {
       category: '建議人工複查',
       name: '.env 格式中疑似含明文密鑰／權杖（疑似）',
       kind: 'env_file_secret',
+      match: line,
       evidence: '變數 "' + varName + '" 在 .env 格式內容中疑似含明文密鑰／權杖，若此檔案已提交進版本控制，建議立即撤銷並更換該金鑰'
     });
   });
@@ -96,6 +96,7 @@ function secretHeuristics(code, existingFindings) {
         category: '建議人工複查',
         name: rule.name,
         kind: 'custom_secret_var',
+        index: cm.index,
         evidence: '變數 "' + varName + '" 疑似含明文密鑰／權杖，前端程式碼中不建議直接寫死此類值'
       });
     }
@@ -111,6 +112,7 @@ function secretHeuristics(code, existingFindings) {
           category: '建議人工複查',
           name: rule.name,
           kind: 'endpoint_url',
+          match: m,
           evidence: '偵測到疑似內部服務端點 URL 寫死在原始碼中：' + maskMatch(m)
         });
       });
@@ -130,6 +132,7 @@ function secretHeuristics(code, existingFindings) {
         category: '建議人工複查',
         name: rule.name,
         kind: 'env_fallback',
+        index: em.index,
         evidence: '變數 "' + varName + '" 讀取環境變數時帶有明文預設值，若部署時忘記設定對應環境變數，程式會直接使用這個明文值'
       });
     }

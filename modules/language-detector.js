@@ -1,6 +1,5 @@
 /**
  * M7 — language-detector
- * 詳細規格見 docs/modules/MODULE_07_language-detector.md
  *
  * 職責:判斷貼上內容的語言特徵,回傳規則涵蓋範圍的提示文字
  * 輸入: code (string)
@@ -9,16 +8,7 @@
  * 這是純函式,不依賴任何其他模組,可完全獨立開發與測試。
  * 判斷順序: Python → Java/Kotlin → Ruby,第一個命中就回傳。
  *
- * ⚠️ 修正紀錄(2026,真實Lovable專案[filla-app]實測發現的嚴重誤判):
- * 原本 PYTHON_PATTERN 裡的 \bimport\s+\w+\b 這條子規則,目的是抓Python的
- * 裸import語句(如 import os),但寫法完全沒排除JavaScript/TypeScript的
- * ES Module import語法。實測發現:任何一份標準的TS/JS檔案,只要有
- * `import type { X } from "./y"`(TypeScript專屬語法)或
- * `import React from "react"`(一般default import)這類再正常不過的寫法,
- * 都會被誤判成「含Python特徵」,對使用者顯示一段誤導性的警告文字,
- * 說這份程式碼的規則涵蓋範圍有限——而它明明就是規則主要針對的
- * JavaScript/TypeScript語言本身。這是影響面極廣、幾乎必現的誤判
- * (幾乎所有現代TS/JS檔案都有import語句),比其他已知限制嚴重得多。
+ * 為什麼:Python import 規則必須排除 JS/TS 的 ES Module import,否則幾乎所有 TS 檔都誤判。(背景見 docs/CHANGELOG.md)
  *
  * 修法:改用能區分「Python裸import」與「JS/TS的ES Module import」的正則。
  * Python的裸import語句有明確特徵——整行只有 import 模組名(可加`as`別名、

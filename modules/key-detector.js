@@ -1,6 +1,5 @@
 /**
  * M1 — key-detector
- * 詳細規格見 docs/modules/MODULE_01_key-detector.md
  *
  * 職責:掃描程式碼,找出已知格式的明文 API 金鑰
  * 輸入: code (string)
@@ -8,29 +7,9 @@
  *
  * 這是純函式,不依賴任何其他模組,可完全獨立開發與測試。
  *
- * ⚠️ 修正紀錄(2026,查證公開文件後修正):
- * Firebase 的 apiKey 原本跟 OpenAI/Anthropic/AWS 等金鑰混在同一份 KEY_RULES 裡,
- * 用同一個 tier1「明文金鑰外洩」的等級與文案處理。這是不準確的——Firebase 官方
- * 文件明確說明 apiKey 只是「識別這是哪個專案」的識別碼,不是機密憑證,設計上
- * 就是要出現在前端程式碼裡,外洩本身不構成風險。真正該檢查的是 Firebase
- * Security Rules 有沒有正確設定,那才是實際控制資料存取的機制。
- * 因此 Firebase 從 KEY_RULES 抽出,獨立成 firebaseConfigDetector,
- * 產生 tier2、kind: 'firebase_config_exposed' 的提醒性質 Finding,
- * 不再套用「金鑰外洩、需撤銷重新產生」那套適用於真正機密金鑰的文案與流程。
+ * 為什麼:Firebase apiKey 設計上可公開 → 獨立為 tier2 firebase_config_exposed,不當外洩處理。(背景見 docs/CHANGELOG.md)
  *
- * ⚠️ 修正紀錄2(2026,真實AI產出程式碼實測發現的誤判):
- * Line Bot Access Token 原本跟 OpenAI/Anthropic/AWS 等金鑰混在同一份 KEY_RULES 裡,
- * 套用同一個 tier1「明文金鑰外洩」等級。這是不準確的——LINE 官方文件說明
- * channel access token 是「不透明字串(opaque string)」,沒有公開的固定格式規則
- * (不像 sk-proj-/AKIA 等有明確字首),原本的正則 /[A-Za-z0-9+/=]{100,}/ 只是「任意
- * 100字元以上的base64字元集合字串」,會誤判任何長JWT、base64編碼圖片、簽章值等
- * 完全不相關的內容。實測發現:貼上一組 Supabase JWT 金鑰,會被同時誤標成
- * 「Line Bot Access Token 外洩」(因為JWT本身也是100+字元的base64字元集合)。
- * 因此 Line Bot 比照 Firebase 的處理方式從 KEY_RULES 抽出,獨立成
- * lineBotTokenDetector:(1) 明確排除三段式JWT格式(xxx.yyy.zzz,已由M2 JWT分析器
- * 專責處理,不應由這條規則重複標記或誤標成別的廠商),(2) 降為 tier2「建議複查」
- * 而非 tier1「高信心度發現」,文案上誠實反映「這條規則沒有可靠格式特徵可比對,
- * 誤判率高於其他已知格式金鑰」,避免使用者把這類低可靠度的比對結果當成確診。
+ * 為什麼:Line Bot token 無固定格式 → tier2 猜測規則,並排除 JWT(交給 M2)。(背景見 docs/CHANGELOG.md)
  */
 
 // 真正的機密金鑰:外洩即代表任何人都能冒用,需要撤銷重新產生
@@ -79,6 +58,7 @@ function keyDetector(code) {
           name: rule.name,
           kind: 'plain_key',
           evidence: maskMatch(m),
+          match: m,
           visualData: { vendor: rule.vendor }
         });
       });
@@ -106,6 +86,7 @@ function firebaseConfigDetector(code) {
         category: '建議人工複查',
         name: 'Firebase 設定值（本身非機密，但請確認 Security Rules）',
         kind: 'firebase_config_exposed',
+        match: m,
         evidence: maskMatch(m) + '　— Firebase apiKey 設計上就是要出現在前端程式碼中，本身外洩不構成風險，但實際的資料存取控制完全由 Firebase Security Rules 決定，建議確認'
       });
     });
@@ -127,18 +108,7 @@ function lineBotTokenDetector(code) {
   while ((m = re.exec(code)) !== null) {
     const matched = m[0];
 
-    // ⚠️ 修正紀錄(2026,真實Lovable專案實測發現的問題):
-    // 原本只用 JWT_SHAPE_PATTERN.test(matched) 檢查「匹配到的片段本身」是否為
-    // 完整三段式JWT,但這個排除邏輯幾乎永遠失效——因為JWT的分隔符號 "." 不在
-    // LINE_BOT_TOKEN_RULE.re 的字元集合[A-Za-z0-9+/=]內,正則掃描遇到"."就會
-    // 截斷,實際只抓到JWT三段中的其中一段(通常是payload),這段本身當然不符合
-    // "xxx.yyy.zzz"的完整格式,排除判斷因此形同虛設。實測發現:一組真實的
-    // Supabase anon JWT會同時被M1的supabase_anon規則正確標記,又被這裡誤標成
-    // Line Bot token,兩者互相矛盾,使用者會很困惑。
-    // 修法:不檢查「匹配片段本身」,而是檢查「匹配片段的前後緊鄰處」是否存在
-    // JWT的其他兩段(用.分隔、同樣是base64-like字元的片段)——如果前面或後面
-    // 緊接著 "." + 另一段長度合理的base64-like字元,代表這其實是嵌在一個更大
-    // JWT結構裡的其中一段,應該排除,交給M2(jwt-analyzer)處理整個JWT。
+    // 為什麼:排除 JWT 片段要檢查「前後緊鄰」是否有 .xxx 段,只看匹配片段本身會失效。(背景見 docs/CHANGELOG.md)
     const before = code.slice(Math.max(0, m.index - 400), m.index);
     const after = code.slice(m.index + matched.length, m.index + matched.length + 400);
     const jwtSegmentBefore = /[A-Za-z0-9_-]{8,}\.$/.test(before);
@@ -152,6 +122,7 @@ function lineBotTokenDetector(code) {
       category: '建議人工複查',
       name: LINE_BOT_TOKEN_RULE.name,
       kind: 'line_bot_token_suspected',
+      index: m.index,
       evidence: maskMatch(matched) + '　— 疑似 Line Bot channel access token，但 LINE 官方對此權杖無公開固定格式規則，本比對僅依「長度足夠的 base64 字元集合字串」判斷，誤判率高於已知格式金鑰（例如 base64 編碼的圖片、簽章值也可能誤觸發），請人工確認來源',
       visualData: { vendor: LINE_BOT_TOKEN_RULE.vendor }
     });

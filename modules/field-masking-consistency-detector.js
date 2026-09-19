@@ -1,6 +1,5 @@
 /**
  * M11 — field-masking-consistency-detector
- * 詳細規格見 docs/modules/MODULE_11_field-masking-consistency-detector.md
  *
  * 職責:偵測「同一份敏感資料，在程式碼裡有多個輸出／回傳路徑，但只有部分
  *       路徑做了遮罩或過濾處理」的模式(欄位遮罩不一致)
@@ -13,8 +12,7 @@
  * 是同一份資料、無法驗證遮罩函式是否真的正確實作。永遠固定為 tier 2,
  * 且呈現文字必須明確說明這只是「線索」不是「結論」。
  *
- * ⚠️ 修補紀錄(2026):原本這個模組雖然邏輯完整,但完全沒被打包進demo HTML,
- * UI也沒有多檔案輸入介面可以觸發它。這次補上多檔案模式後,一併打包進來。
+ * 為什麼:多檔案模式(M11)由 scan-orchestrator.scanFiles 呼叫。(背景見 docs/CHANGELOG.md)
  */
 
 // 輸出點樣式:Response.json(...)/res.json(...)/json(...) 呼叫

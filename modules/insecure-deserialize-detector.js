@@ -48,6 +48,7 @@ function insecureDeserializeDetector(code) {
           category: '不安全的反序列化/動態執行',
           name: rule.name,
           kind: rule.kind,
+          match: m,
           evidence: m.length > 60 ? m.slice(0, 60) + '…' : m
         });
       });

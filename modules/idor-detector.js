@@ -1,6 +1,5 @@
 /**
  * M6 — idor-detector
- * 詳細規格見 docs/modules/MODULE_06_idor-detector.md
  *
  * 職責:偵測疑似缺少擁有權驗證的函式(Broken Access Control / IDOR)
  * 輸入: code (string)
@@ -34,37 +33,15 @@
 // 發現的漏判修正:原本只認 function xxx(){},AI生成的Express路由handler
 // 常見寫成 export async function 這種形式,原版正則完全抓不到。
 //
-// ⚠️ 修正紀錄(2026,真實AI產出程式碼實測發現的漏判):
-// 原本 \)\s*{ 要求右括號後緊接大括號,但TypeScript常見的函式回傳型別標註
-// (例如 function getOrder(id: number): Order { ... })在右括號跟大括號中間
-// 插入了 ": Order" 這段文字,導致整個正則完全匹配失敗、直接漏判。這不只
-// 影響AST版失敗後的降級情境——任何貼上帶回傳型別標註的TS函式,連正則保底版
-// 都抓不到。加上 (?:\s*:\s*[\w.<>\[\]| ]+)? 這段選擇性分組,允許右括號後、
-// 大括號前存在型別標註,但不解析型別內容本身(只是跳過,不影響其他判斷)。
+// 為什麼:允許 TS 回傳型別標註 `): Order {`,否則正則版整條漏判。(背景見 docs/CHANGELOG.md)
 //
-// ⚠️ 修正紀錄2(2026,真實Lovable專案[filla-app]實測發現的嚴重漏判):
-// 原本只認完全等於 id/userId/req 這三個精確名稱,但真實程式碼裡最常見的
-// 參數命名其實是 xxxId 駝峰形式(如 propertyId、taskId、orderId、assetId)——
-// 這在真實案例中比裸 id 更常見。原本的 \b(id|userId|req)\b 是單字邊界完全
-// 匹配,propertyId 裡的 "Id" 前面緊接 property(字母),不構成獨立單字邊界,
-// 完全匹配不到,導致這類函式全部被漏判。加上 [a-zA-Z_$][a-zA-Z0-9_$]*Id 這
-// 個分支涵蓋駝峰 xxxId 命名,要求 Id 是大寫開頭(符合JS駝峰慣例),避免誤傷
-// valid/avoid/grid/solid 這類字尾剛好是小寫id、但語意無關的單字。
+// 為什麼:參數名除 id/userId/req 外也認駝峰 xxxId(大寫 Id,避開 valid/grid)。(背景見 docs/CHANGELOG.md)
 const IDOR_PATTERN = /(?:export\s+(?:default\s+)?)?(?:async\s+)?function\s+\w+\s*\([^)]*\b(id|userId|req|[a-zA-Z_$][a-zA-Z0-9_$]*Id)\b[^)]*\)(?:\s*:\s*[\w.<>\[\]| ]+)?\s*{([^}]{0,300})}/g;
 // findOne/findById 與 AST 版的 DB_METHOD_NAMES 對齊(Mongoose/Sequelize 常見寫法)
 const DB_CALL_PATTERN = /\.(find|findOne|findById|get|query|select|delete|update)\s*\(/i;
 const AUTH_CHECK_PATTERN = /\b(owner|user\.id|session|auth|permission|role)\b/i;
 
-// ⚠️ 修正紀錄(2026,reference_cases/incident-moltbook-2026、incident-base44-2025 發現):
-// IDOR_PATTERN 只認具名 function 宣告,Express/Koa 路由最常見的「callback 直接當參數」
-// 寫法 app.get(path, async (req, res) => {...}) 與 app.get(path, function (req, res) {...})
-// 完全抓不到(AST 版沒有這個問題,只影響 acorn 無法載入時的保底路徑)。
-// 這條規則只比對 callback 的開頭,不要求參數名是 id/xxxId——路由 callback 的簽名固定是
-// (req, res),實際查詢用的 ID 在 req.params 裡。也順帶涵蓋指派給變數的箭頭函式
-// (const deleteOrder = async (req, res) => {...})。
-// 函式主體改用大括號配對取出(extractBraceBody),不沿用 IDOR_PATTERN 的 [^}]{0,300}:
-// 路由 callback 幾乎一定含 { appId } 解構或 findOne({...}) 這類物件字面值,
-// [^}] 會在第一個 } 就截斷主體,導致後面的 DB 呼叫看不到而漏判。
+// 為什麼:Express/Koa 路由 callback 寫法;主體用大括號配對取出,不能用 [^}] 截斷。(背景見 docs/CHANGELOG.md)
 const ROUTE_CALLBACK_PATTERN = /(?:\(\s*(?:req|request)\s*,\s*(?:res|response)(?:\s*,\s*next)?\s*\)\s*=>|\bfunction\s*\(\s*(?:req|request)\s*,\s*(?:res|response)(?:\s*,\s*next)?\s*\))\s*\{/g;
 const MAX_CALLBACK_BODY_LENGTH = 2000;
 
@@ -98,8 +75,9 @@ function bodyLooksLikeIdor(body) {
   return DB_CALL_PATTERN.test(body) && !AUTH_CHECK_PATTERN.test(body);
 }
 
-function makeRegexIdorFinding() {
+function makeRegexIdorFinding(index) {
   return {
+    index,
     tier: 2,
     category: '建議人工複查',
     name: '疑似缺少擁有權驗證',
@@ -114,14 +92,14 @@ function idorDetectorRegex(code) {
   let m;
 
   while ((m = re.exec(code)) !== null) {
-    if (bodyLooksLikeIdor(m[2])) findings.push(makeRegexIdorFinding());
+    if (bodyLooksLikeIdor(m[2])) findings.push(makeRegexIdorFinding(m.index));
   }
 
   const routeRe = new RegExp(ROUTE_CALLBACK_PATTERN.source, ROUTE_CALLBACK_PATTERN.flags);
   while ((m = routeRe.exec(code)) !== null) {
     const openIdx = m.index + m[0].length - 1;
     if (bodyLooksLikeIdor(extractBraceBody(code, openIdx, MAX_CALLBACK_BODY_LENGTH))) {
-      findings.push(makeRegexIdorFinding());
+      findings.push(makeRegexIdorFinding(m.index));
     }
   }
 
@@ -226,11 +204,7 @@ function isDbCallNode(node) {
 
 /**
  * 判斷是否為「擁有權比較」節點:
- * ⚠️ 修正紀錄(來自真實案例實測發現的問題):原本的 isAuthRelatedNode 只判斷
- * 「有沒有出現」owner/session/auth 等權限相關字樣,但這樣會把「只檢查有沒有登入」
- * (例如 if(!req.session.userId){...},只確認使用者存在,不比較資料擁有者)
- * 誤判為「已做擁有權檢查」而放過,這正是 IDOR 漏洞最典型也最危險的樣式——
- * 有登入檢查、卻沒有擁有權檢查。
+ * 為什麼:必須是「擁有權比較」才算已檢查;只檢查有沒有登入(session)不算。(背景見 docs/CHANGELOG.md)
  *
  * 新邏輯改為:判斷子樹中是否存在「比較運算(===/!==/==/!=),且至少一邊牽涉
  * 權限/擁有者相關的識別字或屬性存取」的節點。真正的擁有權檢查一定牽涉到
@@ -295,6 +269,7 @@ function idorDetectorAst(code, acornRef) {
       category: '建議人工複查',
       name: '疑似缺少擁有權驗證',
       kind: 'possible_idor',
+      index: fnNode.start,
       evidence: '此函式用參數查詢資料，但未偵測到權限比對邏輯（語法樹分析，涵蓋箭頭函式與函式表達式）',
       visualData
     });
@@ -336,11 +311,7 @@ function resolveAcornJsx() {
 }
 
 /**
- * ⚠️ 修正紀錄(2026,真實AI產出程式碼實測發現的問題):
- * Acorn 是純 JavaScript parser,原生完全不認識 JSX(<div>...</div> 這類語法)。
- * 實測發現:貼上任何一段含 JSX 的 React 元件(.tsx/.jsx,這正是 Lovable/v0/Bolt
- * 這類工具最主要的產出格式),AST 解析必定失敗,靜默退回正則版,IDOR 涵蓋率
- * 從100%(AST版)掉回77.8%(正則版),且這個降級對使用者完全不可見。
+ * 為什麼:Acorn 原生不認 JSX,需 acorn-jsx 外掛,否則 React 程式碼一律退回正則版。(背景見 docs/CHANGELOG.md)
  *
  * 修法:若環境有 acorn-jsx 外掛可用,用「acorn + acorn-jsx」擴充版解析——
  * 這能處理「有JSX但沒有TypeScript型別標註」的程式碼,涵蓋 .jsx,以及部分
@@ -390,14 +361,7 @@ function idorDetector(code) {
 }
 
 /**
- * ⚠️ 修正紀錄(2026,真實AI產出程式碼實測發現的問題):
- * idorDetector(code) 原本在AST解析失敗時靜默退回正則版,呼叫端完全無法得知
- * 「這次分析比較弱」這件事。既然JSX/TS的AST解析失敗是已知會發生的常態情況
- * (不是例外狀況),不應該讓使用者在完全不知情下拿到涵蓋率較低的結果。
- * 新增這個函式,額外回傳 astUsed(布林值):AST版是否真的被採用。
- * scan-orchestrator 部分(見本檔案下方組裝掃描流程的<script>)會用這個
- * 資訊組出提示文字,顯示在畫面上「本工具無法檢測」區塊,取代原本完全
- * 靜默的行為。
+ * 為什麼:回傳 astUsed,讓畫面提示「這次 IDOR 用的是較弱的正則版」。(背景見 docs/CHANGELOG.md)
  * @param {string} code
  * @returns {{findings: Array, astUsed: boolean}}
  */

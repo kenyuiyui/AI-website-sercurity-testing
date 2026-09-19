@@ -27,11 +27,11 @@ cd AI-website-sercurity-testing
 python3 -m http.server 8000   # 然後開 http://localhost:8000
 ```
 
-拆分版需要 `index.html` 與 `modules/` 放在一起，並透過本機伺服器開啟。
+拆分版需要 `index.html`、`assets/`、`modules/` 放在一起，並透過本機伺服器開啟。
 
 > ⚠️ 若直接雙擊開啟 `index.html` 沒反應，是瀏覽器對 `file://` 頁面限制了 `<script src>` 載入，改用上面的本機伺服器方式，或改用單檔版 `referencesingle/index.html`（邏輯全部內嵌，雙擊即可開啟）。
 
-部署到 GitHub Pages：repo 根目錄就是發布內容（`index.html` + `modules/`），Pages 發布來源設為 `main` 分支根目錄即可。
+部署到 GitHub Pages：repo 根目錄就是發布內容（`index.html` + `assets/` + `modules/`），Pages 發布來源設為 `main` 分支根目錄即可。
 
 ---
 
@@ -39,35 +39,41 @@ python3 -m http.server 8000   # 然後開 http://localhost:8000
 
 ```
 .
-├── index.html                # 拆分版主頁(推薦，GitHub Pages 發布的就是這份)
-├── modules/                  # M1~M12，各自獨立的偵測模組
+├── index.html                # 拆分版主頁(GitHub Pages 發布的就是這份):只有 HTML 結構與載入順序
+├── assets/
+│   ├── style.css              # 全部樣式
+│   └── app.js                 # 畫面層(輸入、讀檔、結果互動)
+├── modules/                  # M1~M12 偵測模組 + scan-orchestrator(掃描流程唯一來源)
 ├── referencesingle/
 │   └── index.html            # 單檔版(由 scripts/build-single.js 產生，請勿手改)
 ├── scripts/
-│   └── build-single.js       # 拆分版 → 單檔版建置腳本
+│   ├── build-single.js       # 拆分版 → 單檔版
+│   ├── verify.js             # 一鍵驗證(npm run verify)
+│   ├── snapshot.js           # 行為快照(verify 使用)
+│   └── ui-smoke.js           # 畫面冒煙測試(選用，需 playwright)
 ├── eval/                     # 準確度驗證報告與測試案例
 │   ├── CASE_FORMAT.md         # 新增案例前先看這份
-│   ├── run_scaled_eval.js     # 規模化驗證，算信賴區間
-│   ├── run_rule_regression.js # 規則邊界回歸測試
+│   ├── findings-snapshot.json # 所有樣本的掃描結果快照
 │   ├── cases/                 # 持續擴充的驗證案例
 │   └── reference_cases/       # 真實事件改寫案例(不計入統計)
-├── package.json               # npm scripts(驗證、建置)
-└── README.md
+├── docs/CHANGELOG.md          # 變更與規則修正紀錄
+├── CLAUDE.md                  # 給 AI 協作者的專案說明(架構、契約、常見任務)
+└── package.json               # npm scripts
 ```
 
-### 修改模組後
+### 修改後
 
-單檔版是由拆分版產生的，**只改 `modules/` 與根目錄 `index.html`**，改完執行：
+單檔版是由拆分版產生的，**只改 `index.html`、`assets/`、`modules/`**，改完執行：
 
 ```bash
-npm install          # 第一次執行，安裝 AST 版驗證需要的 acorn
-npm test             # 規則回歸測試(正則版 + AST 版)
-npm run eval         # 規模化驗證(正則保底版)
-npm run eval:ast     # 規模化驗證(AST 完整版)
-npm run build:single # 重新產生 referencesingle/index.html
+npm install            # 第一次執行，安裝 AST 版驗證需要的 acorn
+npm run build:single   # 重新產生 referencesingle/index.html
+npm run verify         # 規則回歸 + 行為快照 + 單檔版同步，全綠才算完成
 ```
 
-模組對照表：M1 key-detector（明文金鑰）／M2 jwt-analyzer（JWT/Supabase）／M3 hash-detector（弱雜湊）／M4 secret-heuristics（自訂密鑰啟發式）／M5 csp-detector（CSP 缺失）／M6 idor-detector（IDOR）／M7 language-detector／M8 finding-renderer（結果呈現）／M9 sql-injection-detector／M10 insecure-deserialize-detector／M11 field-masking-consistency-detector（多檔案模式）／M12 rate-limit-coverage-detector。
+規則是刻意調整、快照差異也確認合理時，用 `npm run verify -- --update` 更新快照。push 到 GitHub 時會自動跑同一套驗證（`.github/workflows/verify.yml`）。
+
+模組對照表：M1 key-detector（明文金鑰）／M2 jwt-analyzer（JWT/Supabase）／M3 hash-detector（弱雜湊）／M4 secret-heuristics（自訂密鑰啟發式）／M5 csp-detector（CSP 缺失）／M6 idor-detector（IDOR）／M7 language-detector／M8 finding-renderer（結果呈現）／M9 sql-injection-detector／M10 insecure-deserialize-detector／M11 field-masking-consistency-detector（多檔案模式）／M12 rate-limit-coverage-detector；scan-orchestrator 負責依序呼叫並合併結果。
 
 ---
 
@@ -84,6 +90,7 @@ npm run build:single # 重新產生 referencesingle/index.html
 - SQL Injection（字串拼接、模板插值、f-string、Python `%` 格式化）
 - 不安全的反序列化／動態執行（eval／exec／pickle／yaml.load，含 Python `exec()` 格式化字串注入）
 - 疑似缺少擁有權驗證（IDOR），含 Express 路由 `app.get(path, (req, res) => {...})` 寫法
+- 多檔案模式：同一敏感欄位在不同檔案的遮罩不一致、路由缺少速率限制
 
 ### 做不到 / 僅供保守提示
 
@@ -161,9 +168,19 @@ npm run eval         # 正則保底版
 npm run eval:ast     # AST 完整版
 ```
 
-`eval-orchestrator.js` 直接從 `../modules` 讀取偵測邏輯，跟上線版本完全同源。新增驗證案例只需在 `eval/cases/` 新增 `.txt` 檔案，格式見 `eval/CASE_FORMAT.md`。`eval/reference_cases/` 是依真實事件改寫的參考案例，刻意不計入統計（避免改寫帶入預期偏誤），細節見該資料夾 README。
+`eval-orchestrator.js` 與上線版呼叫同一個 `modules/scan-orchestrator.js`，驗證結果就是上線行為。新增驗證案例只需在 `eval/cases/` 新增 `.txt` 檔案，格式見 `eval/CASE_FORMAT.md`。`eval/reference_cases/` 是依真實事件改寫的參考案例，刻意不計入統計（避免改寫帶入預期偏誤），細節見該資料夾 README。
 
 樣本規模仍有限（相較 Gitleaks、TruffleHog 等工具的數千至數萬案例），歡迎提交真實案例協助擴充。
+
+---
+
+## 使用小技巧
+
+- `Ctrl+Enter`（Mac：`⌘ Enter`）直接掃描
+- 可把檔案拖進掃描框，或按「開啟檔案」；一次拖入多個檔案會自動切換成多檔案模式（檔案只在瀏覽器內讀取）
+- 每筆結果標有行號，點一下會在輸入框選取那一段
+- 「複製全部修正指令」把所有發現與對應的修正要求整理成一段，直接貼給 AI
+- 分頁可直接分享連結：`#boundary`（查得到什麼）、`#howto`（怎麼拿到程式碼）
 
 ---
 
