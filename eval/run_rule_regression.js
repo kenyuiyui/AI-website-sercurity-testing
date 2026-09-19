@@ -89,6 +89,61 @@ checkNotice('有查詢且 AST 無法解析的 TSX 出現降級提示', "interfac
 // 壓縮後金鑰檢查仍有效
 check('壓縮 bundle 內的 OpenAI 金鑰', '!function(){var t="sk-proj-abcdefghijklmnopqrstuvwxyz1234567890";' + 'a.b(c);'.repeat(300) + '}();', 'plain_key', true);
 
+// ── 第三輪:整檔案輸入下的誤判(來自掃描本專案自己的結果) ──
+// 方法呼叫不是危險函式
+check('正則的 re.exec(code) 不是執行指令', `const re = /a/g;\nwhile ((m = re.exec(code)) !== null) {}`, 'insecure_exec', false);
+check('Playwright 的 page.$eval() 不是 eval', `const t = await page.$eval('#x', el => el.textContent);`, 'insecure_eval', false);
+check('page.$$eval() 不是 eval', `const t = await page.$$eval('li', els => els.length);`, 'insecure_eval', false);
+check('child_process.exec(cmd) 仍是執行指令', `child_process.exec(cmd, cb);`, 'insecure_exec', true);
+check('require("child_process").exec(cmd) 仍是執行指令', `require("child_process").exec(cmd);`, 'insecure_exec', true);
+check('window.eval(x) 仍是 eval', `window.eval(userInput);`, 'insecure_eval', true);
+// 字串、註解、正則裡「提到」不算
+check('註解裡提到 eval()', `// 不要用 eval() 處理使用者輸入\nconst a = JSON.parse(s);`, 'insecure_eval', false);
+check('說明字串裡提到 eval()', `const guide = { plain: '程式碼裡呼叫了 eval()，風險很高' };`, 'insecure_eval', false);
+check('規則定義的正則裡有 eval\\(', `const RULE = { re: /\\beval\\s*\\(/g };`, 'insecure_eval', false);
+check('樣板字串裡的範例程式碼', "const sample = `function h(password) { return md5(password); }`;", 'weak_hash', false);
+check('樣板字串 ${} 內的真呼叫仍會抓', "const s = `result: ${eval(userInput)}`;", 'insecure_eval', true);
+check('字串後面的真呼叫仍會抓', `const a = "eval(x)"; eval(y);`, 'insecure_eval', true);
+check('HTML onclick 屬性裡的 eval 仍會抓', `<!DOCTYPE html><html><body><button onclick="eval(location.hash.slice(1))">x</button></body></html>`, 'insecure_eval', true);
+check('HTML <script> 內的 eval 仍會抓', `<!DOCTYPE html><html><body><script>eval(location.hash)</script></body></html>`, 'insecure_eval', true);
+check('Python 註解裡的 pickle.loads', `import pickle\n# 不要用 pickle.loads(data)\nobj = json.loads(data)`, 'insecure_pickle', false);
+check('Python docstring 裡的 yaml.load', `def f(data):\n    """不要用 yaml.load(data)"""\n    return yaml.safe_load(data)`, 'insecure_yaml_load', false);
+check('Python 真的 pickle.loads', `import pickle\nobj = pickle.loads(request.data)`, 'insecure_pickle', true);
+// 讀取環境變數的 Python 程式碼不是 .env 內容;拆開的 JWT 片段不是 LINE 權杖
+check('SECRET_KEY = environ["SECRET_KEY"] 不是 .env 明文', `SECRET_KEY = environ["SECRET_KEY"]`, 'env_file_secret', false);
+check('拆開的 JWT payload 不是 LINE 權杖', `const parts = ['eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9', 'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByb2plY3RyZWYiLCJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjIwMTU1NzYwMDB9'];`, 'line_bot_token_suspected', false);
+
+// 檔案情境(需要檔名,直接用 scanCode 檢查層級)
+// 看起來像真的金鑰:拆開組合,避免本檔案在「掃描本專案自己」時被當成外洩
+const REALISH_KEY = 'sk-proj-' + 'Xa7Qm2Lp9Rt4Vn8Kc3Zw6Hy1Bd5Fg0Js';
+function checkTier(label, code, filename, kind, expectedTier) {
+  const f = scanCode(code, { filename }).findings.find(x => x.kind === kind);
+  const got = f ? f.tier : null;
+  const ok = got === expectedTier;
+  if (!ok) failCount++;
+  console.log(`${ok ? '✅' : '❌'} [${kind} 應為 ${expectedTier === null ? '不回報' : 'tier' + expectedTier}${got !== expectedTier ? ',實際 ' + got : ''}] ${label}`);
+}
+checkTier('明顯的假金鑰(abcdef…1234567890)→ 參考', `const k = "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890";`, 'app.js', 'plain_key', 3);
+checkTier('交錯的假金鑰(a1B2c3D4…)→ 參考', `const k = "sk-proj-a1B2c3D4e5F6g7H8i9J0k1L2m3N4o5P6q7R8s9T0";`, 'app.js', 'plain_key', 3);
+checkTier('看起來真的金鑰 → 需要處理', `const k = "${REALISH_KEY}";`, 'app.js', 'plain_key', 1);
+checkTier('測試檔裡看起來真的金鑰 → 仍然需要處理', `const k = "${REALISH_KEY}";`, 'tests/api.test.js', 'plain_key', 1);
+checkTier('測試檔裡的 eval → 參考', `eval(input);`, 'src/__tests__/parse.test.js', 'insecure_eval', 3);
+checkTier('一般檔案的 eval → 需要處理', `eval(input);`, 'src/parse.js', 'insecure_eval', 1);
+checkTier('.js 檔裡的 HTML 字串不檢查 CSP', "const tpl = '<html><head></head><body></body></html>';", 'src/template.js', 'no_csp_html', null);
+checkTier('.html 檔仍檢查 CSP', '<!DOCTYPE html><html><head></head><body></body></html>', 'public/index.html', 'no_csp_html', 1);
+{
+  const n = scanCode('const PYTHON_IMPORT = /^import os$/m;\n// def foo(): 範例\nimport os', { filename: 'modules/language-detector.js' }).notices;
+  const ok = !n.some(x => x.id === 'language');
+  if (!ok) failCount++;
+  console.log(`${ok ? '✅' : '❌'} [notice:language 不應出現] .js 檔不提示 Python 特徵`);
+}
+{
+  const f = scanCode('function a(){ return eval(x) + eval(y); }').findings.filter(x => x.kind === 'insecure_eval');
+  const ok = f.length === 1;
+  if (!ok) failCount++;
+  console.log(`${ok ? '✅' : '❌'} [去重複] 同一行同一種問題只回報一次(實際 ${f.length} 筆)`);
+}
+
 // reference_cases/ 全部應命中 EXPECTED
 console.log();
 const refDir = path.join(__dirname, 'reference_cases');

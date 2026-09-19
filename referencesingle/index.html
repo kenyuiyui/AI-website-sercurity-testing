@@ -8,7 +8,7 @@
   唯一例外:使用者按下「從 GitHub 匯入」時,讀取 api.github.com 與 raw.githubusercontent.com 上的公開檔案(只讀取,不送出程式碼)。
   單檔版由 scripts/build-single.js 改寫這一行(行內 script/style 改用 sha256 雜湊、字型改用 data:)。
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tQN3P01k+9fYTJxjz1bz9sk4ixh28eNMwMOygJKvYHA=' 'sha256-r2Ulx/KLJ3bwPptcn/Gxn23scblhvMWjB2MSqkYA4GY=' 'sha256-k4Dsl4phnEVoWRV6BGYpsCAjEiqhiFqyyqFmNTpECOY=' 'sha256-Srbd4uz0cAeFg5PD+QF1EuE+d2GwVDLgw00jJg/76bA=' 'sha256-i3hlRnn+vvsbJQ4kXKmY/HMhR4Um+akKO9tx68jLg/A=' 'sha256-F0a78aJGjPNT4/2VPsei7caCHd7JFgGsRzCzxjabCxE=' 'sha256-f+7L7f3zZPx/qqQRpumMbdJde9gv9CPhONSDRZvNTao=' 'sha256-QlR64ngDKPI09GTuiypa7EMOmxTtGgcEbAWzUe8esPE=' 'sha256-mbDfAP7VSFlE2nuhGcW6RzchDaYFbrUrFzUEw20ebZU=' 'sha256-KjZdCklqc4O8cs2Pg0FS+9aTNC9SOrRlh8G0HRjF29I=' 'sha256-0ane3il57mJY9/36ujhE2nZNKdDZgv+8ycZL3qVTWRw=' 'sha256-4Vegd4mxIZD9iHXPMOS499BBtcGa5vltwGxNXHtj8lk=' 'sha256-zcahOvWy4i0D89JuzvFYdyrG0Io2WJ3+cQQAbN8T2uc=' 'sha256-l8tB/sUK5v+DtxmaOkEsPjfSmRt1MhdCsPaq+HpXrrY=' 'sha256-YPKriWmcdloU/53/GV6xGDoRNk6O25Fe/3mCwh3Ku+0=' 'sha256-mJms7mSTznvvAFk/q5XP3Kw90q/48WR5F6jUbuLocfA=' 'sha256-SqSxyyyKHonBI35yiz7tpzZnxVe5mrv5ydJKWHpN8yY=' 'sha256-ea1ACIVkkYfl8z08gJk1RilE9zwGYTvFLTsNqTFkYtw='; style-src 'sha256-ZfRBGONkw9p+6/pHPieE6xcZ9VfzpmJYV9FXS4Q2XMs='; font-src data:; img-src data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tQN3P01k+9fYTJxjz1bz9sk4ixh28eNMwMOygJKvYHA=' 'sha256-r2Ulx/KLJ3bwPptcn/Gxn23scblhvMWjB2MSqkYA4GY=' 'sha256-k4Dsl4phnEVoWRV6BGYpsCAjEiqhiFqyyqFmNTpECOY=' 'sha256-AvGuu4qO0PTKlZOxSFM5OZdwoGBGMcuTTMqsy4/n/zE=' 'sha256-Pv+R1vtSPgsxnJrtVzi80jVgHPJdD93MlCauETTy+6U=' 'sha256-i3hlRnn+vvsbJQ4kXKmY/HMhR4Um+akKO9tx68jLg/A=' 'sha256-w9tDV4ToqGvFljYpLINp/oeLBzxAX1ZCL21aTbIMXcE=' 'sha256-8vQF/NjEqRpcUtVliUbiFRQZ+E8xJfB7QS7XJ8EE0GI=' 'sha256-QlR64ngDKPI09GTuiypa7EMOmxTtGgcEbAWzUe8esPE=' 'sha256-mbDfAP7VSFlE2nuhGcW6RzchDaYFbrUrFzUEw20ebZU=' 'sha256-KjZdCklqc4O8cs2Pg0FS+9aTNC9SOrRlh8G0HRjF29I=' 'sha256-m/Ko1PoFKFkaoqlnXe36yaohr/VVn8v/mJiVpfA0YgU=' 'sha256-4Vegd4mxIZD9iHXPMOS499BBtcGa5vltwGxNXHtj8lk=' 'sha256-PIv8TVCXCC8t+Pdd/bp7vMH3ycEqSmtgj05fwYo+5wE=' 'sha256-l8tB/sUK5v+DtxmaOkEsPjfSmRt1MhdCsPaq+HpXrrY=' 'sha256-YPKriWmcdloU/53/GV6xGDoRNk6O25Fe/3mCwh3Ku+0=' 'sha256-g5R9IQtu/zLDkew96AAFuR2Z0c5ZL6qC0Bc9gbtUve4=' 'sha256-SqSxyyyKHonBI35yiz7tpzZnxVe5mrv5ydJKWHpN8yY=' 'sha256-wHy7mMcXOYX3cJL5l0CLlhr9PS9mnYEMrgAt854GXcg='; style-src 'sha256-d9Si8Ug0JlJs8hk7YjQdcwbKEtz8ky7311fNNxnduKE='; font-src data:; img-src data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>未發現 ≠ 安全 — AI 產出程式碼資安檢查器</title>
@@ -1161,6 +1161,36 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
   textarea#codeInput { min-height: 130px; }
   .rs-bar { flex-direction: column; align-items: stretch; }
 }
+
+/* ================= 第三輪:結果分組、位置清單、情境說明 ================= */
+.rc-count {
+  margin-left: 8px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--bg-input);
+  color: var(--text-dim);
+  border: 1px solid var(--border);
+}
+.rc-context {
+  font-size: 12px;
+  color: var(--text-dim);
+  background: var(--bg-input);
+  border-radius: 6px;
+  padding: 6px 10px;
+  margin: 4px 0 8px;
+  line-height: 1.7;
+}
+.rc-locs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.rc-locs .rc-line-tag { margin-left: 0; }
+.rc-loc { font-size: 10.5px; padding: 1px 7px; border-radius: 4px; border: 1px solid var(--border); color: var(--text-dim); }
+.rc-line-tag .rc-filename-tag, .rc-loc .rc-filename-tag { margin: 0 6px 0 0; padding: 0; border: none; background: none; color: inherit; font-size: inherit; }
+.rc-more-locs { width: 100%; font-size: 11px; color: var(--text-dim); }
+.rc-more-locs summary { cursor: pointer; margin-bottom: 6px; }
+.rc-more-locs .rc-line-tag, .rc-more-locs .rc-loc { margin: 0 6px 6px 0; display: inline-block; }
+.rc-ref-body > summary { font-size: 11px; color: var(--text-dimmer); cursor: pointer; }
+.rc-ref-body[open] > summary { margin-bottom: 6px; }
 </style>
 <script>
 // ── 內嵌: assets/theme-init.js ──
@@ -1374,6 +1404,260 @@ Defaulting to 2020, but this will stop working in the future.`)),t.ecmaVersion=1
 `):s=String.fromCharCode(e),this.options.locations&&(++this.curLine,this.lineStart=this.pos),s}jsx_readString(t){let e="",s=++this.pos;for(;;){this.pos>=this.input.length&&this.raise(this.start,"Unterminated string constant");let u=this.input.charCodeAt(this.pos);if(u===t)break;u===38?(e+=this.input.slice(s,this.pos),e+=this.jsx_readEntity(),s=this.pos):f(u)?(e+=this.input.slice(s,this.pos),e+=this.jsx_readNewLine(!1),s=this.pos):++this.pos}return e+=this.input.slice(s,this.pos++),this.finishToken(r.string,e)}jsx_readEntity(){let t="",e=0,s,u=this.input[this.pos];u!=="&"&&this.raise(this.pos,"Entity must start with an ampersand");let l=++this.pos;for(;this.pos<this.input.length&&e++<10;){if(u=this.input[this.pos++],u===";"){t[0]==="#"?t[1]==="x"?(t=t.substr(2),D.test(t)&&(s=String.fromCharCode(parseInt(t,16)))):(t=t.substr(1),F.test(t)&&(s=String.fromCharCode(parseInt(t,10)))):s=w[t];break}t+=u}return s||(this.pos=l,"&")}jsx_readWord(){let t,e=this.pos;do t=this.input.charCodeAt(++this.pos);while(B(t)||t===45);return this.finishToken(a.jsxName,this.input.slice(e,this.pos))}jsx_parseIdentifier(){let t=this.startNode();return this.type===a.jsxName?t.name=this.value:this.type.keyword?t.name=this.type.keyword:this.unexpected(),this.next(),this.finishNode(t,"JSXIdentifier")}jsx_parseNamespacedName(){let t=this.start,e=this.startLoc,s=this.jsx_parseIdentifier();if(!i.allowNamespaces||!this.eat(r.colon))return s;var u=this.startNodeAt(t,e);return u.namespace=s,u.name=this.jsx_parseIdentifier(),this.finishNode(u,"JSXNamespacedName")}jsx_parseElementName(){if(this.type===a.jsxTagEnd)return"";let t=this.start,e=this.startLoc,s=this.jsx_parseNamespacedName();for(this.type===r.dot&&s.type==="JSXNamespacedName"&&!i.allowNamespacedObjects&&this.unexpected();this.eat(r.dot);){let u=this.startNodeAt(t,e);u.object=s,u.property=this.jsx_parseIdentifier(),s=this.finishNode(u,"JSXMemberExpression")}return s}jsx_parseAttributeValue(){switch(this.type){case r.braceL:let t=this.jsx_parseExpressionContainer();return t.expression.type==="JSXEmptyExpression"&&this.raise(t.start,"JSX attributes must only be assigned a non-empty expression"),t;case a.jsxTagStart:case r.string:return this.parseExprAtom();default:this.raise(this.start,"JSX value should be either an expression or a quoted JSX text")}}jsx_parseEmptyExpression(){let t=this.startNodeAt(this.lastTokEnd,this.lastTokEndLoc);return this.finishNodeAt(t,"JSXEmptyExpression",this.start,this.startLoc)}jsx_parseExpressionContainer(){let t=this.startNode();return this.next(),t.expression=this.type===r.braceR?this.jsx_parseEmptyExpression():this.parseExpression(),this.expect(r.braceR),this.finishNode(t,"JSXExpressionContainer")}jsx_parseAttribute(){let t=this.startNode();return this.eat(r.braceL)?(this.expect(r.ellipsis),t.argument=this.parseMaybeAssign(),this.expect(r.braceR),this.finishNode(t,"JSXSpreadAttribute")):(t.name=this.jsx_parseNamespacedName(),t.value=this.eat(r.eq)?this.jsx_parseAttributeValue():null,this.finishNode(t,"JSXAttribute"))}jsx_parseOpeningElementAt(t,e){let s=this.startNodeAt(t,e);s.attributes=[];let u=this.jsx_parseElementName();for(u&&(s.name=u);this.type!==r.slash&&this.type!==a.jsxTagEnd;)s.attributes.push(this.jsx_parseAttribute());return s.selfClosing=this.eat(r.slash),this.expect(a.jsxTagEnd),this.finishNode(s,u?"JSXOpeningElement":"JSXOpeningFragment")}jsx_parseClosingElementAt(t,e){let s=this.startNodeAt(t,e),u=this.jsx_parseElementName();return u&&(s.name=u),this.expect(a.jsxTagEnd),this.finishNode(s,u?"JSXClosingElement":"JSXClosingFragment")}jsx_parseElementAt(t,e){let s=this.startNodeAt(t,e),u=[],l=this.jsx_parseOpeningElementAt(t,e),A=null;if(!l.selfClosing){t:for(;;)switch(this.type){case a.jsxTagStart:if(t=this.start,e=this.startLoc,this.next(),this.eat(r.slash)){A=this.jsx_parseClosingElementAt(t,e);break t}u.push(this.jsx_parseElementAt(t,e));break;case a.jsxText:u.push(this.parseExprAtom());break;case r.braceL:u.push(this.jsx_parseExpressionContainer());break;default:this.unexpected()}d(A.name)!==d(l.name)&&this.raise(A.start,"Expected corresponding JSX closing tag for <"+d(l.name)+">")}let E=l.name?"Element":"Fragment";return s["opening"+E]=l,s["closing"+E]=A,s.children=u,this.type===r.relational&&this.value==="<"&&this.raise(this.start,"Adjacent JSX elements must be wrapped in an enclosing tag"),this.finishNode(s,"JSX"+E)}jsx_parseText(){let t=this.parseLiteral(this.value);return t.type="JSXText",t}jsx_parseElement(){let t=this.start,e=this.startLoc;return this.next(),this.jsx_parseElementAt(t,e)}parseExprAtom(t){return this.type===a.jsxText?this.jsx_parseText():this.type===a.jsxTagStart?this.jsx_parseElement():super.parseExprAtom(t)}readToken(t){let e=this.curContext();if(e===c)return this.jsx_readToken();if(e===p||e===m){if(g(t))return this.jsx_readWord();if(t==62)return++this.pos,this.finishToken(a.jsxTagEnd);if((t===34||t===39)&&e==p)return this.jsx_readString(t)}return t===60&&this.exprAllowed&&this.input.charCodeAt(this.pos+1)!==33?(++this.pos,this.finishToken(a.jsxTagStart)):super.readToken(t)}updateContext(t){if(this.type==r.braceL){var e=this.curContext();e==p?this.context.push(x.b_expr):e==c?this.context.push(x.b_tmpl):super.updateContext(t),this.exprAllowed=!0}else if(this.type===r.slash&&t===a.jsxTagStart)this.context.length-=2,this.context.push(m),this.exprAllowed=!1;else return super.updateContext(t)}}}});globalThis.acornJsx=S();})();
 </script>
 <script>
+// ── 內嵌: modules/source-mask.js ──
+/**
+ * source-mask — 分辨原始碼中哪些位置是「真正的程式碼」,哪些是字串、註解、正則字面值
+ *
+ * 用途:「執行程式碼」類規則(eval、exec、new Function、pickle、yaml、弱雜湊)只該對真正的呼叫報警,
+ * 不該對說明文字、註解、規則定義、測試資料裡「提到」這些函式的地方報警。
+ * 金鑰與 SQL 規則刻意不使用本模組——金鑰與 SQL 本來就寫在字串裡。
+ *
+ * 這是輕量的字元掃描,不是完整語法分析。已知限制:
+ * - 除號與正則字面值 `/` 靠前一個有效字元判斷,極少數寫法可能判斷錯
+ * - HTML 只分析 <script> 區塊內部;區塊外(含 onclick="…" 屬性)一律視為程式碼,寧可多報不漏報
+ * - 未閉合的字串或註解不會吞掉後面的程式碼(字串到行尾為止、未閉合的反引號／區塊註解視為程式碼)
+ *
+ * 輸出:Uint8Array,與原始碼等長;0 = 程式碼、1 = 字串、2 = 註解、3 = 正則字面值
+ */
+
+const MASK_CODE = 0;
+const MASK_STRING = 1;
+const MASK_COMMENT = 2;
+const MASK_REGEX = 3;
+
+const REGEX_PRECEDING_CHARS = '(,=:[!&|?{};+-*%<>~^';
+const REGEX_PRECEDING_WORDS = /(?:^|[^\w$])(return|typeof|case|do|else|in|of|new|delete|void|throw|yield|await)$/;
+
+/**
+ * @param {string} code
+ * @param {{python?: boolean}} [opts] - python:true 時 # 視為註解、支援三引號字串
+ * @returns {Uint8Array}
+ */
+function buildJsMask(code, opts) {
+  const python = !!(opts && opts.python);
+  const n = code.length;
+  const mask = new Uint8Array(n);
+  let i = 0;
+  let lastSignificant = ''; // 前一個非空白、非註解的字元(判斷 / 是除號還是正則)
+  let lastWordEnd = 0;
+
+  const fill = (from, to, kind) => { for (let k = from; k < to && k < n; k++) mask[k] = kind; };
+
+  // 樣板字串 `...${ code }...` 的巢狀狀態
+  const templateStack = []; // 每層記錄 { braceDepth }
+
+  while (i < n) {
+    const ch = code[i];
+    const next = code[i + 1];
+
+    // 樣板字串內的 ${ } 程式碼區段結束
+    if (templateStack.length && ch === '}') {
+      const top = templateStack[templateStack.length - 1];
+      if (top.braceDepth === 0) {
+        templateStack.pop();
+        const end = scanTemplateBody(i + 1);
+        if (end < 0) { i++; continue; }
+        i = end;
+        lastSignificant = '`';
+        continue;
+      }
+      top.braceDepth--;
+    } else if (templateStack.length && ch === '{') {
+      templateStack[templateStack.length - 1].braceDepth++;
+    }
+
+    // 空白
+    if (ch === ' ' || ch === '\t' || ch === '\n' || ch === '\r') { i++; continue; }
+
+    // 註解
+    if (!python && ch === '/' && next === '/') { const e = lineEnd(i); fill(i, e, MASK_COMMENT); i = e; continue; }
+    if (!python && ch === '/' && next === '*') {
+      const close = code.indexOf('*/', i + 2);
+      if (close < 0) { i += 2; continue; } // 未閉合:不吞掉後面的程式碼
+      fill(i, close + 2, MASK_COMMENT); i = close + 2; continue;
+    }
+    if (python && ch === '#') { const e = lineEnd(i); fill(i, e, MASK_COMMENT); i = e; continue; }
+
+    // Python 三引號字串
+    if (python && (ch === '"' || ch === "'") && next === ch && code[i + 2] === ch) {
+      const q = ch + ch + ch;
+      const close = code.indexOf(q, i + 3);
+      if (close < 0) { i += 3; continue; }
+      fill(i, close + 3, MASK_STRING); i = close + 3; lastSignificant = ch; continue;
+    }
+
+    // 一般字串(到行尾為止)
+    if (ch === '"' || ch === "'") {
+      let j = i + 1;
+      while (j < n && code[j] !== ch && code[j] !== '\n') { j += code[j] === '\\' ? 2 : 1; }
+      const end = j < n && code[j] === ch ? j + 1 : j;
+      fill(i, end, MASK_STRING); i = end; lastSignificant = ch; continue;
+    }
+
+    // 樣板字串
+    if (!python && ch === '`') {
+      const end = scanTemplateBody(i + 1, i);
+      if (end < 0) { i++; lastSignificant = ch; continue; } // 未閉合:視為程式碼
+      i = end; lastSignificant = '`'; continue;
+    }
+
+    // 正則字面值
+    if (!python && ch === '/' && regexAllowed()) {
+      const end = scanRegex(i);
+      if (end > 0) { fill(i, end, MASK_REGEX); i = end; lastSignificant = '/'; continue; }
+    }
+
+    if (/[\w$]/.test(ch)) {
+      let j = i;
+      while (j < n && /[\w$]/.test(code[j])) j++;
+      lastSignificant = code[j - 1];
+      lastWordEnd = j;
+      i = j;
+      continue;
+    }
+    lastSignificant = ch;
+    i++;
+  }
+  return mask;
+
+  function lineEnd(from) { const e = code.indexOf('\n', from); return e < 0 ? n : e; }
+
+  function regexAllowed() {
+    if (!lastSignificant) return true;
+    if (REGEX_PRECEDING_CHARS.indexOf(lastSignificant) >= 0) return true;
+    if (/[\w$]/.test(lastSignificant)) return REGEX_PRECEDING_WORDS.test(code.slice(Math.max(0, lastWordEnd - 12), lastWordEnd));
+    return false;
+  }
+
+  function scanRegex(start) {
+    let j = start + 1;
+    let inClass = false;
+    while (j < n) {
+      const c = code[j];
+      if (c === '\n') return -1;
+      if (c === '\\') { j += 2; continue; }
+      if (c === '[') inClass = true;
+      else if (c === ']') inClass = false;
+      else if (c === '/' && !inClass) {
+        j++;
+        while (j < n && /[a-z]/i.test(code[j])) j++;
+        return j;
+      }
+      j++;
+    }
+    return -1;
+  }
+
+  // 從反引號之後(或 ${ } 結束之後)掃描樣板字串本體;遇到 ${ 進入程式碼區段。
+  // 回傳下一個要掃描的位置;樣板字串未閉合時回傳 -1(並還原為程式碼)。
+  function scanTemplateBody(from, openIdx) {
+    let j = from;
+    while (j < n) {
+      const c = code[j];
+      if (c === '\\') { j += 2; continue; }
+      if (c === '`') {
+        fill(openIdx !== undefined ? openIdx : from - 1, j + 1, MASK_STRING);
+        if (openIdx === undefined) mask[from - 1] = MASK_CODE; // 從 } 接續時,} 本身是程式碼
+        return j + 1;
+      }
+      if (c === '$' && code[j + 1] === '{') {
+        fill(openIdx !== undefined ? openIdx : from, j + 2, MASK_STRING);
+        templateStack.push({ braceDepth: 0 });
+        return j + 2;
+      }
+      j++;
+    }
+    return -1;
+  }
+}
+
+/**
+ * 依內容型態建立遮罩:HTML 只分析 <script> 區塊;其他視為 JS/TS,Python 另外處理。
+ * @param {string} code
+ * @param {{language?: 'js'|'python'|'html'|null}} [opts]
+ * @returns {Uint8Array}
+ */
+function buildCodeMask(code, opts) {
+  code = code || '';
+  const language = (opts && opts.language) || guessMaskLanguage(code);
+  if (language === 'python') return buildJsMask(code, { python: true });
+  if (language !== 'html') return buildJsMask(code);
+
+  // HTML:<script> 區塊以外視為程式碼(包含 on* 屬性),區塊內部照 JS 規則分析
+  const mask = new Uint8Array(code.length);
+  const re = /<script\b[^>]*>([\s\S]*?)<\/script\s*>/gi;
+  let m;
+  while ((m = re.exec(code)) !== null) {
+    const bodyStart = m.index + m[0].indexOf('>') + 1;
+    const inner = buildJsMask(m[1]);
+    mask.set(inner, bodyStart);
+  }
+  // HTML 註解
+  // 以字串組合,避免原始碼出現 HTML 註解開頭序列(單檔版內嵌 <script> 時會出問題)
+  const commentRe = new RegExp('<' + '!--[\\s\\S]*?--' + '>', 'g');
+  while ((m = commentRe.exec(code)) !== null) {
+    for (let k = m.index; k < m.index + m[0].length; k++) mask[k] = MASK_COMMENT;
+  }
+  return mask;
+}
+
+function guessMaskLanguage(code) {
+  if (/<!DOCTYPE\s+html|<html[\s>]/i.test(code) || (/<script[\s>]/i.test(code) && /<\/script>/i.test(code) && /<(head|body|div|p|button)[\s>]/i.test(code))) return 'html';
+  const py = /^\s*(def\s+\w+\s*\(.*\)\s*:|import\s+[\w.]+\s*$|from\s+[\w.]+\s+import\s)/m.test(code) && !/\b(const|let|function)\s+\w|=>/.test(code);
+  return py ? 'python' : 'js';
+}
+
+/** 副檔名 → 遮罩用語言;不認得的副檔名回傳 null(改用內容猜測) */
+function languageFromFilename(filename) {
+  if (!filename) return null;
+  const ext = String(filename).toLowerCase().match(/\.([a-z0-9]+)$/);
+  if (!ext) return null;
+  if (ext[1] === 'py') return 'python';
+  if (['html', 'htm'].indexOf(ext[1]) >= 0) return 'html';
+  if (['js', 'jsx', 'ts', 'tsx', 'mjs', 'cjs', 'vue', 'svelte', 'astro'].indexOf(ext[1]) >= 0) return 'js';
+  return null;
+}
+
+/**
+ * 取得遮罩:scan-orchestrator 會預先建好放在 ctx.mask(同一份程式碼只建一次);
+ * 偵測模組被單獨呼叫(例如 Node 測試)時才自己建。
+ */
+function resolveCodeMask(code, ctx) {
+  if (ctx && ctx.mask) return ctx.mask;
+  return buildCodeMask(code, { language: ctx && ctx.language });
+}
+
+/**
+ * 把註解、正則、較長的字串(超過 minStringLength 字元,通常是說明文字或範例程式碼)換成空白,
+ * 保留長度與換行;較短的字串(物件鍵名、一般參數)保留。給需要「看程式結構」的跨檔案規則使用。
+ */
+function blankNonCode(code, mask, minStringLength) {
+  if (!mask) return code;
+  const min = minStringLength || 40;
+  const out = code.split('');
+  let i = 0;
+  while (i < out.length) {
+    if (mask[i] === MASK_CODE) { i++; continue; }
+    let j = i;
+    while (j < out.length && mask[j] === mask[i]) j++;
+    if (mask[i] !== MASK_STRING || j - i > min) {
+      for (let k = i; k < j; k++) if (out[k] !== '\n') out[k] = ' ';
+    }
+    i = j;
+  }
+  return out.join('');
+}
+
+/** 判斷 index 位置是否為真正的程式碼 */
+function isCodeAt(mask, index) {
+  return !mask || index < 0 || index >= mask.length || mask[index] === MASK_CODE;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { blankNonCode, resolveCodeMask, buildCodeMask, buildJsMask, isCodeAt, languageFromFilename, guessMaskLanguage, MASK_CODE, MASK_STRING, MASK_COMMENT, MASK_REGEX };
+}
+</script>
+<script>
 // ── 內嵌: modules/key-detector.js ──
 /**
  * M1 — key-detector
@@ -1516,7 +1800,8 @@ function lineBotTokenDetector(code) {
     const jwtSegmentAfter = /^\.[A-Za-z0-9_-]{8,}/.test(after);
     const looksLikeJwtFragment = JWT_SHAPE_PATTERN.test(matched) || jwtSegmentBefore || jwtSegmentAfter;
 
-    if (looksLikeJwtFragment) continue; // 這是JWT的一部分(或完整JWT),交給M2 jwt-analyzer 處理,不在此重複標記
+    // eyJ 開頭是 base64 編碼的 JSON(JWT 的某一段被拆成獨立字串時也是),不會是 LINE 權杖
+    if (looksLikeJwtFragment || /^eyJ/.test(matched)) continue; // 這是JWT的一部分(或完整JWT),交給M2 jwt-analyzer 處理,不在此重複標記
 
     findings.push({
       tier: 2,
@@ -1695,24 +1980,29 @@ const HASH_RULES = [
 ];
 
 /**
+ * 為什麼:只對「真正的程式碼」報警,字串、註解、規則定義裡的 md5(password 不算(見 source-mask.js)。
  * @param {string} code
+ * @param {{mask?: Uint8Array, language?: string}} [ctx] - scan-orchestrator 傳入的共用遮罩
  * @returns {Array<{tier:number, category:string, name:string, kind:string, evidence:string}>}
  */
-function hashDetector(code) {
+function hashDetector(code, ctx) {
   const findings = [];
+  const mask = (typeof resolveCodeMask === 'function' ? resolveCodeMask : require('./source-mask').resolveCodeMask)(code, ctx);
 
   HASH_RULES.forEach(rule => {
-    const matches = code.match(rule.re);
-    if (matches) {
-      matches.forEach(m => {
-        findings.push({
-          tier: 1,
-          category: '弱雜湊演算法',
-          name: rule.name,
-          kind: 'weak_hash',
-          match: m,
-          evidence: m.length > 40 ? m.slice(0, 40) + '…' : m
-        });
+    const re = new RegExp(rule.re.source, rule.re.flags);
+    let m;
+    while ((m = re.exec(code)) !== null) {
+      if (mask && m.index < mask.length && mask[m.index] !== 0) continue;
+      const text = m[0];
+      findings.push({
+        tier: 1,
+        category: '弱雜湊演算法',
+        name: rule.name,
+        kind: 'weak_hash',
+        match: text,
+        index: m.index,
+        evidence: text.length > 40 ? text.slice(0, 40) + '…' : text
       });
     }
   });
@@ -1777,7 +2067,8 @@ function scanEnvFormatLines(code) {
   const lines = code.split('\n');
   const envLinePattern = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+?)\s*$/;
   const secretNamePattern = /(secret|token|key|password|passwd|credential)/i;
-  const looksLikeCodeNotEnvValue = /[(){}]|\.\w+\(|=>|;\s*$/;
+  // 程式碼賦值而非 .env 字面值:含括號、方法呼叫、箭頭函式、分號結尾,或讀取環境變數(environ[…]、getenv)
+  const looksLikeCodeNotEnvValue = /[(){}]|\.\w+\(|=>|;\s*$|\benviron\s*\[|\bgetenv\b|process\.env/;
 
   lines.forEach(line => {
     const m = line.match(envLinePattern);
@@ -2883,8 +3174,10 @@ function buildAttackDemoHtml(f) {
  * @param {object} f - Finding
  * @returns {string} HTML
  */
-function buildCardBody(f) {
+function buildCardBody(f, evidences) {
   const guide = getFindingGuide(f.kind);
+  // 同一組有多筆時,技術細節列出所有不重複的 evidence(最多 10 筆)
+  const evList = evidences && evidences.length ? evidences : [f.evidence];
   const plainHtml = guide ? `<div class="rc-plain">${escapeHtml(guide.plain)}</div>` : '';
   const attackDemoHtml = buildAttackDemoHtml(f);
   const keyImpactHtml = buildKeyImpactHtml(f);
@@ -2892,7 +3185,7 @@ function buildCardBody(f) {
   const techHtml = `
     <details class="rc-tech">
       <summary>技術細節</summary>
-      <div class="rc-evidence">${escapeHtml(f.evidence)}</div>
+      ${evList.slice(0, 10).map(e => `<div class="rc-evidence">${escapeHtml(e)}</div>`).join('')}${evList.length > 10 ? `<div class="rc-evidence">……另有 ${evList.length - 10} 筆</div>` : ''}
     </details>`;
   let handoffHtml = '';
   if (guide && guide.handoff) {
@@ -3008,28 +3301,68 @@ function countByTier(findings) {
   return counts;
 }
 
+// scan-orchestrator 依檔案情境調整過層級的結果,畫面與報告要說明原因
+const CONTEXT_NOTES = {
+  placeholder: '看起來是範例用的假金鑰（含 test／example 字樣或連續字元），所以列為參考。如果這其實是真的金鑰，仍請撤銷並更換。',
+  test: '位於測試或範例檔案，通常不會在正式網站執行，所以列為參考。',
+  'test-real-secret': '位於測試檔，但看起來像真的金鑰——公開專案的測試檔外洩一樣是外洩，請照常處理。'
+};
+
+/**
+ * 同一層級、同一種問題(同一白話標題、同一情境)合併成一組:說明只寫一次,列出所有位置。
+ * @returns {Array<{tier: number, kind: string, context: string|null, title: string, items: Array}>}
+ */
+function groupFindings(ordered) {
+  const map = new Map();
+  const groups = [];
+  ordered.forEach(f => {
+    const title = plainTitle(f);
+    const key = [f.tier, f.kind, f.context || '', title].join('|');
+    let g = map.get(key);
+    if (!g) {
+      g = { tier: f.tier, kind: f.kind, context: f.context || null, title, items: [] };
+      map.set(key, g);
+      groups.push(g);
+    }
+    g.items.push(f);
+  });
+  return groups.sort((a, b) => a.tier - b.tier);
+}
+
+function tierStats(groups) {
+  const s = { 1: { groups: 0, items: 0 }, 2: { groups: 0, items: 0 }, 3: { groups: 0, items: 0 } };
+  groups.forEach(g => { s[g.tier].groups++; s[g.tier].items += g.items.length; });
+  return s;
+}
+
+function countPhrase(stat, unit) {
+  return stat.groups === stat.items ? `${stat.items} 件${unit}` : `${stat.groups} 類問題（共 ${stat.items} 處）`;
+}
+
 /**
  * 一句話結論 + 行動步驟(畫面與報告共用)
- * @returns {{headline: string, calm: string|null, steps: string[]}}
+ * @returns {{headline: string, calm: string|null, steps: string[], partial?: boolean}}
  */
 function buildVerdict(findings, notices) {
-  const c = countByTier(findings);
-  const hasLeak = findings.some(f => LEAKED_KEY_KINDS.has(f.kind));
-  if (c[1] > 0) {
+  const groups = groupFindings(sortFindings(findings));
+  const s = tierStats(groups);
+  const hasLeak = findings.some(f => f.tier === 1 && LEAKED_KEY_KINDS.has(f.kind));
+  const refNote = s[3].items ? `另有 ${s[3].items} 項「參考」（測試檔、範例假金鑰等），可以略過。` : null;
+  if (s[1].items > 0) {
     const steps = [];
     if (hasLeak) steps.push('先到外洩金鑰所屬的服務後台「撤銷並重新產生」金鑰——只改程式碼的話，舊金鑰仍然有效。');
     steps.push('按「複製全部修正指令」，貼給你用的 AI（Claude、ChatGPT 或 Lovable／Bolt 內建的 AI），請它照指令修改程式。');
     steps.push('改完後回到這裡再掃一次，確認「需要處理」的項目都消失了。');
     return {
-      headline: `有 ${c[1]} 件事需要處理` + (c[2] > 0 ? `，另有 ${c[2]} 件請你確認` : '') + '。',
+      headline: `有 ${countPhrase(s[1], '事')}需要處理` + (s[2].items > 0 ? `，另有 ${countPhrase(s[2], '')}請你確認` : '') + '。',
       calm: '先別慌：這些都是 AI 產生的程式碼常見的問題，有標準的修法，照下面的步驟做就好。',
       steps
     };
   }
-  if (c[2] > 0) {
+  if (s[2].items > 0) {
     return {
-      headline: `沒有確定的問題，但有 ${c[2]} 件請你確認。`,
-      calm: '「請你確認」代表看起來可疑、不一定真的有問題。',
+      headline: `沒有確定的問題，但有 ${countPhrase(s[2], '事')}請你確認。`,
+      calm: '「請你確認」代表看起來可疑、不一定真的有問題。' + (refNote ? ' ' + refNote : ''),
       steps: [
         '逐項展開下方說明，判斷是否符合你的情況。',
         '不確定的話，按「複製全部修正指令」貼給 AI，請它幫你檢查。'
@@ -3038,6 +3371,9 @@ function buildVerdict(findings, notices) {
   }
   if ((notices || []).some(n => n.id === 'minified')) {
     return { headline: '金鑰檢查沒有發現問題，但權限、SQL 這類邏輯無法判斷。', calm: '原因見下方提示：這段是打包壓縮過的程式碼。', steps: [], partial: true };
+  }
+  if (s[3].items > 0) {
+    return { headline: '沒有需要處理或確認的問題。', calm: refNote, steps: [] };
   }
   return { headline: '沒有比對到已知的問題模式。', calm: null, steps: [] };
 }
@@ -3054,12 +3390,48 @@ function buildNoticesHtml(notices) {
   return html;
 }
 
-function buildCardHtml(f, idx) {
-  const meta = TIER_META[f.tier];
-  return `<div class="result-card ${meta.cls}" id="finding-${idx}" tabindex="-1">
-      <div class="rc-title"><span class="rc-tag">${meta.tag}</span><span class="rc-title-text">${escapeHtml(plainTitle(f))}</span>${buildFilenameTagHtml(f)}${buildLineTagHtml(f)}</div>
-      <div class="rc-subtitle">${escapeHtml(f.name)}</div>
-      ${buildCardBody(f)}
+/** 位置的純文字說明(報告、複製指令用):a.js 第 5、9 行；b.js 第 2 行 */
+function describeLocations(items, max) {
+  const limit = max || 30;
+  const byFile = new Map();
+  items.slice(0, limit).forEach(f => {
+    const file = f.filename || '';
+    if (!byFile.has(file)) byFile.set(file, []);
+    if (typeof f.line === 'number') byFile.get(file).push(f.line);
+  });
+  const parts = [];
+  byFile.forEach((lines, file) => {
+    const lineText = lines.length ? `第 ${lines.join('、')} 行` : '';
+    parts.push([file, lineText].filter(Boolean).join(' '));
+  });
+  const text = parts.filter(Boolean).join('；');
+  return items.length > limit ? `${text}……等共 ${items.length} 處` : text;
+}
+
+function buildLocationHtml(f) {
+  const file = f.filename ? `<span class="rc-filename-tag">${escapeHtml(f.filename)}</span>` : '';
+  if (typeof f.line !== 'number') return file ? `<span class="rc-loc">${file}</span>` : '';
+  const fileAttr = f.filename ? ` data-file="${escapeHtml(f.filename)}"` : '';
+  return `<button type="button" class="rc-line-tag" data-start="${f.start}" data-end="${f.end}"${fileAttr} title="在輸入框中選取這一段">${file}第 ${f.line} 行</button>`;
+}
+
+function buildGroupCardHtml(g, idx) {
+  const meta = TIER_META[g.tier];
+  const first = g.items[0];
+  const VISIBLE = 8;
+  const locs = g.items.map(buildLocationHtml).filter(Boolean);
+  const locsHtml = locs.length
+    ? `<div class="rc-locs">${locs.slice(0, VISIBLE).join('')}${locs.length > VISIBLE ? `<details class="rc-more-locs"><summary>還有 ${locs.length - VISIBLE} 處</summary>${locs.slice(VISIBLE).join('')}</details>` : ''}</div>`
+    : '';
+  const countHtml = g.items.length > 1 ? `<span class="rc-count">${g.items.length} 處</span>` : '';
+  const noteHtml = g.context && CONTEXT_NOTES[g.context] ? `<div class="rc-context">${escapeHtml(CONTEXT_NOTES[g.context])}</div>` : '';
+  const evidences = [...new Set(g.items.map(f => f.evidence).filter(Boolean))];
+  return `<div class="result-card ${meta.cls}" id="finding-${idx}" tabindex="-1" data-where="${escapeHtml(describeLocations(g.items))}">
+      <div class="rc-title"><span class="rc-tag">${meta.tag}</span><span class="rc-title-text">${escapeHtml(g.title)}</span>${countHtml}</div>
+      <div class="rc-subtitle">${escapeHtml([...new Set(g.items.map(f => f.name))].join('、'))}</div>
+      ${noteHtml}
+      ${locsHtml}
+      ${g.tier === 3 ? `<details class="rc-ref-body"><summary>展開說明</summary>${buildCardBody(first, evidences)}</details>` : buildCardBody(first, evidences)}
     </div>`;
 }
 
@@ -3071,20 +3443,21 @@ function buildCardHtml(f, idx) {
  */
 function findingRenderer(findings, languageCaveat, notices) {
   const ordered = sortFindings(findings);
-  const counts = countByTier(ordered);
+  const groups = groupFindings(ordered);
+  const s = tierStats(groups);
   const verdict = buildVerdict(ordered, notices);
   let html = '';
 
   // 摘要區:結論 → 行動步驟 → 跳轉/複製/匯出(按鈕行為由 assets/app.js 綁定)
   let firstIdx = 0;
-  const chips = [1, 2, 3].filter(t => t !== 3 || counts[3] > 0).map(t => {
-    const target = counts[t] > 0 ? ` data-jump="finding-${firstIdx}"` : ' disabled';
-    firstIdx += counts[t];
-    return `<button type="button" class="rs-chip ${TIER_META[t].cls}"${target}><b>${counts[t]}</b> ${TIER_META[t].label}</button>`;
+  const chips = [1, 2, 3].filter(t => t !== 3 || s[3].items > 0).map(t => {
+    const target = s[t].items > 0 ? ` data-jump="finding-${firstIdx}"` : ' disabled';
+    firstIdx += s[t].groups;
+    return `<button type="button" class="rs-chip ${TIER_META[t].cls}"${target}><b>${s[t].items}</b> ${TIER_META[t].label}</button>`;
   }).join('');
-  const hasHandoff = ordered.some(f => { const g = getFindingGuide(f.kind); return g && g.handoff; });
-  const stepsHtml = verdict.steps.length ? `<ol class="rs-steps">${verdict.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ol>` : '';
-  const levelCls = counts[1] > 0 ? 'bad' : (counts[2] > 0 || verdict.partial) ? 'check' : 'ok';
+  const hasHandoff = groups.some(g => g.tier < 3 && getFindingGuide(g.kind) && getFindingGuide(g.kind).handoff);
+  const stepsHtml = verdict.steps.length ? `<ol class="rs-steps">${verdict.steps.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ol>` : '';
+  const levelCls = s[1].items > 0 ? 'bad' : (s[2].items > 0 || verdict.partial) ? 'check' : 'ok';
 
   html += `<div class="results-summary ${levelCls}" tabindex="-1">
     <div class="rs-headline">${escapeHtml(verdict.headline)}</div>
@@ -3101,13 +3474,13 @@ function findingRenderer(findings, languageCaveat, notices) {
 
   html += buildNoticesHtml(notices);
 
-  if (ordered.length === 0) {
+  if (s[1].items + s[2].items === 0) {
     html += `<div class="result-card clean">
       <div class="rc-plain">這只代表「沒有符合本工具規則的寫法」，<strong>不代表程式碼是安全的</strong>。建議：① 確認貼上的是原始程式碼，而不是打包壓縮過的檔案；② 後端 API 與資料庫權限規則（RLS／Security Rules）請另外檢查；③ 看看下方「本工具無法檢測」清單。</div>
     </div>`;
   }
 
-  ordered.forEach((f, idx) => { html += buildCardHtml(f, idx); });
+  groups.forEach((g, idx) => { html += buildGroupCardHtml(g, idx); });
 
   const langCaveatHtml = (!notices && languageCaveat) ? `<p class="cb-lang">${escapeHtml(languageCaveat)}</p>` : '';
   html += `<details class="cannot-block">
@@ -3121,7 +3494,8 @@ function findingRenderer(findings, languageCaveat, notices) {
 
 /**
  * 可分享的報告(Markdown)。刻意不含原始程式碼:只輸出白話標題、位置、說明、建議,
- * 以及金鑰類的「遮罩後」識別字串。scripts/verify.js 會檢查報告不含金鑰原文與程式碼行。
+ * 以及金鑰類的「遮罩後」識別字串。同一種問題合併成一項,說明只寫一次。
+ * scripts/verify.js 會檢查報告不含金鑰原文與程式碼行。
  * @param {Array} findings
  * @param {Array} notices
  * @param {{generatedAt?: string, mode?: string, source?: string, toolUrl?: string}} meta
@@ -3130,6 +3504,8 @@ function findingRenderer(findings, languageCaveat, notices) {
 function buildReportMarkdown(findings, notices, meta) {
   meta = meta || {};
   const ordered = sortFindings(findings);
+  const groups = groupFindings(ordered);
+  const s = tierStats(groups);
   const verdict = buildVerdict(ordered, notices);
   const lines = [];
   lines.push('# 資安自我檢查報告', '');
@@ -3138,25 +3514,36 @@ function buildReportMarkdown(findings, notices, meta) {
   if (meta.mode) lines.push(`- 檢查方式：${meta.mode}`);
   lines.push(`- 工具：看見 AI 網頁的程式過錯${meta.toolUrl ? '（' + meta.toolUrl + '）' : ''}`);
   lines.push('', `**結論：${verdict.headline}**`, '');
+  if (verdict.calm) lines.push(verdict.calm, '');
   if (verdict.steps.length) {
     lines.push('建議步驟：');
     verdict.steps
-      .map(s => s.replace('按「複製全部修正指令」，貼給', '把這份報告交給負責修改的人，或貼給').replace('回到這裡再掃一次', '用同一個工具再掃一次'))
-      .forEach((s, i) => lines.push(`${i + 1}. ${s}`));
+      .map(x => x.replace('按「複製全部修正指令」，貼給', '把這份報告交給負責修改的人，或貼給').replace('回到這裡再掃一次', '用同一個工具再掃一次'))
+      .forEach((x, i) => lines.push(`${i + 1}. ${x}`));
     lines.push('');
   }
   [1, 2, 3].forEach(tier => {
-    const group = ordered.filter(f => f.tier === tier);
-    if (!group.length) return;
-    lines.push(`## ${TIER_META[tier].label}（${group.length}）`, '');
-    group.forEach((f, i) => {
-      const where = [f.filename, typeof f.line === 'number' ? `第 ${f.line} 行` : null].filter(Boolean).join(' ');
-      lines.push(`${i + 1}. **${plainTitle(f)}**${where ? `　— ${where}` : ''}`);
-      lines.push(`   - 類型：${f.name}`);
-      const guide = getFindingGuide(f.kind);
-      if (guide && guide.plain) lines.push(`   - 說明：${guide.plain}`);
-      if (plainAction(f)) lines.push(`   - 建議：${plainAction(f)}`);
-      if (MASKED_EVIDENCE_KINDS.has(f.kind) && f.evidence) lines.push(`   - 識別：${String(f.evidence).split('　')[0]}`);
+    const tierGroups = groups.filter(g => g.tier === tier);
+    if (!tierGroups.length) return;
+    const stat = s[tier];
+    lines.push(`## ${TIER_META[tier].label}（${stat.groups === stat.items ? stat.items : `${stat.groups} 類，共 ${stat.items} 處`}）`, '');
+    tierGroups.forEach((g, i) => {
+      const first = g.items[0];
+      lines.push(`${i + 1}. **${g.title}**${g.items.length > 1 ? `（${g.items.length} 處）` : ''}`);
+      const where = describeLocations(g.items);
+      if (where) lines.push(`   - 位置：${where}`);
+      lines.push(`   - 類型：${[...new Set(g.items.map(f => f.name))].join('、')}`);
+      if (g.context && CONTEXT_NOTES[g.context]) lines.push(`   - 備註：${CONTEXT_NOTES[g.context]}`);
+      // 參考項目只列位置與原因,不重複長篇說明
+      if (tier < 3) {
+        const guide = getFindingGuide(g.kind);
+        if (guide && guide.plain) lines.push(`   - 說明：${guide.plain}`);
+        if (plainAction(first)) lines.push(`   - 建議：${plainAction(first)}`);
+      }
+      if (MASKED_EVIDENCE_KINDS.has(g.kind)) {
+        const ids = [...new Set(g.items.map(f => String(f.evidence || '').split('　')[0]).filter(Boolean))];
+        if (ids.length) lines.push(`   - 識別：${ids.slice(0, 5).join('、')}${ids.length > 5 ? ' 等' : ''}`);
+      }
     });
     lines.push('');
   });
@@ -3165,7 +3552,7 @@ function buildReportMarkdown(findings, notices, meta) {
     notices.forEach(n => lines.push(`- ${n.text}`));
     lines.push('');
   }
-  lines.push('---', '本報告由瀏覽器內的靜態比對產生，不含原始程式碼，金鑰只顯示遮罩後的前後幾碼。「請你確認」代表看起來可疑、不是確診；沒有列出的項目也不代表安全，不能取代正式的資安審查。');
+  lines.push('---', '本報告由瀏覽器內的靜態比對產生，不含原始程式碼，金鑰只顯示遮罩後的前後幾碼。「請你確認」代表看起來可疑、不是確診；「參考」是測試檔或範例假金鑰等不影響正式網站的項目。沒有列出的項目也不代表安全，不能取代正式的資安審查。');
   return lines.join('\n');
 }
 
@@ -3174,7 +3561,7 @@ function buildReportMarkdown(findings, notices, meta) {
 // 瀏覽器環境: module 不存在 → 略過這段,函式/常數已是全域作用域下的宣告,
 //            可直接被 index.html 或其他 <script> 使用
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { findingRenderer, buildReportMarkdown, buildVerdict, plainTitle, plainAction, getFindingGuide, escapeHtml, buildCardBody, buildAttackDemoHtml, buildKeyImpactHtml, buildKeyCapabilityHtml, buildFilenameTagHtml, buildLineTagHtml, KEY_CAPABILITY_KB, FINDING_GUIDE, PLAIN_TITLES, TIER_META };
+  module.exports = { findingRenderer, buildReportMarkdown, buildVerdict, groupFindings, describeLocations, plainTitle, plainAction, getFindingGuide, escapeHtml, buildCardBody, buildAttackDemoHtml, buildKeyImpactHtml, buildKeyCapabilityHtml, buildFilenameTagHtml, buildLineTagHtml, KEY_CAPABILITY_KB, FINDING_GUIDE, PLAIN_TITLES, TIER_META, CONTEXT_NOTES };
 }
 </script>
 <script>
@@ -3306,40 +3693,51 @@ if (typeof module !== 'undefined' && module.exports) {
  *   (例如 execSync("ls " + userInput)),則會被標記,因為那才是真正的風險模式
  */
 
+// 為什麼:規則只對「真正的程式碼」報警——字串、註解、正則裡提到 eval( 不算(見 source-mask.js)。
+// 有 prefix 的規則,第一個群組是「前一個字元」,用來排除方法呼叫:
+//   re.exec(code)、page.$eval(…)、obj.eval(…) 都不是危險呼叫;child_process.exec、window.eval 仍然算。
 const INSECURE_DESERIALIZE_RULES = [
-  { name: 'eval() 執行動態內容（疑似不安全反序列化/程式碼注入）', re: /\beval\s*\(/g, kind: 'insecure_eval' },
+  { name: 'eval() 執行動態內容（疑似不安全反序列化/程式碼注入）', re: /(^|[^\w$.]|\b(?:window|globalThis|self)\.)eval\s*\(/gm, prefix: true, kind: 'insecure_eval' },
   { name: 'Python pickle.loads() 反序列化不可信資料', re: /\bpickle\.loads?\s*\(/g, kind: 'insecure_pickle' },
   { name: 'Python yaml.load() 未使用安全模式（應改用 yaml.safe_load 或指定 SafeLoader）', re: /\byaml\.load\s*\((?![^)]*Loader\s*=\s*yaml\.SafeLoader)/g, kind: 'insecure_yaml_load' },
-  { name: 'Node.js exec()/execSync() 執行動態組成的指令（疑似命令注入）', re: /\b(exec|execSync)\s*\(\s*[a-zA-Z_$][\w$]*/g, kind: 'insecure_exec' },
+  { name: 'Node.js exec()/execSync() 執行動態組成的指令（疑似命令注入）', re: /(^|[^\w$.]|(?:require\(\s*['"](?:node:)?child_process['"]\s*\)|\b(?:child_process|childProcess|cp|shell))\.)(?:exec|execSync)\s*\(\s*[a-zA-Z_$][\w$]*/gm, prefix: true, kind: 'insecure_exec' },
   { name: 'Function 建構子動態執行程式碼字串（等同 eval 的風險）', re: /new\s+Function\s*\(/g, kind: 'insecure_function_constructor' },
   // Python exec() 直接執行程式碼字串(語意接近 eval,不是 shell 指令),與上面 Node.js 的
   // exec/execSync 分開成獨立 kind。只認 Python 專屬的動態組字串語法:% 格式化、f-string、
   // .format(),固定字串常值 exec("print(1)") 不會觸發。字串拼接(+)刻意不涵蓋,因為
   // exec("..." + x) 在 JS 裡是命令注入、在 Python 裡是程式碼注入,單看這一行分不出語言。
   // (SecurityEval CWE-094_sonar_1)
-  { name: 'Python exec() 執行由格式化字串組成的程式碼（疑似程式碼注入）', re: /\bexec\s*\(\s*(?:(["'])(?:(?!\1)[^\n])*%[sdr](?:(?!\1)[^\n])*\1\s*%|[fF]["']|(["'])(?:(?!\2)[^\n])*\2\s*\.format\s*\()/g, kind: 'insecure_python_exec' },
+  { name: 'Python exec() 執行由格式化字串組成的程式碼（疑似程式碼注入）', re: /(^|[^\w$.])exec\s*\(\s*(?:(["'])(?:(?!\2)[^\n])*%[sdr](?:(?!\2)[^\n])*\2\s*%|[fF]["']|(["'])(?:(?!\3)[^\n])*\3\s*\.format\s*\()/gm, prefix: true, kind: 'insecure_python_exec' },
 ];
 
 /**
  * @param {string} code
+ * @param {{mask?: Uint8Array, language?: string}} [ctx] - scan-orchestrator 傳入的共用遮罩
  * @returns {Array<{tier:number, category:string, name:string, kind:string, evidence:string}>}
  */
-function insecureDeserializeDetector(code) {
+function insecureDeserializeDetector(code, ctx) {
   const findings = [];
+  const mask = (typeof resolveCodeMask === 'function' ? resolveCodeMask : require('./source-mask').resolveCodeMask)(code, ctx);
+  const inCode = i => !mask || i >= mask.length || mask[i] === 0;
 
   INSECURE_DESERIALIZE_RULES.forEach(rule => {
     const re = new RegExp(rule.re.source, rule.re.flags);
-    const matches = code.match(re);
-    if (matches) {
-      matches.forEach(m => {
-        findings.push({
-          tier: 1,
-          category: '不安全的反序列化/動態執行',
-          name: rule.name,
-          kind: rule.kind,
-          match: m,
-          evidence: m.length > 60 ? m.slice(0, 60) + '…' : m
-        });
+    let m;
+    while ((m = re.exec(code)) !== null) {
+      // prefix 若只是一個分隔字元,不算在比對內容裡;若是 window. / child_process. 則保留
+      const skip = rule.prefix && m[1] && !/\.$/.test(m[1]) ? m[1].length : 0;
+      const start = m.index + skip;
+      const text = m[0].slice(skip);
+      if (re.lastIndex === m.index) re.lastIndex++;
+      if (!inCode(start)) continue;
+      findings.push({
+        tier: 1,
+        category: '不安全的反序列化/動態執行',
+        name: rule.name,
+        kind: rule.kind,
+        match: text,
+        index: start,
+        evidence: text.length > 60 ? text.slice(0, 60) + '…' : text
       });
     }
   });
@@ -3747,7 +4145,7 @@ if (typeof module !== 'undefined' && module.exports) {
 // Node 環境:把各模組的匯出掛到 globalThis,讓下方以「全域名稱」呼叫的寫法與瀏覽器完全一致。
 if (typeof module !== 'undefined' && module.exports && typeof keyDetector === 'undefined') {
   [
-    'key-detector', 'jwt-analyzer', 'hash-detector', 'secret-heuristics', 'csp-detector',
+    'source-mask', 'key-detector', 'jwt-analyzer', 'hash-detector', 'secret-heuristics', 'csp-detector',
     'idor-detector', 'language-detector', 'finding-renderer', 'sql-injection-detector',
     'insecure-deserialize-detector', 'rate-limit-coverage-detector', 'field-masking-consistency-detector'
   ].forEach(name => Object.assign(globalThis, require('./' + name)));
@@ -3765,13 +4163,14 @@ function getSingleFileDetectors() {
   return [
     { id: 'M1', run: code => keyDetector(code) },
     { id: 'M2', run: code => jwtAnalyzer(code) },
-    { id: 'M3', run: code => hashDetector(code) },
+    { id: 'M3', run: (code, ctx) => hashDetector(code, ctx) },
     { id: 'M4', run: (code, ctx) => secretHeuristics(code, ctx.byId.M1.concat(ctx.byId.M2)) },
     { id: 'M5', run: code => cspDetector(code) },
     { id: 'M6', run: (code, ctx) => { const r = idorDetectorWithMeta(code); ctx.astUsed = r.astUsed; return r.findings; } },
     { id: 'M9', run: code => sqlInjectionDetector(code) },
-    { id: 'M10', run: code => insecureDeserializeDetector(code) },
-    { id: 'M12', run: code => rateLimitCoverageDetector(code) }
+    { id: 'M10', run: (code, ctx) => insecureDeserializeDetector(code, ctx) },
+    // M12 需要看字串裡的路由路徑,所以只把註解換成空白(字串保留)
+    { id: 'M12', run: (code, ctx) => rateLimitCoverageDetector(blankNonCode(code, ctx.mask, Infinity)) }
   ];
 }
 
@@ -3839,6 +4238,85 @@ function buildNotices(code, astUsed) {
   return notices;
 }
 
+// ── 檔案情境:依檔名與內容調整結果(不改偵測規則本身) ──
+
+// 測試／範例檔:目錄或檔名含 test、spec、fixture、sample、mock、e2e 等字樣
+const TEST_DIR_RE = /(^|\/)(tests?|__tests__|specs?|e2e|cypress|playwright|fixtures?|__fixtures__|__mocks__|mocks?|examples?|samples?|demos?|benchmarks?)\//i;
+const TEST_NAME_RE = /(^|[._-])(tests?|specs?|smoke|regression|fixtures?|samples?|mocks?|e2e|stories)([._-]|$)/i;
+// 金鑰類 kind:在測試檔裡若「看起來是真的」仍維持原層級(公開 repo 的測試檔外洩一樣是外洩)
+const SECRET_KINDS = new Set(['plain_key', 'supabase_service_role', 'supabase_anon', 'jwt_unknown_role', 'line_bot_token_suspected', 'firebase_config_exposed', 'endpoint_url', 'env_file_secret']);
+const FRAMEWORK_CONFIG_RE = /(^|\/)((next|nuxt|vite|astro|svelte|remix)\.config\.[cm]?[jt]s|(vercel|netlify|firebase)\.json|netlify\.toml)$/i;
+
+function isTestLikePath(filename) {
+  if (!filename) return false;
+  const base = String(filename).split('/').pop().replace(/\.[^.]+$/, '');
+  return TEST_DIR_RE.test(filename) || TEST_NAME_RE.test(base);
+}
+
+function hasSequentialRun(s, len) {
+  let run = 1;
+  for (let i = 1; i < s.length; i++) {
+    const seq = /[a-z0-9]/i.test(s[i]) && s.charCodeAt(i) === s.charCodeAt(i - 1) + 1;
+    run = seq ? run + 1 : 1;
+    if (run >= len) return true;
+  }
+  return false;
+}
+
+/** 明顯是範例用的假金鑰:含 test/fake/example 等字樣、連續字元(abcdefgh、12345678)、或字元種類極少 */
+function looksLikePlaceholderSecret(value) {
+  if (!value) return false;
+  const v = String(value);
+  if (/(test|fake|dummy|example|sample|placeholder|demo|xxxx|your[-_]?(api|key|token|secret)|change[-_]?me|redacted|not[-_]?a[-_]?real)/i.test(v)) return true;
+  // 連續字元,也檢查只取字母、只取數字後的序列(a1B2c3D4… 這類交錯寫法)
+  if (hasSequentialRun(v, 8) || hasSequentialRun(v.replace(/[^a-z]/gi, '').toLowerCase(), 8) || hasSequentialRun(v.replace(/\D/g, ''), 8)) return true;
+  const body = v.replace(/^[a-z]{2,4}[-_](proj[-_]|ant[-_])?/i, '');
+  return body.length >= 16 && new Set(body).size <= 4;
+}
+
+/**
+ * 依檔案情境調整:
+ * - 明顯的假金鑰 → 參考
+ * - 測試／範例檔裡的非金鑰發現 → 參考;看起來是真的金鑰維持原層級並加註
+ * - 同一行同一種問題只留一筆
+ * 被調整的 Finding 會帶 context('placeholder' | 'test')與 originalTier,畫面與報告據此標示。
+ */
+function applyFileContext(findings, filename) {
+  const testFile = isTestLikePath(filename);
+  const seen = new Set();
+  return findings.filter(f => {
+    if (typeof f.line === 'number') {
+      const key = f.kind + '@' + f.line;
+      if (seen.has(key)) return false;
+      seen.add(key);
+    }
+    return true;
+  }).map(f => {
+    if (SECRET_KINDS.has(f.kind) && looksLikePlaceholderSecret(f.match)) {
+      return Object.assign({}, f, { tier: 3, originalTier: f.tier, context: 'placeholder' });
+    }
+    if (testFile) {
+      if (SECRET_KINDS.has(f.kind)) return Object.assign({}, f, { context: 'test-real-secret' });
+      return Object.assign({}, f, { tier: 3, originalTier: f.tier, context: 'test' });
+    }
+    return f;
+  });
+}
+
+/** 有檔名時,副檔名優先於內容猜測:.js 檔不檢查網頁 CSP、不提示 Python 特徵 */
+function applyFilenameRules(findings, notices, filename, language) {
+  if (!filename) return { findings, notices };
+  const ext = (String(filename).toLowerCase().match(/\.([a-z0-9]+)$/) || [])[1] || '';
+  const isConfig = FRAMEWORK_CONFIG_RE.test(filename);
+  findings = findings.filter(f => {
+    if (f.kind === 'no_csp_html') return language === 'html' || ['php', 'erb', 'hbs', 'ejs', 'njk'].indexOf(ext) >= 0;
+    if (f.kind === 'no_csp_config') return isConfig;
+    return true;
+  });
+  if (language === 'js' || language === 'html') notices = notices.filter(n => n.id !== 'language');
+  return { findings, notices };
+}
+
 function joinNotices(notices) {
   return notices.length ? notices.map(n => n.text).join(' ') : null;
 }
@@ -3848,9 +4326,11 @@ function joinNotices(notices) {
  * @param {string} code
  * @returns {{findings: Array, notices: Array, languageCaveat: string|null, astUsed: boolean}}
  */
-function scanCode(code) {
+function scanCode(code, opts) {
   code = code || '';
-  const ctx = { byId: {}, astUsed: false };
+  const filename = opts && opts.filename;
+  const language = languageFromFilename(filename) || guessMaskLanguage(code);
+  const ctx = { byId: {}, astUsed: false, language, mask: buildCodeMask(code, { language }) };
   let findings = [];
   getSingleFileDetectors().forEach(d => {
     const out = d.run(code, ctx) || [];
@@ -3858,35 +4338,52 @@ function scanCode(code) {
     findings = findings.concat(out);
   });
   attachLocations(code, findings);
-  const notices = buildNotices(code, ctx.astUsed);
-  return { findings, notices, languageCaveat: joinNotices(notices), astUsed: ctx.astUsed };
+  findings = applyFileContext(findings, filename);
+  const byName = applyFilenameRules(findings, buildNotices(code, ctx.astUsed), filename, language);
+  const notices = byName.notices;
+  return {
+    findings: byName.findings,
+    notices,
+    languageCaveat: joinNotices(notices),
+    astUsed: ctx.astUsed,
+    language // 'js' | 'html' | 'python':語法分析只適用於 js/html
+  };
 }
 
 /**
  * 多檔案掃描:逐檔案跑 scanCode,多於一個檔案時標上 filename,再跑跨檔案模組 M11。
  * @param {Array<{filename: string|null, code: string}>} files
- * @returns {{findings: Array, notices: Array, languageCaveat: string|null, astUsed: boolean}}
+ * @returns {{findings: Array, notices: Array, languageCaveat: string|null, astUsed: boolean, analysis: {full: number, simple: number, other: number}}}
  */
 function scanFiles(files) {
   files = (files || []).map((f, idx) => ({ filename: f.filename || ('檔案' + (idx + 1)), code: f.code || '' }));
   const isMultiFile = files.length > 1;
   let findings = [];
   const notices = [];
-  let astUsed = files.length > 0;
+  const analysis = { full: 0, simple: 0, other: 0 }; // 語法分析:完整／退回簡易比對／不適用(HTML、Python)
 
   files.forEach(f => {
-    const r = scanCode(f.code);
-    if (!r.astUsed) astUsed = false;
+    const r = scanCode(f.code, { filename: isMultiFile ? f.filename : (f.filename && !/^檔案\d+$/.test(f.filename) ? f.filename : null) });
+    if (r.language === 'python' || r.language === 'html') analysis.other++; // 語法分析只適用 JS/TS
+    else if (r.astUsed) analysis.full++;
+    else analysis.simple++;
     findings = findings.concat(isMultiFile ? r.findings.map(x => Object.assign({}, x, { filename: f.filename })) : r.findings);
     r.notices.forEach(n => notices.push(isMultiFile ? Object.assign({}, n, { text: '【' + f.filename + '】' + n.text }) : n));
   });
 
-  findings = findings.concat(fieldMaskingConsistencyDetector(files));
-  return { findings, notices, languageCaveat: joinNotices(notices), astUsed };
+  // 跨檔案遮罩比對:排除測試／範例檔,並把註解、說明文字、字串裡的範例程式碼換成空白,只比對真正的輸出路徑
+  const m11Files = files
+    .filter(f => !isTestLikePath(f.filename))
+    .map(f => {
+      const language = languageFromFilename(f.filename) || guessMaskLanguage(f.code);
+      return { filename: f.filename, code: blankNonCode(f.code, buildCodeMask(f.code, { language })) };
+    });
+  findings = findings.concat(fieldMaskingConsistencyDetector(m11Files));
+  return { findings, notices, languageCaveat: joinNotices(notices), astUsed: analysis.simple === 0 && analysis.full > 0, analysis };
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { scanCode, scanFiles, attachLocations, buildNotices, looksMinified, getSingleFileDetectors, IDOR_AST_DEGRADED_NOTICE, MINIFIED_NOTICE };
+  module.exports = { scanCode, scanFiles, attachLocations, buildNotices, looksMinified, applyFileContext, isTestLikePath, looksLikePlaceholderSecret, getSingleFileDetectors, IDOR_AST_DEGRADED_NOTICE, MINIFIED_NOTICE };
 }
 </script>
 <script>
@@ -4101,6 +4598,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
   let lastScan = null;     // { findings, notices, astUsed, source } 供匯出報告使用
   let sourceLabel = null;  // 目前輸入的來源說明(GitHub 專案名、檔名…)
+  let singleFilename = null; // 單檔模式下,內容來自哪個檔案(手動貼上時為 null)
 
   // ───────────────────────── 工具 ─────────────────────────
 
@@ -4151,7 +4649,7 @@ if (typeof module !== 'undefined' && module.exports) {
     const v = codeInput.value;
     inputMeta.textContent = v ? (v.split('\n').length + ' 行 · ' + v.length.toLocaleString() + ' 字元') : '或直接貼上程式碼';
   }
-  codeInput.addEventListener('input', () => { sourceLabel = null; updateInputMeta(); });
+  codeInput.addEventListener('input', () => { sourceLabel = null; singleFilename = null; updateInputMeta(); });
 
   // ───────────────────────── 多檔案清單 ─────────────────────────
 
@@ -4273,6 +4771,7 @@ if (typeof module !== 'undefined' && module.exports) {
     } else if (loaded[0]) {
       codeInput.value = loaded[0].code;
       sourceLabel = loaded[0].filename;
+      singleFilename = loaded[0].filename;
       updateInputMeta();
     }
 
@@ -4344,7 +4843,7 @@ if (typeof module !== 'undefined' && module.exports) {
   }
 
   function finishScanUI(r, source, opts) {
-    lastScan = { findings: r.findings, notices: r.notices, astUsed: r.astUsed, source };
+    lastScan = { findings: r.findings, notices: r.notices, astUsed: r.astUsed, analysis: r.analysis, language: r.language, source };
     results.innerHTML = findingRenderer(r.findings, r.languageCaveat, r.notices);
     scanBtn.disabled = false;
     if (!opts || !opts.keepStatus) setStatus('');
@@ -4381,7 +4880,8 @@ if (typeof module !== 'undefined' && module.exports) {
     }
     startScanUI();
     window.setTimeout(() => {
-      finishScanUI(scanCode(code), sourceLabel || ('貼上的程式碼（' + code.split('\n').length + ' 行）'), opts);
+      // 從檔案讀入時帶檔名,讓副檔名規則(CSP、語言、測試檔)生效
+      finishScanUI(scanCode(code, { filename: singleFilename }), sourceLabel || ('貼上的程式碼（' + code.split('\n').length + ' 行）'), opts);
     }, SCAN_DELAY_MS);
   }
 
@@ -4424,11 +4924,10 @@ if (typeof module !== 'undefined' && module.exports) {
     const seen = new Set();
     const items = [];
     const instructions = [];
-    results.querySelectorAll('.result-card:not(.clean)').forEach((card, i) => {
+    // 「參考」(測試檔、範例假金鑰)不放進修正指令
+    results.querySelectorAll('.result-card.tier1, .result-card.tier2').forEach((card, i) => {
       const title = card.querySelector('.rc-title-text');
-      const line = card.querySelector('.rc-line-tag');
-      const file = card.querySelector('.rc-filename-tag');
-      const where = [file && file.textContent, line && line.textContent].filter(Boolean).join(' ');
+      const where = card.dataset.where;
       items.push((i + 1) + '. ' + (title ? title.textContent : '') + (where ? '（' + where + '）' : ''));
       const handoff = card.querySelector('.rc-handoff');
       if (handoff && !seen.has(handoff.dataset.kind)) {
@@ -4442,12 +4941,26 @@ if (typeof module !== 'undefined' && module.exports) {
 
   // ── 匯出報告:不含原始碼、金鑰已遮罩(內容由 buildReportMarkdown 產生) ──
 
+  // 檢查方式的白話說明:多檔案時分別列出完整分析／簡易比對／不適用的檔案數
+  function describeMode(scan) {
+    if (scan.analysis) {
+      const a = scan.analysis;
+      const parts = [];
+      if (a.full) parts.push(`${a.full} 個檔案完整分析（含語法分析）`);
+      if (a.simple) parts.push(`${a.simple} 個檔案簡易比對（含無法解析的語法，例如 TypeScript 型別）`);
+      if (a.other) parts.push(`${a.other} 個檔案規則比對（HTML／Python 不使用語法分析）`);
+      return parts.join('、');
+    }
+    if (scan.language === 'python' || scan.language === 'html') return '規則比對（HTML／Python 不使用語法分析）';
+    return scan.astUsed ? '完整分析（含語法分析）' : '簡易比對（程式碼含無法解析的語法，例如 TypeScript 型別）';
+  }
+
   function currentReport() {
     if (!lastScan) return '';
     return buildReportMarkdown(lastScan.findings, lastScan.notices, {
       generatedAt: new Date().toLocaleString('zh-TW', { hour12: false }),
       source: lastScan.source,
-      mode: lastScan.astUsed ? '完整分析（含語法分析）' : '簡易比對（部分程式碼語法無法完整分析）',
+      mode: describeMode(lastScan),
       toolUrl: TOOL_URL
     });
   }
@@ -4524,11 +5037,12 @@ if (typeof module !== 'undefined' && module.exports) {
   // ───────────────────────── 範例／清除 ─────────────────────────
 
   function buildSampleCode() {
-    // 金鑰以片段組合,避免這份原始碼本身被同一套規則判定為外洩
+    // 金鑰以片段組合,避免這份原始碼本身被同一套規則判定為外洩;簽章段是隨機字元(不是真的簽章),
+    // 刻意不含 fake/demo 等字樣,否則會被判為「範例假金鑰」而降為參考,範例就看不到「需要處理」
     const serviceRoleKey = [
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
       'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByb2plY3RyZWYiLCJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjIwMTU1NzYwMDB9',
-      'fakeSignatureForDemoOnlyNotARealKey12345'
+      'Qm7vR2kLzX9pN4tW8yBc3sH6jD1fG5aE0uKi'
     ].join('.');
     // 範例需同時展示「需要處理」與「請你確認」兩層(正則版與 AST 版皆然)
     return [
@@ -4554,11 +5068,12 @@ if (typeof module !== 'undefined' && module.exports) {
   $('sampleBtn').addEventListener('click', () => {
     clearResults();
     sourceLabel = '範例程式碼';
+    singleFilename = null;
     if (isMultiFileMode()) {
       // 「前端有遮罩、後端沒遮罩」的 M11 典型案例
       replaceFileList([
         { filename: 'frontend/api.js', code: [
-          'const OPENAI_KEY = "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890";',
+          'const OPENAI_KEY = "sk-proj-' + 'Xa7Qm2Lp9Rt4Vn8Kc3Zw6Hy1Bd5Fg0Js' + '";',
           '',
           'function publicRoom(room) {',
           '  return json({ id: room.id, state: maskState(room.state) });',
@@ -4584,6 +5099,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
   $('clearBtn').addEventListener('click', () => {
     sourceLabel = null;
+    singleFilename = null;
     if (isMultiFileMode()) {
       resetFileList();
     } else {

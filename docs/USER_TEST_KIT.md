@@ -20,10 +20,10 @@
 ```js
 import { createClient } from "@supabase/supabase-js";
 
-const OPENAI_API_KEY = "sk-proj-TESTONLYabcdefghijklmnopqrstuvwxyz123456";
+const OPENAI_API_KEY = "sk-proj-Rk4Wq9Tz2Vm7Lp3Xc8Nb5Hs1Jd6Fy0Ga";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyTESTONLY0000000000000000000000000",
+  apiKey: "AIzaSyC9mQ2vL7kR4tX8pW1zN6bH3sJ5dF0gYaE",
   authDomain: "my-shop.firebaseapp.com",
   projectId: "my-shop"
 };

@@ -11,7 +11,7 @@
 // Node 環境:把各模組的匯出掛到 globalThis,讓下方以「全域名稱」呼叫的寫法與瀏覽器完全一致。
 if (typeof module !== 'undefined' && module.exports && typeof keyDetector === 'undefined') {
   [
-    'key-detector', 'jwt-analyzer', 'hash-detector', 'secret-heuristics', 'csp-detector',
+    'source-mask', 'key-detector', 'jwt-analyzer', 'hash-detector', 'secret-heuristics', 'csp-detector',
     'idor-detector', 'language-detector', 'finding-renderer', 'sql-injection-detector',
     'insecure-deserialize-detector', 'rate-limit-coverage-detector', 'field-masking-consistency-detector'
   ].forEach(name => Object.assign(globalThis, require('./' + name)));
@@ -29,13 +29,14 @@ function getSingleFileDetectors() {
   return [
     { id: 'M1', run: code => keyDetector(code) },
     { id: 'M2', run: code => jwtAnalyzer(code) },
-    { id: 'M3', run: code => hashDetector(code) },
+    { id: 'M3', run: (code, ctx) => hashDetector(code, ctx) },
     { id: 'M4', run: (code, ctx) => secretHeuristics(code, ctx.byId.M1.concat(ctx.byId.M2)) },
     { id: 'M5', run: code => cspDetector(code) },
     { id: 'M6', run: (code, ctx) => { const r = idorDetectorWithMeta(code); ctx.astUsed = r.astUsed; return r.findings; } },
     { id: 'M9', run: code => sqlInjectionDetector(code) },
-    { id: 'M10', run: code => insecureDeserializeDetector(code) },
-    { id: 'M12', run: code => rateLimitCoverageDetector(code) }
+    { id: 'M10', run: (code, ctx) => insecureDeserializeDetector(code, ctx) },
+    // M12 需要看字串裡的路由路徑,所以只把註解換成空白(字串保留)
+    { id: 'M12', run: (code, ctx) => rateLimitCoverageDetector(blankNonCode(code, ctx.mask, Infinity)) }
   ];
 }
 
@@ -103,6 +104,85 @@ function buildNotices(code, astUsed) {
   return notices;
 }
 
+// ── 檔案情境:依檔名與內容調整結果(不改偵測規則本身) ──
+
+// 測試／範例檔:目錄或檔名含 test、spec、fixture、sample、mock、e2e 等字樣
+const TEST_DIR_RE = /(^|\/)(tests?|__tests__|specs?|e2e|cypress|playwright|fixtures?|__fixtures__|__mocks__|mocks?|examples?|samples?|demos?|benchmarks?)\//i;
+const TEST_NAME_RE = /(^|[._-])(tests?|specs?|smoke|regression|fixtures?|samples?|mocks?|e2e|stories)([._-]|$)/i;
+// 金鑰類 kind:在測試檔裡若「看起來是真的」仍維持原層級(公開 repo 的測試檔外洩一樣是外洩)
+const SECRET_KINDS = new Set(['plain_key', 'supabase_service_role', 'supabase_anon', 'jwt_unknown_role', 'line_bot_token_suspected', 'firebase_config_exposed', 'endpoint_url', 'env_file_secret']);
+const FRAMEWORK_CONFIG_RE = /(^|\/)((next|nuxt|vite|astro|svelte|remix)\.config\.[cm]?[jt]s|(vercel|netlify|firebase)\.json|netlify\.toml)$/i;
+
+function isTestLikePath(filename) {
+  if (!filename) return false;
+  const base = String(filename).split('/').pop().replace(/\.[^.]+$/, '');
+  return TEST_DIR_RE.test(filename) || TEST_NAME_RE.test(base);
+}
+
+function hasSequentialRun(s, len) {
+  let run = 1;
+  for (let i = 1; i < s.length; i++) {
+    const seq = /[a-z0-9]/i.test(s[i]) && s.charCodeAt(i) === s.charCodeAt(i - 1) + 1;
+    run = seq ? run + 1 : 1;
+    if (run >= len) return true;
+  }
+  return false;
+}
+
+/** 明顯是範例用的假金鑰:含 test/fake/example 等字樣、連續字元(abcdefgh、12345678)、或字元種類極少 */
+function looksLikePlaceholderSecret(value) {
+  if (!value) return false;
+  const v = String(value);
+  if (/(test|fake|dummy|example|sample|placeholder|demo|xxxx|your[-_]?(api|key|token|secret)|change[-_]?me|redacted|not[-_]?a[-_]?real)/i.test(v)) return true;
+  // 連續字元,也檢查只取字母、只取數字後的序列(a1B2c3D4… 這類交錯寫法)
+  if (hasSequentialRun(v, 8) || hasSequentialRun(v.replace(/[^a-z]/gi, '').toLowerCase(), 8) || hasSequentialRun(v.replace(/\D/g, ''), 8)) return true;
+  const body = v.replace(/^[a-z]{2,4}[-_](proj[-_]|ant[-_])?/i, '');
+  return body.length >= 16 && new Set(body).size <= 4;
+}
+
+/**
+ * 依檔案情境調整:
+ * - 明顯的假金鑰 → 參考
+ * - 測試／範例檔裡的非金鑰發現 → 參考;看起來是真的金鑰維持原層級並加註
+ * - 同一行同一種問題只留一筆
+ * 被調整的 Finding 會帶 context('placeholder' | 'test')與 originalTier,畫面與報告據此標示。
+ */
+function applyFileContext(findings, filename) {
+  const testFile = isTestLikePath(filename);
+  const seen = new Set();
+  return findings.filter(f => {
+    if (typeof f.line === 'number') {
+      const key = f.kind + '@' + f.line;
+      if (seen.has(key)) return false;
+      seen.add(key);
+    }
+    return true;
+  }).map(f => {
+    if (SECRET_KINDS.has(f.kind) && looksLikePlaceholderSecret(f.match)) {
+      return Object.assign({}, f, { tier: 3, originalTier: f.tier, context: 'placeholder' });
+    }
+    if (testFile) {
+      if (SECRET_KINDS.has(f.kind)) return Object.assign({}, f, { context: 'test-real-secret' });
+      return Object.assign({}, f, { tier: 3, originalTier: f.tier, context: 'test' });
+    }
+    return f;
+  });
+}
+
+/** 有檔名時,副檔名優先於內容猜測:.js 檔不檢查網頁 CSP、不提示 Python 特徵 */
+function applyFilenameRules(findings, notices, filename, language) {
+  if (!filename) return { findings, notices };
+  const ext = (String(filename).toLowerCase().match(/\.([a-z0-9]+)$/) || [])[1] || '';
+  const isConfig = FRAMEWORK_CONFIG_RE.test(filename);
+  findings = findings.filter(f => {
+    if (f.kind === 'no_csp_html') return language === 'html' || ['php', 'erb', 'hbs', 'ejs', 'njk'].indexOf(ext) >= 0;
+    if (f.kind === 'no_csp_config') return isConfig;
+    return true;
+  });
+  if (language === 'js' || language === 'html') notices = notices.filter(n => n.id !== 'language');
+  return { findings, notices };
+}
+
 function joinNotices(notices) {
   return notices.length ? notices.map(n => n.text).join(' ') : null;
 }
@@ -112,9 +192,11 @@ function joinNotices(notices) {
  * @param {string} code
  * @returns {{findings: Array, notices: Array, languageCaveat: string|null, astUsed: boolean}}
  */
-function scanCode(code) {
+function scanCode(code, opts) {
   code = code || '';
-  const ctx = { byId: {}, astUsed: false };
+  const filename = opts && opts.filename;
+  const language = languageFromFilename(filename) || guessMaskLanguage(code);
+  const ctx = { byId: {}, astUsed: false, language, mask: buildCodeMask(code, { language }) };
   let findings = [];
   getSingleFileDetectors().forEach(d => {
     const out = d.run(code, ctx) || [];
@@ -122,33 +204,50 @@ function scanCode(code) {
     findings = findings.concat(out);
   });
   attachLocations(code, findings);
-  const notices = buildNotices(code, ctx.astUsed);
-  return { findings, notices, languageCaveat: joinNotices(notices), astUsed: ctx.astUsed };
+  findings = applyFileContext(findings, filename);
+  const byName = applyFilenameRules(findings, buildNotices(code, ctx.astUsed), filename, language);
+  const notices = byName.notices;
+  return {
+    findings: byName.findings,
+    notices,
+    languageCaveat: joinNotices(notices),
+    astUsed: ctx.astUsed,
+    language // 'js' | 'html' | 'python':語法分析只適用於 js/html
+  };
 }
 
 /**
  * 多檔案掃描:逐檔案跑 scanCode,多於一個檔案時標上 filename,再跑跨檔案模組 M11。
  * @param {Array<{filename: string|null, code: string}>} files
- * @returns {{findings: Array, notices: Array, languageCaveat: string|null, astUsed: boolean}}
+ * @returns {{findings: Array, notices: Array, languageCaveat: string|null, astUsed: boolean, analysis: {full: number, simple: number, other: number}}}
  */
 function scanFiles(files) {
   files = (files || []).map((f, idx) => ({ filename: f.filename || ('檔案' + (idx + 1)), code: f.code || '' }));
   const isMultiFile = files.length > 1;
   let findings = [];
   const notices = [];
-  let astUsed = files.length > 0;
+  const analysis = { full: 0, simple: 0, other: 0 }; // 語法分析:完整／退回簡易比對／不適用(HTML、Python)
 
   files.forEach(f => {
-    const r = scanCode(f.code);
-    if (!r.astUsed) astUsed = false;
+    const r = scanCode(f.code, { filename: isMultiFile ? f.filename : (f.filename && !/^檔案\d+$/.test(f.filename) ? f.filename : null) });
+    if (r.language === 'python' || r.language === 'html') analysis.other++; // 語法分析只適用 JS/TS
+    else if (r.astUsed) analysis.full++;
+    else analysis.simple++;
     findings = findings.concat(isMultiFile ? r.findings.map(x => Object.assign({}, x, { filename: f.filename })) : r.findings);
     r.notices.forEach(n => notices.push(isMultiFile ? Object.assign({}, n, { text: '【' + f.filename + '】' + n.text }) : n));
   });
 
-  findings = findings.concat(fieldMaskingConsistencyDetector(files));
-  return { findings, notices, languageCaveat: joinNotices(notices), astUsed };
+  // 跨檔案遮罩比對:排除測試／範例檔,並把註解、說明文字、字串裡的範例程式碼換成空白,只比對真正的輸出路徑
+  const m11Files = files
+    .filter(f => !isTestLikePath(f.filename))
+    .map(f => {
+      const language = languageFromFilename(f.filename) || guessMaskLanguage(f.code);
+      return { filename: f.filename, code: blankNonCode(f.code, buildCodeMask(f.code, { language })) };
+    });
+  findings = findings.concat(fieldMaskingConsistencyDetector(m11Files));
+  return { findings, notices, languageCaveat: joinNotices(notices), astUsed: analysis.simple === 0 && analysis.full > 0, analysis };
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { scanCode, scanFiles, attachLocations, buildNotices, looksMinified, getSingleFileDetectors, IDOR_AST_DEGRADED_NOTICE, MINIFIED_NOTICE };
+  module.exports = { scanCode, scanFiles, attachLocations, buildNotices, looksMinified, applyFileContext, isTestLikePath, looksLikePlaceholderSecret, getSingleFileDetectors, IDOR_AST_DEGRADED_NOTICE, MINIFIED_NOTICE };
 }

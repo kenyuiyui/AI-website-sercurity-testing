@@ -21,24 +21,29 @@ const HASH_RULES = [
 ];
 
 /**
+ * 為什麼:只對「真正的程式碼」報警,字串、註解、規則定義裡的 md5(password 不算(見 source-mask.js)。
  * @param {string} code
+ * @param {{mask?: Uint8Array, language?: string}} [ctx] - scan-orchestrator 傳入的共用遮罩
  * @returns {Array<{tier:number, category:string, name:string, kind:string, evidence:string}>}
  */
-function hashDetector(code) {
+function hashDetector(code, ctx) {
   const findings = [];
+  const mask = (typeof resolveCodeMask === 'function' ? resolveCodeMask : require('./source-mask').resolveCodeMask)(code, ctx);
 
   HASH_RULES.forEach(rule => {
-    const matches = code.match(rule.re);
-    if (matches) {
-      matches.forEach(m => {
-        findings.push({
-          tier: 1,
-          category: '弱雜湊演算法',
-          name: rule.name,
-          kind: 'weak_hash',
-          match: m,
-          evidence: m.length > 40 ? m.slice(0, 40) + '…' : m
-        });
+    const re = new RegExp(rule.re.source, rule.re.flags);
+    let m;
+    while ((m = re.exec(code)) !== null) {
+      if (mask && m.index < mask.length && mask[m.index] !== 0) continue;
+      const text = m[0];
+      findings.push({
+        tier: 1,
+        category: '弱雜湊演算法',
+        name: rule.name,
+        kind: 'weak_hash',
+        match: text,
+        index: m.index,
+        evidence: text.length > 40 ? text.slice(0, 40) + '…' : text
       });
     }
   });

@@ -3,6 +3,20 @@
 程式碼裡只留一行「為什麼」;完整背景(發現經過、當初的錯誤寫法、驗證方式)集中在這裡。
 新增紀錄時:程式碼旁寫一行 `為什麼:…(背景見 docs/CHANGELOG.md)`,細節寫在本檔對應模組底下。
 
+## 2026-09 第三輪：整包專案輸入的誤報
+
+起因：用 GitHub 匯入掃描本專案自己，得到「需要處理 72、請你確認 10」，逐筆檢查後 83 筆全是誤報。現有測試樣本都是短片段，沒測過「整個專案」這種輸入。
+
+- **方法呼叫被當成危險函式**：`re.exec(code)`（正則方法）被當成執行系統指令、Playwright 的 `page.$eval()` 被當成 `eval()`。規則改為排除 `.exec(`、`$eval(`、`obj.eval(`；`child_process.exec`、`require("child_process").exec`、`window.eval` 仍然偵測。
+- **字串、註解、正則裡「提到」被當成呼叫**：新增 `modules/source-mask.js`，「執行程式碼」類規則（eval、exec、new Function、pickle、yaml、弱雜湊）只對真正的程式碼報警。金鑰與 SQL 規則不受影響（本來就要看字串）。HTML 只分析 `<script>` 區塊，區塊外（含 `onclick="…"`）一律視為程式碼，寧可多報。M12 路由規則略過註解；M11 跨檔案比對略過測試檔與長字串。
+- **依副檔名判斷**：有檔名時，`.js` 等檔案不檢查網頁 CSP、不提示 Python 特徵；框架 CSP 只看 next.config、vercel.json 等設定檔。
+- **測試／範例檔與假金鑰**：測試檔（目錄或檔名含 test、spec、fixture、sample、mock、e2e、smoke、regression 等）裡的發現降為「參考」；明顯的假金鑰（含 test／example 字樣、`abcdefgh`／`12345678` 連續字元、`a1B2c3D4` 交錯序列）降為「參考」。**看起來是真的金鑰即使在測試檔也維持原層級**。
+- **其他規則修正**：`SECRET_KEY = environ["SECRET_KEY"]` 不再被當成 .env 明文（legacy-tn-021、fp-21 的「請你確認」因此消失）；拆開的 JWT 片段（`eyJ` 開頭）不再被當成 LINE 權杖。
+- **去重複與分組**：同一行同一種問題只報一次；畫面與報告依問題類型分組，說明只寫一次、列出所有位置；「參考」的說明預設收合；結論句改為「N 類問題（共 M 處）」。
+- **檢查方式說明**：多檔案時分別列出完整分析、簡易比對、HTML／Python 不適用的檔案數，不再因為一個檔案無法解析就整份標成「簡易比對」。
+- **整專案回歸測試**：`scripts/self-scan.js` 用 GitHub 匯入同一套篩選掃描本專案，verify 要求「需要處理 = 0」。本輪結果：35 個檔案 → 需要處理 0、請你確認 0、參考 15。
+- 準確度統計不變（命中率依問題類型計算）；資料集中 6 個樣本的假金鑰現在顯示為「參考」。
+
 ## 2026-09 第二輪：可信度、隱私、門檻
 
 - **Firebase 誤報修正**：`AIzaSy` 金鑰只有「以 apiKey 屬性寫在 Firebase 設定裡（附近有 authDomain／projectId／firebaseapp.com／initializeApp 等特徵）」才判為 `firebase_config_exposed`（tier2），否則仍為 Gemini／Google 金鑰外洩（tier1）。同一個值不再被兩條規則各報一次。舊的 Firebase 規則只認 JSON 雙引號寫法，JS 物件寫法反而漏掉、被當成外洩。

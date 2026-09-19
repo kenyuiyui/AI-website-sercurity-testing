@@ -27,8 +27,9 @@ assets/github-import.js       公開 GitHub 專案匯入(api.github.com 取清�
 assets/app.js                 畫面層:事件、讀檔、結果互動、匯出。不寫偵測規則
 vendor/                       acorn、acorn-jsx 本地打包版(瀏覽器全域 acorn / acornJsx),授權見 THIRD_PARTY_LICENSES.md
 modules/*.js                  偵測模組(瀏覽器全域腳本 + Node module.exports 雙用)
-modules/scan-orchestrator.js  掃描流程唯一來源:scanCode(code) / scanFiles(files) → {findings, notices, astUsed}
-modules/finding-renderer.js   結果 HTML、白話標題(PLAIN_TITLES)、結論與步驟(buildVerdict)、報告(buildReportMarkdown)
+modules/source-mask.js        分辨程式碼／字串／註解／正則;「執行程式碼」類規則只對真正的程式碼報警
+modules/scan-orchestrator.js  掃描流程唯一來源:scanCode(code, {filename}) / scanFiles(files);另含檔案情境規則(測試檔、假金鑰、副檔名、去重複)
+modules/finding-renderer.js   結果 HTML(依問題類型分組)、白話標題(PLAIN_TITLES)、結論與步驟(buildVerdict)、報告(buildReportMarkdown)
 scripts/build-single.js       index.html → referencesingle/index.html(內嵌 css/js/字型,改寫 CSP 為 sha256)
 scripts/verify.js             一鍵驗證;snapshot.js / check-report.js / ui-smoke.js 為其子步驟
 eval/load-ast.js              讓 Node 使用 vendor/ 內與網頁相同的 acorn(require 它 = AST 版)
@@ -58,13 +59,19 @@ docs/USER_TEST_KIT.md         真人測試任務腳本(擁有者執行,結果回
   match?: string,         // 選填:原始片段,供定位與去重複。可能含未遮罩金鑰 → 絕不可輸出到畫面或報告
   visualData?: object,    // 選填:畫面示意用
   // 以下由 scan-orchestrator 補上
-  line?, start?, end?, filename?
+  line?, start?, end?, filename?,
+  context?: 'placeholder' | 'test' | 'test-real-secret',  // 依檔案情境調整過層級時的原因
+  originalTier?
 }
 ```
 
 notices（本次檢查的限制）：`{ id, level: 'warn' | 'info', text }`，由 `scan-orchestrator.buildNotices` 產生，畫面放在結果最上方。
 
 ## 常見任務
+
+**規則是否該看字串？** 金鑰、SQL 規則要看字串內容；「呼叫某個危險函式」類規則必須用 `resolveCodeMask` 只看真正的程式碼（見 M3、M10 寫法），否則說明文字、測試資料都會誤報。
+
+**整專案回歸**：`scripts/self-scan.js` 掃描本專案自己，verify 要求「需要處理 = 0」。本專案的測試或說明需要放「看起來像真的」金鑰時，請拆開組合（`'sk-proj-' + '…'`），否則會被正確地判為外洩。
 
 **新增一條規則（既有模組）**：改 `modules/<模組>.js` → 在 `eval/run_rule_regression.js` 加「應命中／不應命中」各至少一例 → `npm run verify`，確認快照差異只有預期的樣本 → `--update`。
 

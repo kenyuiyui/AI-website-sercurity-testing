@@ -45,7 +45,8 @@ function scanEnvFormatLines(code) {
   const lines = code.split('\n');
   const envLinePattern = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+?)\s*$/;
   const secretNamePattern = /(secret|token|key|password|passwd|credential)/i;
-  const looksLikeCodeNotEnvValue = /[(){}]|\.\w+\(|=>|;\s*$/;
+  // 程式碼賦值而非 .env 字面值:含括號、方法呼叫、箭頭函式、分號結尾,或讀取環境變數(environ[…]、getenv)
+  const looksLikeCodeNotEnvValue = /[(){}]|\.\w+\(|=>|;\s*$|\benviron\s*\[|\bgetenv\b|process\.env/;
 
   lines.forEach(line => {
     const m = line.match(envLinePattern);

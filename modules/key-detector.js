@@ -139,7 +139,8 @@ function lineBotTokenDetector(code) {
     const jwtSegmentAfter = /^\.[A-Za-z0-9_-]{8,}/.test(after);
     const looksLikeJwtFragment = JWT_SHAPE_PATTERN.test(matched) || jwtSegmentBefore || jwtSegmentAfter;
 
-    if (looksLikeJwtFragment) continue; // 這是JWT的一部分(或完整JWT),交給M2 jwt-analyzer 處理,不在此重複標記
+    // eyJ 開頭是 base64 編碼的 JSON(JWT 的某一段被拆成獨立字串時也是),不會是 LINE 權杖
+    if (looksLikeJwtFragment || /^eyJ/.test(matched)) continue; // 這是JWT的一部分(或完整JWT),交給M2 jwt-analyzer 處理,不在此重複標記
 
     findings.push({
       tier: 2,

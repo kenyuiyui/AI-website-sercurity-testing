@@ -17,40 +17,51 @@
  *   (例如 execSync("ls " + userInput)),則會被標記,因為那才是真正的風險模式
  */
 
+// 為什麼:規則只對「真正的程式碼」報警——字串、註解、正則裡提到 eval( 不算(見 source-mask.js)。
+// 有 prefix 的規則,第一個群組是「前一個字元」,用來排除方法呼叫:
+//   re.exec(code)、page.$eval(…)、obj.eval(…) 都不是危險呼叫;child_process.exec、window.eval 仍然算。
 const INSECURE_DESERIALIZE_RULES = [
-  { name: 'eval() 執行動態內容（疑似不安全反序列化/程式碼注入）', re: /\beval\s*\(/g, kind: 'insecure_eval' },
+  { name: 'eval() 執行動態內容（疑似不安全反序列化/程式碼注入）', re: /(^|[^\w$.]|\b(?:window|globalThis|self)\.)eval\s*\(/gm, prefix: true, kind: 'insecure_eval' },
   { name: 'Python pickle.loads() 反序列化不可信資料', re: /\bpickle\.loads?\s*\(/g, kind: 'insecure_pickle' },
   { name: 'Python yaml.load() 未使用安全模式（應改用 yaml.safe_load 或指定 SafeLoader）', re: /\byaml\.load\s*\((?![^)]*Loader\s*=\s*yaml\.SafeLoader)/g, kind: 'insecure_yaml_load' },
-  { name: 'Node.js exec()/execSync() 執行動態組成的指令（疑似命令注入）', re: /\b(exec|execSync)\s*\(\s*[a-zA-Z_$][\w$]*/g, kind: 'insecure_exec' },
+  { name: 'Node.js exec()/execSync() 執行動態組成的指令（疑似命令注入）', re: /(^|[^\w$.]|(?:require\(\s*['"](?:node:)?child_process['"]\s*\)|\b(?:child_process|childProcess|cp|shell))\.)(?:exec|execSync)\s*\(\s*[a-zA-Z_$][\w$]*/gm, prefix: true, kind: 'insecure_exec' },
   { name: 'Function 建構子動態執行程式碼字串（等同 eval 的風險）', re: /new\s+Function\s*\(/g, kind: 'insecure_function_constructor' },
   // Python exec() 直接執行程式碼字串(語意接近 eval,不是 shell 指令),與上面 Node.js 的
   // exec/execSync 分開成獨立 kind。只認 Python 專屬的動態組字串語法:% 格式化、f-string、
   // .format(),固定字串常值 exec("print(1)") 不會觸發。字串拼接(+)刻意不涵蓋,因為
   // exec("..." + x) 在 JS 裡是命令注入、在 Python 裡是程式碼注入,單看這一行分不出語言。
   // (SecurityEval CWE-094_sonar_1)
-  { name: 'Python exec() 執行由格式化字串組成的程式碼（疑似程式碼注入）', re: /\bexec\s*\(\s*(?:(["'])(?:(?!\1)[^\n])*%[sdr](?:(?!\1)[^\n])*\1\s*%|[fF]["']|(["'])(?:(?!\2)[^\n])*\2\s*\.format\s*\()/g, kind: 'insecure_python_exec' },
+  { name: 'Python exec() 執行由格式化字串組成的程式碼（疑似程式碼注入）', re: /(^|[^\w$.])exec\s*\(\s*(?:(["'])(?:(?!\2)[^\n])*%[sdr](?:(?!\2)[^\n])*\2\s*%|[fF]["']|(["'])(?:(?!\3)[^\n])*\3\s*\.format\s*\()/gm, prefix: true, kind: 'insecure_python_exec' },
 ];
 
 /**
  * @param {string} code
+ * @param {{mask?: Uint8Array, language?: string}} [ctx] - scan-orchestrator 傳入的共用遮罩
  * @returns {Array<{tier:number, category:string, name:string, kind:string, evidence:string}>}
  */
-function insecureDeserializeDetector(code) {
+function insecureDeserializeDetector(code, ctx) {
   const findings = [];
+  const mask = (typeof resolveCodeMask === 'function' ? resolveCodeMask : require('./source-mask').resolveCodeMask)(code, ctx);
+  const inCode = i => !mask || i >= mask.length || mask[i] === 0;
 
   INSECURE_DESERIALIZE_RULES.forEach(rule => {
     const re = new RegExp(rule.re.source, rule.re.flags);
-    const matches = code.match(re);
-    if (matches) {
-      matches.forEach(m => {
-        findings.push({
-          tier: 1,
-          category: '不安全的反序列化/動態執行',
-          name: rule.name,
-          kind: rule.kind,
-          match: m,
-          evidence: m.length > 60 ? m.slice(0, 60) + '…' : m
-        });
+    let m;
+    while ((m = re.exec(code)) !== null) {
+      // prefix 若只是一個分隔字元,不算在比對內容裡;若是 window. / child_process. 則保留
+      const skip = rule.prefix && m[1] && !/\.$/.test(m[1]) ? m[1].length : 0;
+      const start = m.index + skip;
+      const text = m[0].slice(skip);
+      if (re.lastIndex === m.index) re.lastIndex++;
+      if (!inCode(start)) continue;
+      findings.push({
+        tier: 1,
+        category: '不安全的反序列化/動態執行',
+        name: rule.name,
+        kind: rule.kind,
+        match: text,
+        index: start,
+        evidence: text.length > 60 ? text.slice(0, 60) + '…' : text
       });
     }
   });

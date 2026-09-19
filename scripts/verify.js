@@ -6,6 +6,7 @@
  * 3. 規則回歸測試:eval/run_rule_regression.js(正則版 + AST 版)
  * 4. 行為快照:所有驗證樣本的掃描結果與 eval/findings-snapshot.json 比對(正則版 + AST 版)
  *    規則改動是刻意的 → 確認差異合理後執行 npm run verify -- --update 更新快照
+ *    另含:匯出報告安全、整專案自我掃描(需要處理 = 0)、GitHub 匯入解析
  * 5. 單檔版同步:referencesingle/index.html 與拆分版一致
  * 6. 畫面冒煙測試:有安裝 playwright 時才跑(scripts/ui-smoke.js),沒有就略過
  */
@@ -116,6 +117,12 @@ step(update ? '更新行為快照' : '行為快照比對', () => {
 step('匯出報告不含金鑰原文與原始碼', () => {
   const out = run('node', ['scripts/check-report.js']).trim();
   return `${out} 份報告檢查通過`;
+});
+
+// ── 4b-2. 整專案自我掃描 ──
+step('掃描本專案自己:「需要處理」必須是 0', () => {
+  const out = JSON.parse(run('node', ['scripts/self-scan.js']).trim());
+  return `${out.files} 個檔案 → 需要處理 ${out.tier1}、請你確認 ${out.tier2}、參考 ${out.tier3}`;
 });
 
 // ── 4c. GitHub 網址解析與檔案篩選 ──

@@ -30,6 +30,7 @@
 
   let lastScan = null;     // { findings, notices, astUsed, source } 供匯出報告使用
   let sourceLabel = null;  // 目前輸入的來源說明(GitHub 專案名、檔名…)
+  let singleFilename = null; // 單檔模式下,內容來自哪個檔案(手動貼上時為 null)
 
   // ───────────────────────── 工具 ─────────────────────────
 
@@ -80,7 +81,7 @@
     const v = codeInput.value;
     inputMeta.textContent = v ? (v.split('\n').length + ' 行 · ' + v.length.toLocaleString() + ' 字元') : '或直接貼上程式碼';
   }
-  codeInput.addEventListener('input', () => { sourceLabel = null; updateInputMeta(); });
+  codeInput.addEventListener('input', () => { sourceLabel = null; singleFilename = null; updateInputMeta(); });
 
   // ───────────────────────── 多檔案清單 ─────────────────────────
 
@@ -202,6 +203,7 @@
     } else if (loaded[0]) {
       codeInput.value = loaded[0].code;
       sourceLabel = loaded[0].filename;
+      singleFilename = loaded[0].filename;
       updateInputMeta();
     }
 
@@ -273,7 +275,7 @@
   }
 
   function finishScanUI(r, source, opts) {
-    lastScan = { findings: r.findings, notices: r.notices, astUsed: r.astUsed, source };
+    lastScan = { findings: r.findings, notices: r.notices, astUsed: r.astUsed, analysis: r.analysis, language: r.language, source };
     results.innerHTML = findingRenderer(r.findings, r.languageCaveat, r.notices);
     scanBtn.disabled = false;
     if (!opts || !opts.keepStatus) setStatus('');
@@ -310,7 +312,8 @@
     }
     startScanUI();
     window.setTimeout(() => {
-      finishScanUI(scanCode(code), sourceLabel || ('貼上的程式碼（' + code.split('\n').length + ' 行）'), opts);
+      // 從檔案讀入時帶檔名,讓副檔名規則(CSP、語言、測試檔)生效
+      finishScanUI(scanCode(code, { filename: singleFilename }), sourceLabel || ('貼上的程式碼（' + code.split('\n').length + ' 行）'), opts);
     }, SCAN_DELAY_MS);
   }
 
@@ -353,11 +356,10 @@
     const seen = new Set();
     const items = [];
     const instructions = [];
-    results.querySelectorAll('.result-card:not(.clean)').forEach((card, i) => {
+    // 「參考」(測試檔、範例假金鑰)不放進修正指令
+    results.querySelectorAll('.result-card.tier1, .result-card.tier2').forEach((card, i) => {
       const title = card.querySelector('.rc-title-text');
-      const line = card.querySelector('.rc-line-tag');
-      const file = card.querySelector('.rc-filename-tag');
-      const where = [file && file.textContent, line && line.textContent].filter(Boolean).join(' ');
+      const where = card.dataset.where;
       items.push((i + 1) + '. ' + (title ? title.textContent : '') + (where ? '（' + where + '）' : ''));
       const handoff = card.querySelector('.rc-handoff');
       if (handoff && !seen.has(handoff.dataset.kind)) {
@@ -371,12 +373,26 @@
 
   // ── 匯出報告:不含原始碼、金鑰已遮罩(內容由 buildReportMarkdown 產生) ──
 
+  // 檢查方式的白話說明:多檔案時分別列出完整分析／簡易比對／不適用的檔案數
+  function describeMode(scan) {
+    if (scan.analysis) {
+      const a = scan.analysis;
+      const parts = [];
+      if (a.full) parts.push(`${a.full} 個檔案完整分析（含語法分析）`);
+      if (a.simple) parts.push(`${a.simple} 個檔案簡易比對（含無法解析的語法，例如 TypeScript 型別）`);
+      if (a.other) parts.push(`${a.other} 個檔案規則比對（HTML／Python 不使用語法分析）`);
+      return parts.join('、');
+    }
+    if (scan.language === 'python' || scan.language === 'html') return '規則比對（HTML／Python 不使用語法分析）';
+    return scan.astUsed ? '完整分析（含語法分析）' : '簡易比對（程式碼含無法解析的語法，例如 TypeScript 型別）';
+  }
+
   function currentReport() {
     if (!lastScan) return '';
     return buildReportMarkdown(lastScan.findings, lastScan.notices, {
       generatedAt: new Date().toLocaleString('zh-TW', { hour12: false }),
       source: lastScan.source,
-      mode: lastScan.astUsed ? '完整分析（含語法分析）' : '簡易比對（部分程式碼語法無法完整分析）',
+      mode: describeMode(lastScan),
       toolUrl: TOOL_URL
     });
   }
@@ -453,11 +469,12 @@
   // ───────────────────────── 範例／清除 ─────────────────────────
 
   function buildSampleCode() {
-    // 金鑰以片段組合,避免這份原始碼本身被同一套規則判定為外洩
+    // 金鑰以片段組合,避免這份原始碼本身被同一套規則判定為外洩;簽章段是隨機字元(不是真的簽章),
+    // 刻意不含 fake/demo 等字樣,否則會被判為「範例假金鑰」而降為參考,範例就看不到「需要處理」
     const serviceRoleKey = [
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
       'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByb2plY3RyZWYiLCJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjIwMTU1NzYwMDB9',
-      'fakeSignatureForDemoOnlyNotARealKey12345'
+      'Qm7vR2kLzX9pN4tW8yBc3sH6jD1fG5aE0uKi'
     ].join('.');
     // 範例需同時展示「需要處理」與「請你確認」兩層(正則版與 AST 版皆然)
     return [
@@ -483,11 +500,12 @@
   $('sampleBtn').addEventListener('click', () => {
     clearResults();
     sourceLabel = '範例程式碼';
+    singleFilename = null;
     if (isMultiFileMode()) {
       // 「前端有遮罩、後端沒遮罩」的 M11 典型案例
       replaceFileList([
         { filename: 'frontend/api.js', code: [
-          'const OPENAI_KEY = "sk-proj-abcdefghijklmnopqrstuvwxyz1234567890";',
+          'const OPENAI_KEY = "sk-proj-' + 'Xa7Qm2Lp9Rt4Vn8Kc3Zw6Hy1Bd5Fg0Js' + '";',
           '',
           'function publicRoom(room) {',
           '  return json({ id: room.id, state: maskState(room.state) });',
@@ -513,6 +531,7 @@
 
   $('clearBtn').addEventListener('click', () => {
     sourceLabel = null;
+    singleFilename = null;
     if (isMultiFileMode()) {
       resetFileList();
     } else {

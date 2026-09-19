@@ -450,8 +450,10 @@ function buildAttackDemoHtml(f) {
  * @param {object} f - Finding
  * @returns {string} HTML
  */
-function buildCardBody(f) {
+function buildCardBody(f, evidences) {
   const guide = getFindingGuide(f.kind);
+  // 同一組有多筆時,技術細節列出所有不重複的 evidence(最多 10 筆)
+  const evList = evidences && evidences.length ? evidences : [f.evidence];
   const plainHtml = guide ? `<div class="rc-plain">${escapeHtml(guide.plain)}</div>` : '';
   const attackDemoHtml = buildAttackDemoHtml(f);
   const keyImpactHtml = buildKeyImpactHtml(f);
@@ -459,7 +461,7 @@ function buildCardBody(f) {
   const techHtml = `
     <details class="rc-tech">
       <summary>技術細節</summary>
-      <div class="rc-evidence">${escapeHtml(f.evidence)}</div>
+      ${evList.slice(0, 10).map(e => `<div class="rc-evidence">${escapeHtml(e)}</div>`).join('')}${evList.length > 10 ? `<div class="rc-evidence">……另有 ${evList.length - 10} 筆</div>` : ''}
     </details>`;
   let handoffHtml = '';
   if (guide && guide.handoff) {
@@ -575,28 +577,68 @@ function countByTier(findings) {
   return counts;
 }
 
+// scan-orchestrator 依檔案情境調整過層級的結果,畫面與報告要說明原因
+const CONTEXT_NOTES = {
+  placeholder: '看起來是範例用的假金鑰（含 test／example 字樣或連續字元），所以列為參考。如果這其實是真的金鑰，仍請撤銷並更換。',
+  test: '位於測試或範例檔案，通常不會在正式網站執行，所以列為參考。',
+  'test-real-secret': '位於測試檔，但看起來像真的金鑰——公開專案的測試檔外洩一樣是外洩，請照常處理。'
+};
+
+/**
+ * 同一層級、同一種問題(同一白話標題、同一情境)合併成一組:說明只寫一次,列出所有位置。
+ * @returns {Array<{tier: number, kind: string, context: string|null, title: string, items: Array}>}
+ */
+function groupFindings(ordered) {
+  const map = new Map();
+  const groups = [];
+  ordered.forEach(f => {
+    const title = plainTitle(f);
+    const key = [f.tier, f.kind, f.context || '', title].join('|');
+    let g = map.get(key);
+    if (!g) {
+      g = { tier: f.tier, kind: f.kind, context: f.context || null, title, items: [] };
+      map.set(key, g);
+      groups.push(g);
+    }
+    g.items.push(f);
+  });
+  return groups.sort((a, b) => a.tier - b.tier);
+}
+
+function tierStats(groups) {
+  const s = { 1: { groups: 0, items: 0 }, 2: { groups: 0, items: 0 }, 3: { groups: 0, items: 0 } };
+  groups.forEach(g => { s[g.tier].groups++; s[g.tier].items += g.items.length; });
+  return s;
+}
+
+function countPhrase(stat, unit) {
+  return stat.groups === stat.items ? `${stat.items} 件${unit}` : `${stat.groups} 類問題（共 ${stat.items} 處）`;
+}
+
 /**
  * 一句話結論 + 行動步驟(畫面與報告共用)
- * @returns {{headline: string, calm: string|null, steps: string[]}}
+ * @returns {{headline: string, calm: string|null, steps: string[], partial?: boolean}}
  */
 function buildVerdict(findings, notices) {
-  const c = countByTier(findings);
-  const hasLeak = findings.some(f => LEAKED_KEY_KINDS.has(f.kind));
-  if (c[1] > 0) {
+  const groups = groupFindings(sortFindings(findings));
+  const s = tierStats(groups);
+  const hasLeak = findings.some(f => f.tier === 1 && LEAKED_KEY_KINDS.has(f.kind));
+  const refNote = s[3].items ? `另有 ${s[3].items} 項「參考」（測試檔、範例假金鑰等），可以略過。` : null;
+  if (s[1].items > 0) {
     const steps = [];
     if (hasLeak) steps.push('先到外洩金鑰所屬的服務後台「撤銷並重新產生」金鑰——只改程式碼的話，舊金鑰仍然有效。');
     steps.push('按「複製全部修正指令」，貼給你用的 AI（Claude、ChatGPT 或 Lovable／Bolt 內建的 AI），請它照指令修改程式。');
     steps.push('改完後回到這裡再掃一次，確認「需要處理」的項目都消失了。');
     return {
-      headline: `有 ${c[1]} 件事需要處理` + (c[2] > 0 ? `，另有 ${c[2]} 件請你確認` : '') + '。',
+      headline: `有 ${countPhrase(s[1], '事')}需要處理` + (s[2].items > 0 ? `，另有 ${countPhrase(s[2], '')}請你確認` : '') + '。',
       calm: '先別慌：這些都是 AI 產生的程式碼常見的問題，有標準的修法，照下面的步驟做就好。',
       steps
     };
   }
-  if (c[2] > 0) {
+  if (s[2].items > 0) {
     return {
-      headline: `沒有確定的問題，但有 ${c[2]} 件請你確認。`,
-      calm: '「請你確認」代表看起來可疑、不一定真的有問題。',
+      headline: `沒有確定的問題，但有 ${countPhrase(s[2], '事')}請你確認。`,
+      calm: '「請你確認」代表看起來可疑、不一定真的有問題。' + (refNote ? ' ' + refNote : ''),
       steps: [
         '逐項展開下方說明，判斷是否符合你的情況。',
         '不確定的話，按「複製全部修正指令」貼給 AI，請它幫你檢查。'
@@ -605,6 +647,9 @@ function buildVerdict(findings, notices) {
   }
   if ((notices || []).some(n => n.id === 'minified')) {
     return { headline: '金鑰檢查沒有發現問題，但權限、SQL 這類邏輯無法判斷。', calm: '原因見下方提示：這段是打包壓縮過的程式碼。', steps: [], partial: true };
+  }
+  if (s[3].items > 0) {
+    return { headline: '沒有需要處理或確認的問題。', calm: refNote, steps: [] };
   }
   return { headline: '沒有比對到已知的問題模式。', calm: null, steps: [] };
 }
@@ -621,12 +666,48 @@ function buildNoticesHtml(notices) {
   return html;
 }
 
-function buildCardHtml(f, idx) {
-  const meta = TIER_META[f.tier];
-  return `<div class="result-card ${meta.cls}" id="finding-${idx}" tabindex="-1">
-      <div class="rc-title"><span class="rc-tag">${meta.tag}</span><span class="rc-title-text">${escapeHtml(plainTitle(f))}</span>${buildFilenameTagHtml(f)}${buildLineTagHtml(f)}</div>
-      <div class="rc-subtitle">${escapeHtml(f.name)}</div>
-      ${buildCardBody(f)}
+/** 位置的純文字說明(報告、複製指令用):a.js 第 5、9 行；b.js 第 2 行 */
+function describeLocations(items, max) {
+  const limit = max || 30;
+  const byFile = new Map();
+  items.slice(0, limit).forEach(f => {
+    const file = f.filename || '';
+    if (!byFile.has(file)) byFile.set(file, []);
+    if (typeof f.line === 'number') byFile.get(file).push(f.line);
+  });
+  const parts = [];
+  byFile.forEach((lines, file) => {
+    const lineText = lines.length ? `第 ${lines.join('、')} 行` : '';
+    parts.push([file, lineText].filter(Boolean).join(' '));
+  });
+  const text = parts.filter(Boolean).join('；');
+  return items.length > limit ? `${text}……等共 ${items.length} 處` : text;
+}
+
+function buildLocationHtml(f) {
+  const file = f.filename ? `<span class="rc-filename-tag">${escapeHtml(f.filename)}</span>` : '';
+  if (typeof f.line !== 'number') return file ? `<span class="rc-loc">${file}</span>` : '';
+  const fileAttr = f.filename ? ` data-file="${escapeHtml(f.filename)}"` : '';
+  return `<button type="button" class="rc-line-tag" data-start="${f.start}" data-end="${f.end}"${fileAttr} title="在輸入框中選取這一段">${file}第 ${f.line} 行</button>`;
+}
+
+function buildGroupCardHtml(g, idx) {
+  const meta = TIER_META[g.tier];
+  const first = g.items[0];
+  const VISIBLE = 8;
+  const locs = g.items.map(buildLocationHtml).filter(Boolean);
+  const locsHtml = locs.length
+    ? `<div class="rc-locs">${locs.slice(0, VISIBLE).join('')}${locs.length > VISIBLE ? `<details class="rc-more-locs"><summary>還有 ${locs.length - VISIBLE} 處</summary>${locs.slice(VISIBLE).join('')}</details>` : ''}</div>`
+    : '';
+  const countHtml = g.items.length > 1 ? `<span class="rc-count">${g.items.length} 處</span>` : '';
+  const noteHtml = g.context && CONTEXT_NOTES[g.context] ? `<div class="rc-context">${escapeHtml(CONTEXT_NOTES[g.context])}</div>` : '';
+  const evidences = [...new Set(g.items.map(f => f.evidence).filter(Boolean))];
+  return `<div class="result-card ${meta.cls}" id="finding-${idx}" tabindex="-1" data-where="${escapeHtml(describeLocations(g.items))}">
+      <div class="rc-title"><span class="rc-tag">${meta.tag}</span><span class="rc-title-text">${escapeHtml(g.title)}</span>${countHtml}</div>
+      <div class="rc-subtitle">${escapeHtml([...new Set(g.items.map(f => f.name))].join('、'))}</div>
+      ${noteHtml}
+      ${locsHtml}
+      ${g.tier === 3 ? `<details class="rc-ref-body"><summary>展開說明</summary>${buildCardBody(first, evidences)}</details>` : buildCardBody(first, evidences)}
     </div>`;
 }
 
@@ -638,20 +719,21 @@ function buildCardHtml(f, idx) {
  */
 function findingRenderer(findings, languageCaveat, notices) {
   const ordered = sortFindings(findings);
-  const counts = countByTier(ordered);
+  const groups = groupFindings(ordered);
+  const s = tierStats(groups);
   const verdict = buildVerdict(ordered, notices);
   let html = '';
 
   // 摘要區:結論 → 行動步驟 → 跳轉/複製/匯出(按鈕行為由 assets/app.js 綁定)
   let firstIdx = 0;
-  const chips = [1, 2, 3].filter(t => t !== 3 || counts[3] > 0).map(t => {
-    const target = counts[t] > 0 ? ` data-jump="finding-${firstIdx}"` : ' disabled';
-    firstIdx += counts[t];
-    return `<button type="button" class="rs-chip ${TIER_META[t].cls}"${target}><b>${counts[t]}</b> ${TIER_META[t].label}</button>`;
+  const chips = [1, 2, 3].filter(t => t !== 3 || s[3].items > 0).map(t => {
+    const target = s[t].items > 0 ? ` data-jump="finding-${firstIdx}"` : ' disabled';
+    firstIdx += s[t].groups;
+    return `<button type="button" class="rs-chip ${TIER_META[t].cls}"${target}><b>${s[t].items}</b> ${TIER_META[t].label}</button>`;
   }).join('');
-  const hasHandoff = ordered.some(f => { const g = getFindingGuide(f.kind); return g && g.handoff; });
-  const stepsHtml = verdict.steps.length ? `<ol class="rs-steps">${verdict.steps.map(s => `<li>${escapeHtml(s)}</li>`).join('')}</ol>` : '';
-  const levelCls = counts[1] > 0 ? 'bad' : (counts[2] > 0 || verdict.partial) ? 'check' : 'ok';
+  const hasHandoff = groups.some(g => g.tier < 3 && getFindingGuide(g.kind) && getFindingGuide(g.kind).handoff);
+  const stepsHtml = verdict.steps.length ? `<ol class="rs-steps">${verdict.steps.map(x => `<li>${escapeHtml(x)}</li>`).join('')}</ol>` : '';
+  const levelCls = s[1].items > 0 ? 'bad' : (s[2].items > 0 || verdict.partial) ? 'check' : 'ok';
 
   html += `<div class="results-summary ${levelCls}" tabindex="-1">
     <div class="rs-headline">${escapeHtml(verdict.headline)}</div>
@@ -668,13 +750,13 @@ function findingRenderer(findings, languageCaveat, notices) {
 
   html += buildNoticesHtml(notices);
 
-  if (ordered.length === 0) {
+  if (s[1].items + s[2].items === 0) {
     html += `<div class="result-card clean">
       <div class="rc-plain">這只代表「沒有符合本工具規則的寫法」，<strong>不代表程式碼是安全的</strong>。建議：① 確認貼上的是原始程式碼，而不是打包壓縮過的檔案；② 後端 API 與資料庫權限規則（RLS／Security Rules）請另外檢查；③ 看看下方「本工具無法檢測」清單。</div>
     </div>`;
   }
 
-  ordered.forEach((f, idx) => { html += buildCardHtml(f, idx); });
+  groups.forEach((g, idx) => { html += buildGroupCardHtml(g, idx); });
 
   const langCaveatHtml = (!notices && languageCaveat) ? `<p class="cb-lang">${escapeHtml(languageCaveat)}</p>` : '';
   html += `<details class="cannot-block">
@@ -688,7 +770,8 @@ function findingRenderer(findings, languageCaveat, notices) {
 
 /**
  * 可分享的報告(Markdown)。刻意不含原始程式碼:只輸出白話標題、位置、說明、建議,
- * 以及金鑰類的「遮罩後」識別字串。scripts/verify.js 會檢查報告不含金鑰原文與程式碼行。
+ * 以及金鑰類的「遮罩後」識別字串。同一種問題合併成一項,說明只寫一次。
+ * scripts/verify.js 會檢查報告不含金鑰原文與程式碼行。
  * @param {Array} findings
  * @param {Array} notices
  * @param {{generatedAt?: string, mode?: string, source?: string, toolUrl?: string}} meta
@@ -697,6 +780,8 @@ function findingRenderer(findings, languageCaveat, notices) {
 function buildReportMarkdown(findings, notices, meta) {
   meta = meta || {};
   const ordered = sortFindings(findings);
+  const groups = groupFindings(ordered);
+  const s = tierStats(groups);
   const verdict = buildVerdict(ordered, notices);
   const lines = [];
   lines.push('# 資安自我檢查報告', '');
@@ -705,25 +790,36 @@ function buildReportMarkdown(findings, notices, meta) {
   if (meta.mode) lines.push(`- 檢查方式：${meta.mode}`);
   lines.push(`- 工具：看見 AI 網頁的程式過錯${meta.toolUrl ? '（' + meta.toolUrl + '）' : ''}`);
   lines.push('', `**結論：${verdict.headline}**`, '');
+  if (verdict.calm) lines.push(verdict.calm, '');
   if (verdict.steps.length) {
     lines.push('建議步驟：');
     verdict.steps
-      .map(s => s.replace('按「複製全部修正指令」，貼給', '把這份報告交給負責修改的人，或貼給').replace('回到這裡再掃一次', '用同一個工具再掃一次'))
-      .forEach((s, i) => lines.push(`${i + 1}. ${s}`));
+      .map(x => x.replace('按「複製全部修正指令」，貼給', '把這份報告交給負責修改的人，或貼給').replace('回到這裡再掃一次', '用同一個工具再掃一次'))
+      .forEach((x, i) => lines.push(`${i + 1}. ${x}`));
     lines.push('');
   }
   [1, 2, 3].forEach(tier => {
-    const group = ordered.filter(f => f.tier === tier);
-    if (!group.length) return;
-    lines.push(`## ${TIER_META[tier].label}（${group.length}）`, '');
-    group.forEach((f, i) => {
-      const where = [f.filename, typeof f.line === 'number' ? `第 ${f.line} 行` : null].filter(Boolean).join(' ');
-      lines.push(`${i + 1}. **${plainTitle(f)}**${where ? `　— ${where}` : ''}`);
-      lines.push(`   - 類型：${f.name}`);
-      const guide = getFindingGuide(f.kind);
-      if (guide && guide.plain) lines.push(`   - 說明：${guide.plain}`);
-      if (plainAction(f)) lines.push(`   - 建議：${plainAction(f)}`);
-      if (MASKED_EVIDENCE_KINDS.has(f.kind) && f.evidence) lines.push(`   - 識別：${String(f.evidence).split('　')[0]}`);
+    const tierGroups = groups.filter(g => g.tier === tier);
+    if (!tierGroups.length) return;
+    const stat = s[tier];
+    lines.push(`## ${TIER_META[tier].label}（${stat.groups === stat.items ? stat.items : `${stat.groups} 類，共 ${stat.items} 處`}）`, '');
+    tierGroups.forEach((g, i) => {
+      const first = g.items[0];
+      lines.push(`${i + 1}. **${g.title}**${g.items.length > 1 ? `（${g.items.length} 處）` : ''}`);
+      const where = describeLocations(g.items);
+      if (where) lines.push(`   - 位置：${where}`);
+      lines.push(`   - 類型：${[...new Set(g.items.map(f => f.name))].join('、')}`);
+      if (g.context && CONTEXT_NOTES[g.context]) lines.push(`   - 備註：${CONTEXT_NOTES[g.context]}`);
+      // 參考項目只列位置與原因,不重複長篇說明
+      if (tier < 3) {
+        const guide = getFindingGuide(g.kind);
+        if (guide && guide.plain) lines.push(`   - 說明：${guide.plain}`);
+        if (plainAction(first)) lines.push(`   - 建議：${plainAction(first)}`);
+      }
+      if (MASKED_EVIDENCE_KINDS.has(g.kind)) {
+        const ids = [...new Set(g.items.map(f => String(f.evidence || '').split('　')[0]).filter(Boolean))];
+        if (ids.length) lines.push(`   - 識別：${ids.slice(0, 5).join('、')}${ids.length > 5 ? ' 等' : ''}`);
+      }
     });
     lines.push('');
   });
@@ -732,7 +828,7 @@ function buildReportMarkdown(findings, notices, meta) {
     notices.forEach(n => lines.push(`- ${n.text}`));
     lines.push('');
   }
-  lines.push('---', '本報告由瀏覽器內的靜態比對產生，不含原始程式碼，金鑰只顯示遮罩後的前後幾碼。「請你確認」代表看起來可疑、不是確診；沒有列出的項目也不代表安全，不能取代正式的資安審查。');
+  lines.push('---', '本報告由瀏覽器內的靜態比對產生，不含原始程式碼，金鑰只顯示遮罩後的前後幾碼。「請你確認」代表看起來可疑、不是確診；「參考」是測試檔或範例假金鑰等不影響正式網站的項目。沒有列出的項目也不代表安全，不能取代正式的資安審查。');
   return lines.join('\n');
 }
 
@@ -741,5 +837,5 @@ function buildReportMarkdown(findings, notices, meta) {
 // 瀏覽器環境: module 不存在 → 略過這段,函式/常數已是全域作用域下的宣告,
 //            可直接被 index.html 或其他 <script> 使用
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { findingRenderer, buildReportMarkdown, buildVerdict, plainTitle, plainAction, getFindingGuide, escapeHtml, buildCardBody, buildAttackDemoHtml, buildKeyImpactHtml, buildKeyCapabilityHtml, buildFilenameTagHtml, buildLineTagHtml, KEY_CAPABILITY_KB, FINDING_GUIDE, PLAIN_TITLES, TIER_META };
+  module.exports = { findingRenderer, buildReportMarkdown, buildVerdict, groupFindings, describeLocations, plainTitle, plainAction, getFindingGuide, escapeHtml, buildCardBody, buildAttackDemoHtml, buildKeyImpactHtml, buildKeyCapabilityHtml, buildFilenameTagHtml, buildLineTagHtml, KEY_CAPABILITY_KB, FINDING_GUIDE, PLAIN_TITLES, TIER_META, CONTEXT_NOTES };
 }
