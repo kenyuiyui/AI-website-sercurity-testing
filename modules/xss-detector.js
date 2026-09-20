@@ -73,7 +73,9 @@ function xssDynamicParts(expr) {
   for (const m of expr.matchAll(/\$\{([^{}]{1,150})\}/g)) parts.push(m[1].trim());
   // 字串相加:把字面字串挖掉,剩下的識別字就是動態的部分
   const stripped = expr.replace(/`(?:[^`\\]|\\.)*`|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g, '""');
-  if (stripped.indexOf('+') >= 0) {
+  // 有分號代表讀到的是一整個程式區塊(例如 items.map(it => { … })),
+  // 這時只有樣板字串的 ${…} 才是真的插進 HTML;區塊裡的變數宣告不算。
+  if (stripped.indexOf('+') >= 0 && stripped.indexOf(';') < 0) {
     // 允許鏈中間有呼叫,document.getElementById('q').value 才不會被拆成兩段而看不出是輸入框
     const CHAIN_RE = /[A-Za-z_$][\w$]*(?:\s*\([^()]{0,80}\))?(?:\s*\.\s*[A-Za-z_$][\w$]*(?:\s*\([^()]{0,80}\))?|\[[^\]]{1,20}\])*/g;
     for (const m of stripped.matchAll(CHAIN_RE)) parts.push(m[0].trim());
@@ -100,7 +102,10 @@ function xssLooksLikeUrlSource(code, expr, depth) {
   if ((depth || 0) >= 1) return false;
   return (expr.match(/[A-Za-z_$][\w$]*/g) || []).slice(0, 5).some(id => {
     const src = xssResolveLocal(code, id);
-    return src && xssLooksLikeUrlSource(code, src, (depth || 0) + 1);
+    // 只追「短的、像一個值」的變數;整包工具物件(const Utils = { … })裡面一定找得到
+    // .value、textContent 之類的字樣,展開它只會得到錯的結論
+    if (!src || src.length > 120 || /^\s*\{/.test(src)) return false;
+    return xssLooksLikeUrlSource(code, src, (depth || 0) + 1);
   });
 }
 
@@ -136,6 +141,8 @@ function xssDetector(code, ctx) {
       if (!/^[A-Za-z_$][\w$]*$/.test(p)) return;
       const src = xssResolveLocal(code, p);
       if (!src) return;
+      // 這個變數就是跳脫後的結果(const task = escapeHtml(it.task))→ 安全,不要再往下判斷
+      if (/escape|sanitiz|encodeURI|DOMPurify|purify/i.test(src)) return;
       // 變數本身就是網址／輸入框的內容 → 升級成「確定會出事」那一級
       if (xssLooksLikeUrlSource(code, src, 0)) {
         if (urlParts.indexOf(p) < 0) urlParts.push(p + '（內容來自網址或輸入框）');

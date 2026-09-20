@@ -8,7 +8,7 @@
   唯一例外:使用者按下「從 GitHub 匯入」時,讀取 api.github.com 與 raw.githubusercontent.com 上的公開檔案(只讀取,不送出程式碼)。
   單檔版由 scripts/build-single.js 改寫這一行(行內 script/style 改用 sha256 雜湊、字型改用 data:)。
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tQN3P01k+9fYTJxjz1bz9sk4ixh28eNMwMOygJKvYHA=' 'sha256-r2Ulx/KLJ3bwPptcn/Gxn23scblhvMWjB2MSqkYA4GY=' 'sha256-k4Dsl4phnEVoWRV6BGYpsCAjEiqhiFqyyqFmNTpECOY=' 'sha256-AvGuu4qO0PTKlZOxSFM5OZdwoGBGMcuTTMqsy4/n/zE=' 'sha256-Kz1bcHKV44I2OKFIEpq+iclqwXOorzYOHcgUVYXJdaw=' 'sha256-s6wK40PdWN1WO56UYib9d+evKEx9zrGhFp1jXa+P+bU=' 'sha256-w9tDV4ToqGvFljYpLINp/oeLBzxAX1ZCL21aTbIMXcE=' 'sha256-8ZqKMlOH5MjSWLMiy13BEO4qPrHonb2ogwoH+rmKY2s=' 'sha256-dJag6CzpPEQgZWU1O+LyofbUR9zU/RFSlosjlVvJgqY=' 'sha256-VF7EbVkdcEb/5TRO0cqx51QYwoWGkFPl+O/f3MwcOBM=' 'sha256-KjZdCklqc4O8cs2Pg0FS+9aTNC9SOrRlh8G0HRjF29I=' 'sha256-LcZWF0O4w0uncH/nUDsSgFAW6hQ16blGQsJSvyXcuLw=' 'sha256-0pOxSQ9PNKtU4R7szM6TT7hYjIr5M9Q6ebZB4CGAZFI=' 'sha256-PIv8TVCXCC8t+Pdd/bp7vMH3ycEqSmtgj05fwYo+5wE=' 'sha256-oMcRnEhoBVhFfAKGp7IKU0F/2a9JOXV4OXT2OQi84xY=' 'sha256-YPKriWmcdloU/53/GV6xGDoRNk6O25Fe/3mCwh3Ku+0=' 'sha256-HBnGfbhOyybYr3HfgCkGArZMN03Te8k/4wDrP375Ge0=' 'sha256-cmLyYxrHv9dqB9fvRph7+9gAY7NMsMz99f7Q0K37ioo=' 'sha256-etIXWe4Dij/o++qELwMLDHsclqQHBsAKJRiNQTGfG1c=' 'sha256-xZQkkSa264miFJm8yfibQKGc3PVNTz40HvWCUjoTA/0=' 'sha256-Wyyh4pGZCu33knKPa4k+JP95Q4DQlB07lPvliCyAa5o='; style-src 'sha256-yVZD3pDEYI+5GpYuMKxafiMqHiUD1ZRJ4fxaLl7b0Yw='; font-src data:; img-src data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tQN3P01k+9fYTJxjz1bz9sk4ixh28eNMwMOygJKvYHA=' 'sha256-r2Ulx/KLJ3bwPptcn/Gxn23scblhvMWjB2MSqkYA4GY=' 'sha256-k4Dsl4phnEVoWRV6BGYpsCAjEiqhiFqyyqFmNTpECOY=' 'sha256-AvGuu4qO0PTKlZOxSFM5OZdwoGBGMcuTTMqsy4/n/zE=' 'sha256-Kz1bcHKV44I2OKFIEpq+iclqwXOorzYOHcgUVYXJdaw=' 'sha256-s6wK40PdWN1WO56UYib9d+evKEx9zrGhFp1jXa+P+bU=' 'sha256-w9tDV4ToqGvFljYpLINp/oeLBzxAX1ZCL21aTbIMXcE=' 'sha256-8ZqKMlOH5MjSWLMiy13BEO4qPrHonb2ogwoH+rmKY2s=' 'sha256-dJag6CzpPEQgZWU1O+LyofbUR9zU/RFSlosjlVvJgqY=' 'sha256-VF7EbVkdcEb/5TRO0cqx51QYwoWGkFPl+O/f3MwcOBM=' 'sha256-KjZdCklqc4O8cs2Pg0FS+9aTNC9SOrRlh8G0HRjF29I=' 'sha256-LcZWF0O4w0uncH/nUDsSgFAW6hQ16blGQsJSvyXcuLw=' 'sha256-0pOxSQ9PNKtU4R7szM6TT7hYjIr5M9Q6ebZB4CGAZFI=' 'sha256-PIv8TVCXCC8t+Pdd/bp7vMH3ycEqSmtgj05fwYo+5wE=' 'sha256-oMcRnEhoBVhFfAKGp7IKU0F/2a9JOXV4OXT2OQi84xY=' 'sha256-YPKriWmcdloU/53/GV6xGDoRNk6O25Fe/3mCwh3Ku+0=' 'sha256-MkhJSNhhn6SqYzLWDW+T8J4PNIbQLFBBKzie516HbkQ=' 'sha256-cmLyYxrHv9dqB9fvRph7+9gAY7NMsMz99f7Q0K37ioo=' 'sha256-etIXWe4Dij/o++qELwMLDHsclqQHBsAKJRiNQTGfG1c=' 'sha256-xZQkkSa264miFJm8yfibQKGc3PVNTz40HvWCUjoTA/0=' 'sha256-Wyyh4pGZCu33knKPa4k+JP95Q4DQlB07lPvliCyAa5o='; style-src 'sha256-yVZD3pDEYI+5GpYuMKxafiMqHiUD1ZRJ4fxaLl7b0Yw='; font-src data:; img-src data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>未發現 ≠ 安全 — AI 產出程式碼資安檢查器</title>
@@ -1424,7 +1424,7 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
     <footer>
       <p>本工具只做靜態比對：不執行、不上傳、不儲存你貼上的內容。適合上線前快速自我檢查，不能取代正式的資安審查或滲透測試。</p>
       <p>「需要處理」是高信心度的結果；「請你確認」代表看起來可疑，需要你對照程式判斷。</p>
-      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">f751a4f2</span></p>
+      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">d6cbb681</span></p>
     </footer>
   </div>
 
@@ -4719,7 +4719,9 @@ function xssDynamicParts(expr) {
   for (const m of expr.matchAll(/\$\{([^{}]{1,150})\}/g)) parts.push(m[1].trim());
   // 字串相加:把字面字串挖掉,剩下的識別字就是動態的部分
   const stripped = expr.replace(/`(?:[^`\\]|\\.)*`|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'/g, '""');
-  if (stripped.indexOf('+') >= 0) {
+  // 有分號代表讀到的是一整個程式區塊(例如 items.map(it => { … })),
+  // 這時只有樣板字串的 ${…} 才是真的插進 HTML;區塊裡的變數宣告不算。
+  if (stripped.indexOf('+') >= 0 && stripped.indexOf(';') < 0) {
     // 允許鏈中間有呼叫,document.getElementById('q').value 才不會被拆成兩段而看不出是輸入框
     const CHAIN_RE = /[A-Za-z_$][\w$]*(?:\s*\([^()]{0,80}\))?(?:\s*\.\s*[A-Za-z_$][\w$]*(?:\s*\([^()]{0,80}\))?|\[[^\]]{1,20}\])*/g;
     for (const m of stripped.matchAll(CHAIN_RE)) parts.push(m[0].trim());
@@ -4746,7 +4748,10 @@ function xssLooksLikeUrlSource(code, expr, depth) {
   if ((depth || 0) >= 1) return false;
   return (expr.match(/[A-Za-z_$][\w$]*/g) || []).slice(0, 5).some(id => {
     const src = xssResolveLocal(code, id);
-    return src && xssLooksLikeUrlSource(code, src, (depth || 0) + 1);
+    // 只追「短的、像一個值」的變數;整包工具物件(const Utils = { … })裡面一定找得到
+    // .value、textContent 之類的字樣,展開它只會得到錯的結論
+    if (!src || src.length > 120 || /^\s*\{/.test(src)) return false;
+    return xssLooksLikeUrlSource(code, src, (depth || 0) + 1);
   });
 }
 
@@ -4782,6 +4787,8 @@ function xssDetector(code, ctx) {
       if (!/^[A-Za-z_$][\w$]*$/.test(p)) return;
       const src = xssResolveLocal(code, p);
       if (!src) return;
+      // 這個變數就是跳脫後的結果(const task = escapeHtml(it.task))→ 安全,不要再往下判斷
+      if (/escape|sanitiz|encodeURI|DOMPurify|purify/i.test(src)) return;
       // 變數本身就是網址／輸入框的內容 → 升級成「確定會出事」那一級
       if (xssLooksLikeUrlSource(code, src, 0)) {
         if (urlParts.indexOf(p) < 0) urlParts.push(p + '（內容來自網址或輸入框）');

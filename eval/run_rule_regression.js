@@ -253,6 +253,26 @@ check('沒有外部資料的純靜態頁不報', 'const t = "標題";\nbox.inner
 check('先組成變數再塞進 HTML 也要追到',
   'const list = JSON.parse(localStorage.getItem("c"));\nconst conflictText = list.map(x => `${x.name}`).join("；");\nbanner.innerHTML = `<div>${conflictText}</div>`;',
   'html_from_data', true);
+// 真實回報:跳脫後才指派給變數的寫法被誤判成最高層級(const task = escapeHtml(it.task))
+const ESCAPED_VAR = 'const data = JSON.parse(localStorage.getItem("d") || "{}");\n' +
+  'list.innerHTML = data.items.map(it => {\n' +
+  '  const task = Utils.escapeHtml(it.task || "");\n' +
+  '  const owner = it.owner ? `<span>${Utils.escapeHtml(it.owner)}</span>` : "";\n' +
+  '  return `<li>${task}${owner}</li>`;\n' +
+  '}).join("");';
+check('跳脫後才指派給變數,不算 XSS', ESCAPED_VAR, 'html_from_data', false);
+check('跳脫後才指派給變數,更不該算成網址來源', ESCAPED_VAR, 'xss_from_url', false);
+// 讀到的是一整個程式區塊時,區塊裡的變數宣告不是「插進 HTML 的值」
+check('區塊裡的變數宣告不算插值',
+  'const rows = JSON.parse(localStorage.getItem("r") || "[]");\n' +
+  'out.innerHTML = rows.map(row => {\n' +
+  '  const label = row.label || "（未命名）";\n' +
+  '  let html = `<div>`;\n' +
+  '  html += `<b>${Utils.escapeHtml(label)}</b>`;\n' +
+  '  html += `</div>`;\n' +
+  '  return html;\n' +
+  '}).join("");',
+  'html_from_data', false);
 check('組成變數時有跳脫就不報',
   'const list = JSON.parse(localStorage.getItem("c"));\nconst conflictText = list.map(x => `${escapeHTML(x.name)}`).join("；");\nbanner.innerHTML = `<div>${conflictText}</div>`;',
   'html_from_data', false);
