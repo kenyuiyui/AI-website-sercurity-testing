@@ -692,7 +692,17 @@ function buildVerdict(findings, notices) {
 }
 
 // ── 檔案地圖(project-map.js 的結果):畫面的樹狀清單與報告的「檢查範圍」共用 ──
-const PM_LABELS = { used: '使用中', unused: '疑似沒用到', build: '建置／設定', test: '測試／範例', unknown: '無法判斷', skipped: '未檢查' };
+const PM_LABELS = { used: '使用中', page: '另一個網頁', unused: '疑似沒用到', build: '工具／設定', test: '測試／範例', unknown: '無法判斷', skipped: '未檢查' };
+// 每種狀態的一句話說明:使用者第一次看到「無法判斷」「另一個網頁」時不用去猜
+const PM_WHY = {
+  used: '從首頁一路引用得到',
+  page: '自己就是一個網頁（首頁沒有連到它，但網址打得開）',
+  unused: '從任何一個網頁都追不到，也不是工具或測試用',
+  build: '建置、部署或驗證用的檔案，不會送到瀏覽器',
+  test: '測試或範例檔',
+  unknown: '這次無法判斷（原因見上一行）',
+  skipped: '這次沒有檢查到'
+};
 
 function projectMapRows(map) {
   const rows = map.nodes.map(n => ({ path: n.path, status: n.status }));
@@ -724,8 +734,94 @@ function projectTreeText(map, findings) {
   return out.join('\n');
 }
 
+/**
+ * 引用關係樹:從入口網頁出發,列出它用到哪些檔案、那些檔案又用到誰。
+ * 同一個檔案只展開一次(第二次標「同上」),避免共用模組把樹撐爆。
+ */
+function projectGraphText(map) {
+  const edges = map.edges || {};
+  const out = [];
+  const expanded = new Set();
+  const MAX_DEPTH = 8;
+  function walk(node, depth) {
+    const pad = '  '.repeat(depth);
+    const children = edges[node] || [];
+    if (expanded.has(node)) { out.push(pad + node + (children.length ? '（同上）' : '')); return; }
+    expanded.add(node);
+    out.push(pad + node + (children.length ? '' : '（沒有再引用其他檔案）'));
+    if (depth >= MAX_DEPTH) { if (children.length) out.push(pad + '  …（更深層省略）'); return; }
+    children.forEach(c => walk(c, depth + 1));
+  }
+  // 主要入口放最前面,其他網頁接在後面
+  const roots = (map.entries || []).slice().sort((a, b) => (a === map.primary ? -1 : b === map.primary ? 1 : 0));
+  roots.forEach(e => { walk(e, 0); out.push(''); });
+  while (out.length && !out[out.length - 1]) out.pop();
+  return out.join('\n');
+}
+
+/** 待處理／確認的項數(依檔案),畫面與文字樹共用 */
+function projectTodoCount(findings) {
+  const count = {};
+  (findings || []).forEach(f => { if (f.filename && f.tier < 3) count[f.filename] = (count[f.filename] || 0) + 1; });
+  return count;
+}
+
+/** 畫面用的檔案樹:每個檔案配一個有顏色的狀態標籤,待處理的檔案再加一個醒目標記 */
+function buildProjectTreeHtml(map, findings) {
+  const count = projectTodoCount(findings);
+  const seen = new Set();
+  const out = [];
+  const indent = d => 'pm-i' + Math.min(d, 6);
+  projectMapRows(map).forEach(r => {
+    const parts = r.path.split('/');
+    for (let i = 0; i < parts.length - 1; i++) {
+      const dir = parts.slice(0, i + 1).join('/');
+      if (!seen.has(dir)) { seen.add(dir); out.push(`<div class="pm-dir ${indent(i)}">${escapeHtml(parts[i])}/</div>`); }
+    }
+    const status = (!map.analyzed && r.status === 'unknown') ? 'checked' : r.status;
+    const label = status === 'checked' ? '已檢查' : PM_LABELS[r.status];
+    const todo = count[r.path];
+    out.push(`<div class="pm-row ${indent(parts.length - 1)}">`
+      + `<span class="pm-name">${escapeHtml(parts[parts.length - 1])}</span>`
+      + `<span class="pm-chip pm-${status}">${escapeHtml(label)}</span>`
+      + (todo ? `<span class="pm-todo">${todo} 項待處理／確認</span>` : '')
+      + '</div>');
+  });
+  return `<div class="pm-tree" tabindex="0">${out.join('')}</div>`;
+}
+
+/**
+ * 畫面用的引用關係:一層一個顏色(第一層淺綠、第二層淺黃…),讓「誰被誰用到」一眼看得出來。
+ * 同一個檔案只展開一次(第二次標「同上」),最深 8 層。
+ */
+function buildProjectGraphHtml(map, findings) {
+  const edges = map.edges || {};
+  const count = projectTodoCount(findings);
+  const expanded = new Set();
+  const MAX_DEPTH = 8;
+  function node(path, depth) {
+    const children = edges[path] || [];
+    const lvl = 'pm-l' + (depth % 6);
+    const todo = count[path] ? `<span class="pm-todo">${count[path]} 項待處理／確認</span>` : '';
+    const repeat = expanded.has(path);
+    const head = `<div class="pm-gnode ${lvl}">`
+      + `<span class="pm-name">${escapeHtml(path)}</span>`
+      + (depth === 0 ? '<span class="pm-chip pm-entry">入口</span>' : '')
+      + (repeat && children.length ? '<span class="pm-note">同上</span>' : '')
+      + (!children.length ? '<span class="pm-note">沒有再引用其他檔案</span>' : '')
+      + todo;
+    if (repeat || !children.length) return head + '</div>';
+    expanded.add(path);
+    if (depth >= MAX_DEPTH) return head + '<div class="pm-note pm-deep">…（更深層省略）</div></div>';
+    return head + `<div class="pm-gkids">${children.map(c => node(c, depth + 1)).join('')}</div></div>`;
+  }
+  const roots = (map.entries || []).slice().sort((a, b) => (a === map.primary ? -1 : b === map.primary ? 1 : 0));
+  roots.forEach(r => expanded.delete(r));
+  return `<div class="pm-graph" tabindex="0">${roots.map(r => node(r, 0)).join('')}</div>`;
+}
+
 function projectMapCounts(map) {
-  const parts = ['used', 'unused', 'build', 'test', 'unknown'].filter(k => map.counts[k]).map(k => `${PM_LABELS[k]} ${map.counts[k]}`);
+  const parts = ['used', 'page', 'unused', 'build', 'test', 'unknown'].filter(k => map.counts[k]).map(k => `${PM_LABELS[k]} ${map.counts[k]}`);
   return `${map.nodes.length} 個檔案` + (map.analyzed && parts.length ? '：' + parts.join('、') : '');
 }
 
@@ -733,8 +829,18 @@ function buildProjectMapHtml(map, findings) {
   if (!map || !(map.analyzed || map.coverage)) return '';
   const missing = projectMapSkipped(map);
   const head = `檔案地圖（${map.nodes.length} 個檔案` + (map.counts.unused ? `，${map.counts.unused} 個疑似沒在使用` : '') + (missing ? `，${missing} 個沒檢查到` : '') + '）';
-  const hint = map.analyzed ? '「疑似沒用到」是從網站入口（index.html）追不到的檔案，建議確認後刪除。' : '';
-  return `<details class="rs-notice info rs-map"><summary>${escapeHtml(head)}</summary><p>${escapeHtml(projectMapCounts(map) + '。' + hint)}</p><pre class="rs-tree" tabindex="0">${escapeHtml(projectTreeText(map, findings))}</pre></details>`;
+  // 狀態說明只列這次真的出現的狀態;map.note 是「為什麼無法判斷」,要放在樹旁邊而不是只放在限制區
+  const shown = ['used', 'page', 'unused', 'build', 'test', 'unknown'].filter(k => map.counts[k]);
+  const legend = map.analyzed && shown.length
+    ? `<ul class="rs-legend">${shown.map(k => `<li><span class="pm-chip pm-${k}">${escapeHtml(PM_LABELS[k])}</span>${escapeHtml(PM_WHY[k])}</li>`).join('')}</ul>`
+    : '';
+  const noteHtml = map.note ? `<p class="rs-map-note">${escapeHtml(map.note)}</p>` : '';
+  const graphHtml = (map.entries || []).length
+    ? `<p class="rs-map-sub">${escapeHtml('網頁用到哪些檔案（引用關係，從 ' + (map.primary || '入口') + ' 開始）')}</p>`
+      + '<p class="rs-map-hint">由外往內一層一個顏色：最外層是網頁，往內是它用到的檔案。</p>'
+      + buildProjectGraphHtml(map, findings)
+    : '';
+  return `<details class="rs-notice info rs-map"><summary>${escapeHtml(head)}</summary><p>${escapeHtml(projectMapCounts(map) + '。')}</p>${noteHtml}${legend}<p class="rs-map-sub">全部檔案</p>${buildProjectTreeHtml(map, findings)}${graphHtml}</details>`;
 }
 
 function buildMapReportLines(map) {
@@ -743,8 +849,11 @@ function buildMapReportLines(map) {
   const lines = ['## 檢查範圍', ''];
   lines.push(map.coverage ? `- 專案有 ${map.coverage.total} 個程式碼檔，實際檢查 ${map.nodes.length} 個。` : `- 檢查了 ${map.nodes.length} 個檔案。`);
   if (map.analyzed) lines.push(`- 使用狀態：${projectMapCounts(map).replace(/^\d+ 個檔案：?/, '') || '無'}`);
+  if (map.note) lines.push(`- ${map.note}`);
   const unused = map.nodes.filter(n => n.status === 'unused').map(n => n.path);
-  if (unused.length) lines.push(`- 疑似沒用到（從網站入口追不到，建議確認後刪除）：${names(unused)}`);
+  if (unused.length) lines.push(`- 疑似沒用到（從任何一個網頁都追不到，建議確認後刪除）：${names(unused)}`);
+  const otherPages = map.nodes.filter(n => n.status === 'page').map(n => n.path);
+  if (otherPages.length) lines.push(`- 另一個網頁（首頁沒連到，但網址打得開）：${names(otherPages)}`);
   const skipped = projectMapRows(map).filter(r => r.status === 'skipped').map(r => r.path);
   if (skipped.length) lines.push(`- 沒檢查到的檔案：${names(skipped)}`);
   lines.push('');
@@ -957,5 +1066,5 @@ function buildReportMarkdown(findings, notices, meta) {
 // 瀏覽器環境: module 不存在 → 略過這段,函式/常數已是全域作用域下的宣告,
 //            可直接被 index.html 或其他 <script> 使用
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { findingRenderer, buildReportMarkdown, projectTreeText, buildProjectMapHtml, buildVerdict, groupFindings, describeLocations, plainTitle, plainAction, getFindingGuide, escapeHtml, buildCardBody, buildAttackDemoHtml, buildKeyImpactHtml, buildKeyCapabilityHtml, buildFilenameTagHtml, buildLineTagHtml, KEY_CAPABILITY_KB, FINDING_GUIDE, PLAIN_TITLES, TIER_META, CONTEXT_NOTES };
+  module.exports = { findingRenderer, buildReportMarkdown, projectTreeText, projectGraphText, buildProjectTreeHtml, buildProjectGraphHtml, buildProjectMapHtml, buildVerdict, groupFindings, describeLocations, plainTitle, plainAction, getFindingGuide, escapeHtml, buildCardBody, buildAttackDemoHtml, buildKeyImpactHtml, buildKeyCapabilityHtml, buildFilenameTagHtml, buildLineTagHtml, KEY_CAPABILITY_KB, FINDING_GUIDE, PLAIN_TITLES, TIER_META, CONTEXT_NOTES };
 }

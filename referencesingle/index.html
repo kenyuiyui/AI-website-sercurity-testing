@@ -8,7 +8,7 @@
   唯一例外:使用者按下「從 GitHub 匯入」時,讀取 api.github.com 與 raw.githubusercontent.com 上的公開檔案(只讀取,不送出程式碼)。
   單檔版由 scripts/build-single.js 改寫這一行(行內 script/style 改用 sha256 雜湊、字型改用 data:)。
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tQN3P01k+9fYTJxjz1bz9sk4ixh28eNMwMOygJKvYHA=' 'sha256-r2Ulx/KLJ3bwPptcn/Gxn23scblhvMWjB2MSqkYA4GY=' 'sha256-k4Dsl4phnEVoWRV6BGYpsCAjEiqhiFqyyqFmNTpECOY=' 'sha256-AvGuu4qO0PTKlZOxSFM5OZdwoGBGMcuTTMqsy4/n/zE=' 'sha256-Kz1bcHKV44I2OKFIEpq+iclqwXOorzYOHcgUVYXJdaw=' 'sha256-s6wK40PdWN1WO56UYib9d+evKEx9zrGhFp1jXa+P+bU=' 'sha256-w9tDV4ToqGvFljYpLINp/oeLBzxAX1ZCL21aTbIMXcE=' 'sha256-8ZqKMlOH5MjSWLMiy13BEO4qPrHonb2ogwoH+rmKY2s=' 'sha256-QlR64ngDKPI09GTuiypa7EMOmxTtGgcEbAWzUe8esPE=' 'sha256-VF7EbVkdcEb/5TRO0cqx51QYwoWGkFPl+O/f3MwcOBM=' 'sha256-KjZdCklqc4O8cs2Pg0FS+9aTNC9SOrRlh8G0HRjF29I=' 'sha256-XAQZGxa0rsPeymQOZBYehQadNqs386yL6RKCroTT/L0=' 'sha256-0pOxSQ9PNKtU4R7szM6TT7hYjIr5M9Q6ebZB4CGAZFI=' 'sha256-PIv8TVCXCC8t+Pdd/bp7vMH3ycEqSmtgj05fwYo+5wE=' 'sha256-l8tB/sUK5v+DtxmaOkEsPjfSmRt1MhdCsPaq+HpXrrY=' 'sha256-YPKriWmcdloU/53/GV6xGDoRNk6O25Fe/3mCwh3Ku+0=' 'sha256-wxdOJRWzK4CCPNAYf0g/tYZDRq3kysuIOTQEr+qTVJ8=' 'sha256-pzWScTKyDlaL7/sm8RyFU3EM1fmYnHzXs8HaSYSvpg4=' 'sha256-xZQkkSa264miFJm8yfibQKGc3PVNTz40HvWCUjoTA/0=' 'sha256-Wyyh4pGZCu33knKPa4k+JP95Q4DQlB07lPvliCyAa5o='; style-src 'sha256-2Dz6Wxz6zAW47WniW9jOPBWZNXKFH4DgfSqZN54z8Y4='; font-src data:; img-src data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tQN3P01k+9fYTJxjz1bz9sk4ixh28eNMwMOygJKvYHA=' 'sha256-r2Ulx/KLJ3bwPptcn/Gxn23scblhvMWjB2MSqkYA4GY=' 'sha256-k4Dsl4phnEVoWRV6BGYpsCAjEiqhiFqyyqFmNTpECOY=' 'sha256-AvGuu4qO0PTKlZOxSFM5OZdwoGBGMcuTTMqsy4/n/zE=' 'sha256-Kz1bcHKV44I2OKFIEpq+iclqwXOorzYOHcgUVYXJdaw=' 'sha256-s6wK40PdWN1WO56UYib9d+evKEx9zrGhFp1jXa+P+bU=' 'sha256-w9tDV4ToqGvFljYpLINp/oeLBzxAX1ZCL21aTbIMXcE=' 'sha256-8ZqKMlOH5MjSWLMiy13BEO4qPrHonb2ogwoH+rmKY2s=' 'sha256-QlR64ngDKPI09GTuiypa7EMOmxTtGgcEbAWzUe8esPE=' 'sha256-VF7EbVkdcEb/5TRO0cqx51QYwoWGkFPl+O/f3MwcOBM=' 'sha256-KjZdCklqc4O8cs2Pg0FS+9aTNC9SOrRlh8G0HRjF29I=' 'sha256-shrX+jzCxf+KpHLPQRKA5Ok+VeRMj2p0zXKOX4vuudE=' 'sha256-0pOxSQ9PNKtU4R7szM6TT7hYjIr5M9Q6ebZB4CGAZFI=' 'sha256-PIv8TVCXCC8t+Pdd/bp7vMH3ycEqSmtgj05fwYo+5wE=' 'sha256-l8tB/sUK5v+DtxmaOkEsPjfSmRt1MhdCsPaq+HpXrrY=' 'sha256-YPKriWmcdloU/53/GV6xGDoRNk6O25Fe/3mCwh3Ku+0=' 'sha256-BxKdpKIs9fmITky+V9zrUQrqwHG8Y9OLjJuxNHDl/tY=' 'sha256-pzWScTKyDlaL7/sm8RyFU3EM1fmYnHzXs8HaSYSvpg4=' 'sha256-xZQkkSa264miFJm8yfibQKGc3PVNTz40HvWCUjoTA/0=' 'sha256-Wyyh4pGZCu33knKPa4k+JP95Q4DQlB07lPvliCyAa5o='; style-src 'sha256-yVZD3pDEYI+5GpYuMKxafiMqHiUD1ZRJ4fxaLl7b0Yw='; font-src data:; img-src data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>未發現 ≠ 安全 — AI 產出程式碼資安檢查器</title>
@@ -40,6 +40,13 @@
   --gray-tier2: #6B7280;
   --gray-tier2-text: #A9AEB8;
   --focus: #D4A15F;
+  /* 引用關係的分層顏色(第 1 層淺綠、第 2 層淺黃…);深色主題用低彩度底色 + 看得見的左框 */
+  --lvl0-bg: #16201C; --lvl0-line: #5B8C7B;
+  --lvl1-bg: #241D14; --lvl1-line: #D4A15F;
+  --lvl2-bg: #131E24; --lvl2-line: #5B8093;
+  --lvl3-bg: #1E1826; --lvl3-line: #8A6FA8;
+  --lvl4-bg: #24171A; --lvl4-line: #B8757E;
+  --lvl5-bg: #1A1E27; --lvl5-line: #6B7280;
 }
 
 /* ================= 淺色主題(降低對比,柔和閱讀) ================= */
@@ -60,6 +67,12 @@ html[data-theme="light"] {
   --gray-tier2: #8B8F98;
   --gray-tier2-text: #5C6068;
   --focus: #B8823F;
+  --lvl0-bg: #E7F1EC; --lvl0-line: #4A7A67;
+  --lvl1-bg: #FBF0DE; --lvl1-line: #B8823F;
+  --lvl2-bg: #E4EFF5; --lvl2-line: #3E7492;
+  --lvl3-bg: #EFE8F6; --lvl3-line: #7B5EA0;
+  --lvl4-bg: #FBE9EC; --lvl4-line: #B05966;
+  --lvl5-bg: #EFEDE7; --lvl5-line: #8B8F98;
 }
 
 * { box-sizing: border-box; }
@@ -1004,6 +1017,76 @@ footer a:hover { color: var(--amber); }
 .rs-notice.info { border: 1px solid var(--border); color: var(--text-dim); padding: 6px 14px; }
 .rs-notice.info summary { cursor: pointer; font-size: 12px; color: var(--text-dim); }
 .rs-notice.info p { margin: 6px 0; }
+/* ── 檔案地圖:有顏色的檔案樹與分層引用關係圖 ── */
+.pm-tree, .pm-graph {
+  margin: 6px 0 4px;
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  padding: 8px 10px;
+}
+.pm-dir { font-size: 11.5px; color: var(--text-dimmer); margin-top: 4px; }
+.pm-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--text-dim); padding: 1px 0; }
+.pm-row .pm-name, .pm-gnode .pm-name { color: var(--text); }
+.pm-i1 { padding-left: 14px; } .pm-i2 { padding-left: 28px; } .pm-i3 { padding-left: 42px; }
+.pm-i4 { padding-left: 56px; } .pm-i5 { padding-left: 70px; } .pm-i6 { padding-left: 84px; }
+
+/* 狀態標籤:顏色本身就要說明「這是好事還是要處理」 */
+.pm-chip {
+  font-size: 10.5px;
+  line-height: 1.6;
+  padding: 0 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.pm-used, .pm-checked, .pm-entry { border-color: var(--green); color: var(--green-text); background: var(--green-bg); }
+.pm-page { border-color: var(--lvl2-line); color: var(--lvl2-line); background: var(--lvl2-bg); }
+.pm-unused { border-color: var(--amber); color: var(--amber-text); background: var(--amber-bg); }
+.pm-build, .pm-test, .pm-unknown { background: var(--bg-input); }
+.pm-skipped { border-color: var(--amber); color: var(--amber-text); }
+.pm-todo {
+  font-size: 10.5px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--amber-bg);
+  color: var(--amber-text);
+  border: 1px solid var(--amber);
+}
+.pm-note { font-size: 10.5px; color: var(--text-dimmer); }
+
+/* 引用關係:每往內一層換一個顏色,層與層之間用內縮的色塊表現包含關係 */
+.pm-gnode {
+  font-size: 12px;
+  line-height: 1.7;
+  border-left: 3px solid var(--border);
+  border-radius: 0 6px 6px 0;
+  padding: 3px 8px;
+  margin: 3px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pm-gkids { width: 100%; padding-left: 12px; }
+.pm-l0 { background: var(--lvl0-bg); border-left-color: var(--lvl0-line); }
+.pm-l1 { background: var(--lvl1-bg); border-left-color: var(--lvl1-line); }
+.pm-l2 { background: var(--lvl2-bg); border-left-color: var(--lvl2-line); }
+.pm-l3 { background: var(--lvl3-bg); border-left-color: var(--lvl3-line); }
+.pm-l4 { background: var(--lvl4-bg); border-left-color: var(--lvl4-line); }
+.pm-l5 { background: var(--lvl5-bg); border-left-color: var(--lvl5-line); }
+.pm-deep { width: 100%; }
+.rs-map-hint { margin: 2px 0 4px; font-size: 11.5px; color: var(--text-dimmer); }
+.rs-legend li { margin-bottom: 3px; }
+.rs-legend .pm-chip { margin-right: 6px; }
+
+.rs-map-note { margin: 6px 0; color: var(--amber-text); }
+.rs-map-sub { margin: 10px 0 2px; font-weight: 600; color: var(--text); }
+.rs-legend { margin: 6px 0 2px; padding-left: 1.15rem; font-size: 12px; line-height: 1.7; color: var(--text-dim); }
+.rs-legend b { color: var(--text); font-weight: 600; }
 .rs-tree { margin: 8px 0 6px; max-height: 320px; overflow: auto; white-space: pre; font-family: inherit; font-size: 11.5px; line-height: 1.7; color: var(--text-dim); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
 
 /* 匯出報告 */
@@ -1341,7 +1424,7 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
     <footer>
       <p>本工具只做靜態比對：不執行、不上傳、不儲存你貼上的內容。適合上線前快速自我檢查，不能取代正式的資安審查或滲透測試。</p>
       <p>「需要處理」是高信心度的結果；「請你確認」代表看起來可疑，需要你對照程式判斷。</p>
-      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">47a621fb</span></p>
+      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">dc112f4e</span></p>
     </footer>
   </div>
 
@@ -1365,7 +1448,7 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
             <li>把文字當程式執行（eval、exec、pickle、yaml.load）</li>
             <li>疑似缺少擁有權檢查（登入的人看得到別人的資料），含 Express 路由寫法</li>
             <li>多檔案：同一敏感欄位在不同檔案的遮罩不一致、路由缺少流量限制</li>
-            <li>多檔案：列出檢查範圍（掃了幾個、哪些沒掃到），並標出疑似沒在使用的檔案（這些檔案裡的發現降為「參考」，金鑰除外）</li>
+            <li>多檔案：列出檢查範圍（掃了幾個、哪些沒掃到）、每個檔案的角色，以及「網頁用到哪些檔案」的引用關係樹；疑似沒用到的檔案裡，發現降為「參考」（金鑰除外）</li>
           </ul>
         </div>
         <div class="boundary-col cannot">
@@ -1377,7 +1460,7 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
             <li>權限檢查只是模式比對，主要針對 JavaScript／Express，一定會有漏判與誤判</li>
             <li>疑似自訂密鑰、內部網址、環境變數明文備用值 — 沒有固定格式，誤判率較高</li>
             <li>後端、資料庫權限規則（RLS／Security Rules）與雲端 IAM 設定；資料庫檔（.sql）與部署設定（.yml）不在檢查範圍，請自行檢視</li>
-            <li>「疑似沒在使用」只是沿著程式引用推測，遇到動態載入或多頁面設定時不判斷</li>
+            <li>「疑似沒用到」只是沿著程式引用推測，遇到動態載入或多頁面設定時不判斷</li>
             <li>私人 GitHub 專案（請下載後用拖放或開啟檔案）</li>
           </ul>
         </div>
@@ -3523,7 +3606,17 @@ function buildVerdict(findings, notices) {
 }
 
 // ── 檔案地圖(project-map.js 的結果):畫面的樹狀清單與報告的「檢查範圍」共用 ──
-const PM_LABELS = { used: '使用中', unused: '疑似沒用到', build: '建置／設定', test: '測試／範例', unknown: '無法判斷', skipped: '未檢查' };
+const PM_LABELS = { used: '使用中', page: '另一個網頁', unused: '疑似沒用到', build: '工具／設定', test: '測試／範例', unknown: '無法判斷', skipped: '未檢查' };
+// 每種狀態的一句話說明:使用者第一次看到「無法判斷」「另一個網頁」時不用去猜
+const PM_WHY = {
+  used: '從首頁一路引用得到',
+  page: '自己就是一個網頁（首頁沒有連到它，但網址打得開）',
+  unused: '從任何一個網頁都追不到，也不是工具或測試用',
+  build: '建置、部署或驗證用的檔案，不會送到瀏覽器',
+  test: '測試或範例檔',
+  unknown: '這次無法判斷（原因見上一行）',
+  skipped: '這次沒有檢查到'
+};
 
 function projectMapRows(map) {
   const rows = map.nodes.map(n => ({ path: n.path, status: n.status }));
@@ -3555,8 +3648,94 @@ function projectTreeText(map, findings) {
   return out.join('\n');
 }
 
+/**
+ * 引用關係樹:從入口網頁出發,列出它用到哪些檔案、那些檔案又用到誰。
+ * 同一個檔案只展開一次(第二次標「同上」),避免共用模組把樹撐爆。
+ */
+function projectGraphText(map) {
+  const edges = map.edges || {};
+  const out = [];
+  const expanded = new Set();
+  const MAX_DEPTH = 8;
+  function walk(node, depth) {
+    const pad = '  '.repeat(depth);
+    const children = edges[node] || [];
+    if (expanded.has(node)) { out.push(pad + node + (children.length ? '（同上）' : '')); return; }
+    expanded.add(node);
+    out.push(pad + node + (children.length ? '' : '（沒有再引用其他檔案）'));
+    if (depth >= MAX_DEPTH) { if (children.length) out.push(pad + '  …（更深層省略）'); return; }
+    children.forEach(c => walk(c, depth + 1));
+  }
+  // 主要入口放最前面,其他網頁接在後面
+  const roots = (map.entries || []).slice().sort((a, b) => (a === map.primary ? -1 : b === map.primary ? 1 : 0));
+  roots.forEach(e => { walk(e, 0); out.push(''); });
+  while (out.length && !out[out.length - 1]) out.pop();
+  return out.join('\n');
+}
+
+/** 待處理／確認的項數(依檔案),畫面與文字樹共用 */
+function projectTodoCount(findings) {
+  const count = {};
+  (findings || []).forEach(f => { if (f.filename && f.tier < 3) count[f.filename] = (count[f.filename] || 0) + 1; });
+  return count;
+}
+
+/** 畫面用的檔案樹:每個檔案配一個有顏色的狀態標籤,待處理的檔案再加一個醒目標記 */
+function buildProjectTreeHtml(map, findings) {
+  const count = projectTodoCount(findings);
+  const seen = new Set();
+  const out = [];
+  const indent = d => 'pm-i' + Math.min(d, 6);
+  projectMapRows(map).forEach(r => {
+    const parts = r.path.split('/');
+    for (let i = 0; i < parts.length - 1; i++) {
+      const dir = parts.slice(0, i + 1).join('/');
+      if (!seen.has(dir)) { seen.add(dir); out.push(`<div class="pm-dir ${indent(i)}">${escapeHtml(parts[i])}/</div>`); }
+    }
+    const status = (!map.analyzed && r.status === 'unknown') ? 'checked' : r.status;
+    const label = status === 'checked' ? '已檢查' : PM_LABELS[r.status];
+    const todo = count[r.path];
+    out.push(`<div class="pm-row ${indent(parts.length - 1)}">`
+      + `<span class="pm-name">${escapeHtml(parts[parts.length - 1])}</span>`
+      + `<span class="pm-chip pm-${status}">${escapeHtml(label)}</span>`
+      + (todo ? `<span class="pm-todo">${todo} 項待處理／確認</span>` : '')
+      + '</div>');
+  });
+  return `<div class="pm-tree" tabindex="0">${out.join('')}</div>`;
+}
+
+/**
+ * 畫面用的引用關係:一層一個顏色(第一層淺綠、第二層淺黃…),讓「誰被誰用到」一眼看得出來。
+ * 同一個檔案只展開一次(第二次標「同上」),最深 8 層。
+ */
+function buildProjectGraphHtml(map, findings) {
+  const edges = map.edges || {};
+  const count = projectTodoCount(findings);
+  const expanded = new Set();
+  const MAX_DEPTH = 8;
+  function node(path, depth) {
+    const children = edges[path] || [];
+    const lvl = 'pm-l' + (depth % 6);
+    const todo = count[path] ? `<span class="pm-todo">${count[path]} 項待處理／確認</span>` : '';
+    const repeat = expanded.has(path);
+    const head = `<div class="pm-gnode ${lvl}">`
+      + `<span class="pm-name">${escapeHtml(path)}</span>`
+      + (depth === 0 ? '<span class="pm-chip pm-entry">入口</span>' : '')
+      + (repeat && children.length ? '<span class="pm-note">同上</span>' : '')
+      + (!children.length ? '<span class="pm-note">沒有再引用其他檔案</span>' : '')
+      + todo;
+    if (repeat || !children.length) return head + '</div>';
+    expanded.add(path);
+    if (depth >= MAX_DEPTH) return head + '<div class="pm-note pm-deep">…（更深層省略）</div></div>';
+    return head + `<div class="pm-gkids">${children.map(c => node(c, depth + 1)).join('')}</div></div>`;
+  }
+  const roots = (map.entries || []).slice().sort((a, b) => (a === map.primary ? -1 : b === map.primary ? 1 : 0));
+  roots.forEach(r => expanded.delete(r));
+  return `<div class="pm-graph" tabindex="0">${roots.map(r => node(r, 0)).join('')}</div>`;
+}
+
 function projectMapCounts(map) {
-  const parts = ['used', 'unused', 'build', 'test', 'unknown'].filter(k => map.counts[k]).map(k => `${PM_LABELS[k]} ${map.counts[k]}`);
+  const parts = ['used', 'page', 'unused', 'build', 'test', 'unknown'].filter(k => map.counts[k]).map(k => `${PM_LABELS[k]} ${map.counts[k]}`);
   return `${map.nodes.length} 個檔案` + (map.analyzed && parts.length ? '：' + parts.join('、') : '');
 }
 
@@ -3564,8 +3743,18 @@ function buildProjectMapHtml(map, findings) {
   if (!map || !(map.analyzed || map.coverage)) return '';
   const missing = projectMapSkipped(map);
   const head = `檔案地圖（${map.nodes.length} 個檔案` + (map.counts.unused ? `，${map.counts.unused} 個疑似沒在使用` : '') + (missing ? `，${missing} 個沒檢查到` : '') + '）';
-  const hint = map.analyzed ? '「疑似沒用到」是從網站入口（index.html）追不到的檔案，建議確認後刪除。' : '';
-  return `<details class="rs-notice info rs-map"><summary>${escapeHtml(head)}</summary><p>${escapeHtml(projectMapCounts(map) + '。' + hint)}</p><pre class="rs-tree" tabindex="0">${escapeHtml(projectTreeText(map, findings))}</pre></details>`;
+  // 狀態說明只列這次真的出現的狀態;map.note 是「為什麼無法判斷」,要放在樹旁邊而不是只放在限制區
+  const shown = ['used', 'page', 'unused', 'build', 'test', 'unknown'].filter(k => map.counts[k]);
+  const legend = map.analyzed && shown.length
+    ? `<ul class="rs-legend">${shown.map(k => `<li><span class="pm-chip pm-${k}">${escapeHtml(PM_LABELS[k])}</span>${escapeHtml(PM_WHY[k])}</li>`).join('')}</ul>`
+    : '';
+  const noteHtml = map.note ? `<p class="rs-map-note">${escapeHtml(map.note)}</p>` : '';
+  const graphHtml = (map.entries || []).length
+    ? `<p class="rs-map-sub">${escapeHtml('網頁用到哪些檔案（引用關係，從 ' + (map.primary || '入口') + ' 開始）')}</p>`
+      + '<p class="rs-map-hint">由外往內一層一個顏色：最外層是網頁，往內是它用到的檔案。</p>'
+      + buildProjectGraphHtml(map, findings)
+    : '';
+  return `<details class="rs-notice info rs-map"><summary>${escapeHtml(head)}</summary><p>${escapeHtml(projectMapCounts(map) + '。')}</p>${noteHtml}${legend}<p class="rs-map-sub">全部檔案</p>${buildProjectTreeHtml(map, findings)}${graphHtml}</details>`;
 }
 
 function buildMapReportLines(map) {
@@ -3574,8 +3763,11 @@ function buildMapReportLines(map) {
   const lines = ['## 檢查範圍', ''];
   lines.push(map.coverage ? `- 專案有 ${map.coverage.total} 個程式碼檔，實際檢查 ${map.nodes.length} 個。` : `- 檢查了 ${map.nodes.length} 個檔案。`);
   if (map.analyzed) lines.push(`- 使用狀態：${projectMapCounts(map).replace(/^\d+ 個檔案：?/, '') || '無'}`);
+  if (map.note) lines.push(`- ${map.note}`);
   const unused = map.nodes.filter(n => n.status === 'unused').map(n => n.path);
-  if (unused.length) lines.push(`- 疑似沒用到（從網站入口追不到，建議確認後刪除）：${names(unused)}`);
+  if (unused.length) lines.push(`- 疑似沒用到（從任何一個網頁都追不到，建議確認後刪除）：${names(unused)}`);
+  const otherPages = map.nodes.filter(n => n.status === 'page').map(n => n.path);
+  if (otherPages.length) lines.push(`- 另一個網頁（首頁沒連到，但網址打得開）：${names(otherPages)}`);
   const skipped = projectMapRows(map).filter(r => r.status === 'skipped').map(r => r.path);
   if (skipped.length) lines.push(`- 沒檢查到的檔案：${names(skipped)}`);
   lines.push('');
@@ -3788,7 +3980,7 @@ function buildReportMarkdown(findings, notices, meta) {
 // 瀏覽器環境: module 不存在 → 略過這段,函式/常數已是全域作用域下的宣告,
 //            可直接被 index.html 或其他 <script> 使用
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { findingRenderer, buildReportMarkdown, projectTreeText, buildProjectMapHtml, buildVerdict, groupFindings, describeLocations, plainTitle, plainAction, getFindingGuide, escapeHtml, buildCardBody, buildAttackDemoHtml, buildKeyImpactHtml, buildKeyCapabilityHtml, buildFilenameTagHtml, buildLineTagHtml, KEY_CAPABILITY_KB, FINDING_GUIDE, PLAIN_TITLES, TIER_META, CONTEXT_NOTES };
+  module.exports = { findingRenderer, buildReportMarkdown, projectTreeText, projectGraphText, buildProjectTreeHtml, buildProjectGraphHtml, buildProjectMapHtml, buildVerdict, groupFindings, describeLocations, plainTitle, plainAction, getFindingGuide, escapeHtml, buildCardBody, buildAttackDemoHtml, buildKeyImpactHtml, buildKeyCapabilityHtml, buildFilenameTagHtml, buildLineTagHtml, KEY_CAPABILITY_KB, FINDING_GUIDE, PLAIN_TITLES, TIER_META, CONTEXT_NOTES };
 }
 </script>
 <script>
@@ -4366,31 +4558,66 @@ if (typeof module !== 'undefined' && module.exports) {
 /**
  * M13 — project-map
  *
- * 職責:多檔案專案的「檔案地圖」。從網站入口(index.html)沿 import 一路往下追,
- * 標出每個檔案是 使用中／疑似沒用到／建置設定／測試,並附上檢查範圍(掃了幾個、哪些沒掃)。
+ * 職責:多檔案專案的「檔案地圖」。從網頁檔(index.html 等)沿 import／require／資源路徑一路往下追,
+ * 標出每個檔案的角色,並附上檢查範圍與「入口用到哪些檔案」的引用關係。
  * 輸入: files [{filename, code}]、coverage(選用,見 assets/github-import.js)、isTest(filename)(選用)
- * 輸出: { analyzed, certain, note, entries, entrySkipped, nodes: [{path, status}], counts, coverage }
+ * 輸出: { analyzed, certain, note, entries, primary, entrySkipped, nodes: [{path, status}], edges, counts, coverage }
  *
- * 只用 regex 追 import(acorn 解析不了 TypeScript),也追不到動態拼出來的路徑,
- * 所以「沒用到」一律稱「疑似」;無法確定時(缺檔、動態載入、多頁面設定)certain = false,
- * scan-orchestrator 就不會把任何檔案的發現降級,避免把正在使用的檔案當成沒用到。
- * 純函式,不依賴其他模組。
+ * 狀態: used(使用中) / page(另一個網頁,沒有被首頁連到) / build(建置設定) / test(測試範例)
+ *       / unused(疑似沒用到) / unknown(無法判斷)
+ *
+ * 兩段追蹤:
+ *   1. 網頁檔(.html)都是入口 → 追到的檔案是「使用中」(多頁網站的其他頁面也會被送上線)
+ *   2. 建置腳本與測試檔當第二批起點 → 它們用到的檔案標成 建置／測試,而不是「沒用到」
+ *      (只被測試腳本 require 的檔案不該被當成可以刪)
+ *
+ * 只用 regex 追引用(acorn 解析不了 TypeScript),也追不到動態拼出來的路徑,
+ * 所以「沒用到」一律稱「疑似」;無法確定時(缺檔、動態載入、多頁面設定、入口沒引用任何程式檔)
+ * certain = false,scan-orchestrator 就不會把任何檔案的發現降級。
+ *
+ * 為什麼:引用與動態載入只看真正的程式碼(source-mask),否則註解裡寫的 import(…) 會讓整個專案變成「無法判斷」。(背景見 docs/CHANGELOG.md)
  */
 
 const PM_EXTS = ['', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.vue', '.svelte', '/index.ts', '/index.tsx', '/index.js', '/index.jsx', '/index.vue'];
-// import x from 'a' / export * from 'a' / import 'a' / import('a') / <script src> / <link href>
-const PM_IMPORT_RE = /(?:import|export)\s[^'"`;]*?from\s*['"]([^'"]+)['"]|import\s*['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)|<script[^>]*?\ssrc=["']([^"']+)["']|<link[^>]*?\shref=["']([^"']+)["']/g;
+// import x from 'a' / export * from 'a' / import 'a' / import('a') / require('a') / <script src> / <link href> / <a href>
+const PM_IMPORT_RE = /(?:import|export)\s[^'"`;]*?from\s*['"]([^'"]+)['"]|import\s*['"]([^'"]+)['"]|import\(\s*['"]([^'"]+)['"]\s*\)|require\(\s*['"]([^'"]+)['"]\s*\)|<(?:script|a)[^>]*?\s(?:src|href)=["']([^"']+)["']|<link[^>]*?\shref=["']([^"']+)["']/g;
+// 其他用「字串路徑」載入的寫法:navigator.serviceWorker.register('/sw.js')、new Worker('./w.js')、fetch('./data.json')
+const PM_PATH_STRING_RE = /['"`]((?:\.{0,2}\/)?[\w./-]+\.[A-Za-z0-9]{2,5})['"`]/g;
 // 追不到的載入方式:import(變數)、import.meta.glob、require.context
 const PM_DYNAMIC_RE = /import\(\s*[^'"\s)]|import\.meta\.glob|require\.context/;
 // 用檔案位置決定頁面的框架:入口不是 index.html,這裡不判斷
 const PM_FILE_ROUTING_RE = /(^|\/)(next|nuxt|astro|svelte|remix)\.config\.[cm]?[jt]s$/i;
-// 不在 import 鏈上、但有它的用途:建置腳本、部署設定、.env
-const PM_BUILD_RE = /(^|\/)(scripts?|deployment|deploy|tools|supabase|\.github)\/|\.config\.[cm]?[jt]s$|(^|\/)(vercel|netlify|firebase)\.json$|(^|\/)\.env(\.|$)/i;
+// 不在引用鏈上、但有它的用途:建置與驗證腳本、部署設定、.env
+const PM_BUILD_RE = /(^|\/)(scripts?|deployment|deploy|tools|supabase|\.github|eval|benchmarks?)\/|\.config\.[cm]?[jt]s$|(^|\/)(vercel|netlify|firebase)\.json$|(^|\/)\.env(\.|$)/i;
+const PM_HTML_RE = /\.html?$/i;
 
 function pmNormalize(p) {
   const out = [];
   p.split('/').forEach(s => { if (s === '..') out.pop(); else if (s && s !== '.') out.push(s); });
   return out.join('/');
+}
+
+/** source-mask 的三個函式:瀏覽器是全域,Node 走 require;拿不到就不遮罩 */
+function pmSourceMask() {
+  if (typeof blankNonCode === 'function') return { blankNonCode: blankNonCode, buildCodeMask: buildCodeMask, languageFromFilename: languageFromFilename };
+  try { return require('./source-mask'); } catch (e) { return null; }
+}
+
+/**
+ * 兩種「只看程式碼」的版本:
+ *   imports — 只抹掉註解與正則,字串留著(引用路徑本身就是字串)
+ *   strict  — 連字串也抹掉,用來判斷有沒有動態載入(字串裡提到 import.meta.glob 不算)
+ */
+function pmCodeViews(file) {
+  const sm = pmSourceMask();
+  if (!sm) return { imports: file.code, strict: file.code };
+  try {
+    const mask = sm.buildCodeMask(file.code, { language: sm.languageFromFilename(file.filename) });
+    // 1 = 連兩個字以上的字串都抹掉(動態載入是語法,不會寫在字串裡);Infinity = 字串全留(引用路徑本身就是字串)
+    return { imports: sm.blankNonCode(file.code, mask, Infinity), strict: sm.blankNonCode(file.code, mask, 1) };
+  } catch (e) {
+    return { imports: file.code, strict: file.code };
+  }
 }
 
 /** vite.config 裡的 '@': path.resolve(__dirname, './src') 之類;讀不到就用最常見的 @、~ → src */
@@ -4408,7 +4635,7 @@ function pmResolve(from, spec, paths, aliases, base) {
   for (const [key, dir] of aliases) if (spec.startsWith(key + '/')) p = base + dir + '/' + spec.slice(key.length + 1);
   if (p === null && spec.startsWith('/')) p = base + spec.slice(1);
   // HTML 裡的 assets/app.js(沒有 ./)也是相對於該 HTML;JS 裡的裸名稱是 npm 套件,不追
-  if (p === null && (spec.startsWith('./') || spec.startsWith('../') || /\.html?$/i.test(from))) p = from.slice(0, from.lastIndexOf('/') + 1) + spec;
+  if (p === null && (spec.startsWith('./') || spec.startsWith('../') || PM_HTML_RE.test(from))) p = from.slice(0, from.lastIndexOf('/') + 1) + spec;
   if (p === null) return null;
   p = pmNormalize(p);
   for (const e of PM_EXTS) if (paths.has(p + e)) return p + e;
@@ -4417,7 +4644,9 @@ function pmResolve(from, spec, paths, aliases, base) {
 
 function pmImportsOf(code) {
   const out = new Set();
-  for (const m of code.matchAll(PM_IMPORT_RE)) out.add(m[1] || m[2] || m[3] || m[4] || m[5]);
+  for (const m of code.matchAll(PM_IMPORT_RE)) out.add(m[1] || m[2] || m[3] || m[4] || m[5] || m[6]);
+  // 字串路徑:只有「剛好對得上專案裡某個檔案」時才算,否則忽略
+  for (const m of code.matchAll(PM_PATH_STRING_RE)) out.add(m[1]);
   out.delete(undefined);
   return [...out];
 }
@@ -4429,54 +4658,90 @@ function pmImportsOf(code) {
  */
 function buildProjectMap(files, coverage, isTest) {
   const paths = new Set(files.map(f => f.filename));
-  const byPath = new Map(files.map(f => [f.filename, f]));
+  const views = new Map(files.map(f => [f.filename, pmCodeViews(f)]));
   const cov = coverage || null;
   const missing = cov ? cov.skippedLimit.length + cov.skippedLarge.length + cov.failed.length : 0;
-  const map = { analyzed: false, certain: false, note: null, entries: [], entrySkipped: [], nodes: [], counts: { used: 0, unused: 0, build: 0, test: 0, unknown: 0 }, coverage: cov };
+  const map = {
+    analyzed: false, certain: false, note: null, entries: [], primary: '', entrySkipped: [],
+    nodes: [], edges: {}, counts: { used: 0, page: 0, unused: 0, build: 0, test: 0, unknown: 0 }, coverage: cov
+  };
   // 入口本身沒被檢查(太大／被上限擠掉／下載失敗)時,整份結果都不能當作「沒問題」,要單獨講清楚
   const skippedPaths = cov ? [].concat(cov.skippedLimit, cov.skippedLarge, cov.failed) : [];
   map.entrySkipped = skippedPaths.filter(p => /(^|\/)index\.html?$/i.test(p));
 
-  // 入口:最上層的 index.html
-  const htmls = files.map(f => f.filename).filter(p => /(^|\/)index\.html$/i.test(p));
-  const minDepth = Math.min(...htmls.map(p => p.split('/').length));
-  const entries = htmls.filter(p => p.split('/').length === minDepth);
-  const base = entries.length ? entries[0].slice(0, entries[0].lastIndexOf('/') + 1) : '';
-
-  const reached = new Set(entries);
-  const queue = entries.slice();
+  // 入口:所有網頁檔(放上線後每一頁都打得開);主要入口取最上層的 index.html
+  const pages = files.map(f => f.filename).filter(p => PM_HTML_RE.test(p));
+  const indexes = pages.filter(p => /(^|\/)index\.html?$/i.test(p));
+  const primary = indexes.sort((a, b) => a.split('/').length - b.split('/').length)[0] || pages[0] || '';
+  const base = primary ? primary.slice(0, primary.lastIndexOf('/') + 1) : '';
   const aliases = pmAliases(files);
+  map.entries = pages;
+  map.primary = primary;
+
   let dynamic = false;
-  while (queue.length) {
-    const from = queue.shift();
-    const code = byPath.get(from).code;
-    if (PM_DYNAMIC_RE.test(code)) dynamic = true;
-    pmImportsOf(code).forEach(spec => {
-      const to = pmResolve(from, spec, paths, aliases, base);
-      if (to && !reached.has(to)) { reached.add(to); queue.push(to); }
-    });
+  /** 從 seeds 出發沿引用往下走;回傳走到的檔案集合,同時把引用關係記進 map.edges */
+  function walk(seeds, visited) {
+    const reached = new Set();
+    const queue = [];
+    seeds.forEach(s => { if (!visited.has(s)) { reached.add(s); queue.push(s); } });
+    while (queue.length) {
+      const from = queue.shift();
+      const view = views.get(from) || { imports: '', strict: '' };
+      if (PM_DYNAMIC_RE.test(view.strict)) dynamic = true;
+      const children = [];
+      pmImportsOf(view.imports).forEach(spec => {
+        const to = pmResolve(from, spec, paths, aliases, base);
+        if (!to || to === from) return;
+        children.push(to);
+        if (!reached.has(to) && !visited.has(to)) { reached.add(to); queue.push(to); }
+      });
+      if (children.length) map.edges[from] = [...new Set(children)];
+    }
+    return reached;
   }
 
-  let note = null;
-  if (!entries.length && map.entrySkipped.length) note = `網站主檔 ${map.entrySkipped[0]} 這次沒有被檢查（檔案太大或下載失敗），所以這次幾乎沒有看到你的網站內容。`;
-  else if (!entries.length) note = '找不到網站入口（index.html），所以沒有判斷哪些檔案有在使用。';
-  else if (files.some(f => PM_FILE_ROUTING_RE.test(f.filename))) note = '這個專案用 Next.js／Nuxt 之類的框架，頁面由檔案位置決定，本工具沒有判斷哪些檔案有在使用。';
-  else if (reached.size <= entries.length) note = '這是單檔式網站（程式碼都寫在 index.html 裡），沒有其他程式檔要追蹤，所以不需要判斷哪些檔案有在使用。';
-  if (note) { map.note = note; map.nodes = files.map(f => ({ path: f.filename, status: 'unknown' })); map.counts.unknown = files.length; return map; }
+  if (!pages.length || files.some(f => PM_FILE_ROUTING_RE.test(f.filename))) {
+    map.note = !pages.length && map.entrySkipped.length
+      ? `網站主檔 ${map.entrySkipped[0]} 這次沒有被檢查（檔案太大或下載失敗），所以這次幾乎沒有看到你的網站內容。`
+      : !pages.length
+        ? '找不到網站入口（index.html），所以沒有判斷哪些檔案有在使用。'
+        : '這個專案用 Next.js／Nuxt 之類的框架，頁面由檔案位置決定，本工具沒有判斷哪些檔案有在使用。';
+    map.nodes = files.map(f => ({ path: f.filename, status: 'unknown' }));
+    map.counts.unknown = files.length;
+    return map;
+  }
+
+  // 第一段:首頁 → 沿引用往下(其他網頁各自再走一次,它們自己的引用也算「有在使用」)
+  const fromPrimary = walk([primary], new Set());
+  const used = new Set(fromPrimary);
+  pages.forEach(p => { if (!used.has(p)) walk([p], used).forEach(x => used.add(x)); });
+
+  // 第二段:建置腳本與測試檔是另一批起點,它們用到的檔案不是「沒用到」,而是工具用
+  const toolCat = new Map();
+  files.forEach(f => {
+    if (used.has(f.filename)) return;
+    const cat = isTest && isTest(f.filename) ? 'test' : PM_BUILD_RE.test(f.filename) ? 'build' : null;
+    if (cat) walk([f.filename], used).forEach(p => { if (!toolCat.has(p) || cat === 'test') toolCat.set(p, cat); });
+  });
 
   const multiPage = files.some(f => /(^|\/)vite\.config\.[cm]?[jt]s$/.test(f.filename) && /rollupOptions[\s\S]{0,300}input/.test(f.code));
+  const codeFiles = files.filter(f => !PM_HTML_RE.test(f.filename)).length;
   let uncertain = null;
   if (missing) uncertain = '有檔案沒檢查到（見上方檢查範圍），無法確定哪些檔案沒在使用';
   else if (dynamic) uncertain = '專案裡有動態載入（例如 import.meta.glob、import(變數)），追蹤可能漏掉檔案';
   else if (multiPage) uncertain = '專案設定了多個頁面入口，追蹤可能漏掉檔案';
+  else if (used.size <= pages.length && codeFiles) uncertain = '入口網頁沒有直接引用任何程式檔（可能是打包後的網站），追蹤不到引用關係';
 
   map.analyzed = true;
   map.certain = !uncertain;
-  map.entries = entries;
   if (uncertain) map.note = uncertain + '，所以沒有把任何檔案標成「疑似沒用到」。';
+  else if (used.size <= pages.length) map.note = '這是單檔式網站（程式碼都寫在網頁檔裡），沒有其他程式檔要追蹤。';
   files.forEach(f => {
     let status;
-    if (reached.has(f.filename)) status = 'used';
+    if (fromPrimary.has(f.filename)) status = 'used';
+    else if (PM_HTML_RE.test(f.filename)) status = f.filename === primary ? 'used' : 'page';
+    else if (used.has(f.filename)) status = 'used';
+    else if (toolCat.has(f.filename)) status = toolCat.get(f.filename);
     else if (isTest && isTest(f.filename)) status = 'test';
     else if (PM_BUILD_RE.test(f.filename)) status = 'build';
     else status = uncertain ? 'unknown' : 'unused';

@@ -23,6 +23,13 @@
   --gray-tier2: #6B7280;
   --gray-tier2-text: #A9AEB8;
   --focus: #D4A15F;
+  /* 引用關係的分層顏色(第 1 層淺綠、第 2 層淺黃…);深色主題用低彩度底色 + 看得見的左框 */
+  --lvl0-bg: #16201C; --lvl0-line: #5B8C7B;
+  --lvl1-bg: #241D14; --lvl1-line: #D4A15F;
+  --lvl2-bg: #131E24; --lvl2-line: #5B8093;
+  --lvl3-bg: #1E1826; --lvl3-line: #8A6FA8;
+  --lvl4-bg: #24171A; --lvl4-line: #B8757E;
+  --lvl5-bg: #1A1E27; --lvl5-line: #6B7280;
 }
 
 /* ================= 淺色主題(降低對比,柔和閱讀) ================= */
@@ -43,6 +50,12 @@ html[data-theme="light"] {
   --gray-tier2: #8B8F98;
   --gray-tier2-text: #5C6068;
   --focus: #B8823F;
+  --lvl0-bg: #E7F1EC; --lvl0-line: #4A7A67;
+  --lvl1-bg: #FBF0DE; --lvl1-line: #B8823F;
+  --lvl2-bg: #E4EFF5; --lvl2-line: #3E7492;
+  --lvl3-bg: #EFE8F6; --lvl3-line: #7B5EA0;
+  --lvl4-bg: #FBE9EC; --lvl4-line: #B05966;
+  --lvl5-bg: #EFEDE7; --lvl5-line: #8B8F98;
 }
 
 * { box-sizing: border-box; }
@@ -987,6 +1000,76 @@ footer a:hover { color: var(--amber); }
 .rs-notice.info { border: 1px solid var(--border); color: var(--text-dim); padding: 6px 14px; }
 .rs-notice.info summary { cursor: pointer; font-size: 12px; color: var(--text-dim); }
 .rs-notice.info p { margin: 6px 0; }
+/* ── 檔案地圖:有顏色的檔案樹與分層引用關係圖 ── */
+.pm-tree, .pm-graph {
+  margin: 6px 0 4px;
+  max-height: 360px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  padding: 8px 10px;
+}
+.pm-dir { font-size: 11.5px; color: var(--text-dimmer); margin-top: 4px; }
+.pm-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--text-dim); padding: 1px 0; }
+.pm-row .pm-name, .pm-gnode .pm-name { color: var(--text); }
+.pm-i1 { padding-left: 14px; } .pm-i2 { padding-left: 28px; } .pm-i3 { padding-left: 42px; }
+.pm-i4 { padding-left: 56px; } .pm-i5 { padding-left: 70px; } .pm-i6 { padding-left: 84px; }
+
+/* 狀態標籤:顏色本身就要說明「這是好事還是要處理」 */
+.pm-chip {
+  font-size: 10.5px;
+  line-height: 1.6;
+  padding: 0 6px;
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.pm-used, .pm-checked, .pm-entry { border-color: var(--green); color: var(--green-text); background: var(--green-bg); }
+.pm-page { border-color: var(--lvl2-line); color: var(--lvl2-line); background: var(--lvl2-bg); }
+.pm-unused { border-color: var(--amber); color: var(--amber-text); background: var(--amber-bg); }
+.pm-build, .pm-test, .pm-unknown { background: var(--bg-input); }
+.pm-skipped { border-color: var(--amber); color: var(--amber-text); }
+.pm-todo {
+  font-size: 10.5px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--amber-bg);
+  color: var(--amber-text);
+  border: 1px solid var(--amber);
+}
+.pm-note { font-size: 10.5px; color: var(--text-dimmer); }
+
+/* 引用關係:每往內一層換一個顏色,層與層之間用內縮的色塊表現包含關係 */
+.pm-gnode {
+  font-size: 12px;
+  line-height: 1.7;
+  border-left: 3px solid var(--border);
+  border-radius: 0 6px 6px 0;
+  padding: 3px 8px;
+  margin: 3px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pm-gkids { width: 100%; padding-left: 12px; }
+.pm-l0 { background: var(--lvl0-bg); border-left-color: var(--lvl0-line); }
+.pm-l1 { background: var(--lvl1-bg); border-left-color: var(--lvl1-line); }
+.pm-l2 { background: var(--lvl2-bg); border-left-color: var(--lvl2-line); }
+.pm-l3 { background: var(--lvl3-bg); border-left-color: var(--lvl3-line); }
+.pm-l4 { background: var(--lvl4-bg); border-left-color: var(--lvl4-line); }
+.pm-l5 { background: var(--lvl5-bg); border-left-color: var(--lvl5-line); }
+.pm-deep { width: 100%; }
+.rs-map-hint { margin: 2px 0 4px; font-size: 11.5px; color: var(--text-dimmer); }
+.rs-legend li { margin-bottom: 3px; }
+.rs-legend .pm-chip { margin-right: 6px; }
+
+.rs-map-note { margin: 6px 0; color: var(--amber-text); }
+.rs-map-sub { margin: 10px 0 2px; font-weight: 600; color: var(--text); }
+.rs-legend { margin: 6px 0 2px; padding-left: 1.15rem; font-size: 12px; line-height: 1.7; color: var(--text-dim); }
+.rs-legend b { color: var(--text); font-weight: 600; }
 .rs-tree { margin: 8px 0 6px; max-height: 320px; overflow: auto; white-space: pre; font-family: inherit; font-size: 11.5px; line-height: 1.7; color: var(--text-dim); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px 12px; }
 
 /* 匯出報告 */

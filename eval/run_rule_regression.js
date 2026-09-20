@@ -131,7 +131,7 @@ check('.env 的管理者密碼仍報 .env 密鑰', `VITE_ADMIN_PASSWORD=Sup3rS3c
 check('.env 的 OpenAI 金鑰 → 只報明文金鑰', 'OPENAI_API_KEY=sk-proj-' + 'Xa7Qm2Lp9Rt4Vn8Kc3Zw6Hy1Bd5Fg0Js', 'plain_key', true);
 check('.env 的 OpenAI 金鑰 → 不重複報 .env 密鑰', 'OPENAI_API_KEY=sk-proj-' + 'Xa7Qm2Lp9Rt4Vn8Kc3Zw6Hy1Bd5Fg0Js', 'env_file_secret', false);
 
-// 第五輪:單檔式網頁(所有程式碼都寫在一個 index.html)造成的誤判
+// 第六輪:單檔式網頁(所有程式碼都寫在一個 index.html)造成的誤判
 check('組 HTML 的模板字串不是 SQL 拼接', 'const h = `<span onblur="Card.update(${id}, v)">${esc(t)}</span>`;', 'possible_sql_injection', false);
 check('真正的 SELECT 模板字串仍會報', 'const q = `SELECT * FROM users WHERE id = ${id}`;', 'possible_sql_injection', true);
 check('真正的 UPDATE 模板字串仍會報', 'const q = `UPDATE users SET name = \'${n}\'`;', 'possible_sql_injection', true);
@@ -166,7 +166,8 @@ const VITE_PROJECT = [
 const vr = scanFiles(VITE_PROJECT);
 const st = (r, p) => (r.projectMap.nodes.find(n => n.path === p) || {}).status;
 checkMap('入口追得到的檔案標為使用中(含 @ 別名、動態 import)', ['index.html', 'src/main.ts', 'src/App.vue', 'src/components/Nav.vue', 'src/views/Home.vue'].every(p => st(vr, p) === 'used'));
-checkMap('追不到的檔案標為疑似沒用到', st(vr, 'src/components/Old.vue') === 'unused' && st(vr, 'tmp_home.html') === 'unused');
+checkMap('追不到的檔案標為疑似沒用到', st(vr, 'src/components/Old.vue') === 'unused' && st(vr, 'src/old/key.js') === 'unused');
+checkMap('沒被首頁連到的網頁標為「另一個網頁」而不是沒用到', st(vr, 'tmp_home.html') === 'page');
 checkMap('建置設定檔不算沒用到', st(vr, 'vite.config.ts') === 'build');
 const evalF = vr.findings.find(f => f.kind === 'insecure_eval');
 checkMap('沒用到檔案裡的一般問題降為參考', !!evalF && evalF.tier === 3 && evalF.context === 'unused' && evalF.originalTier === 1);
@@ -180,7 +181,39 @@ checkMap('有檔案沒檢查到 → 不降級、提示沒檢查到的數量', wi
 checkMap('列出不檢查的檔案類型(.sql)', withCov.notices.some(n => n.id === 'not-checked' && n.text.includes('.sql 2 個')));
 const pasted = scanFiles([{ filename: null, code: 'const a = 1;' }, { filename: null, code: 'const b = 2;' }]);
 checkMap('貼上的多段程式碼(沒有 index.html)不出現檔案地圖', pasted.projectMap.analyzed === false && !pasted.notices.some(n => n.id === 'usage') && !/rs-map/.test(findingRenderer(pasted.findings, pasted.languageCaveat, pasted.notices, pasted.projectMap)));
-checkMap('畫面顯示檔案地圖與疑似沒用到的數量', /rs-tree/.test(findingRenderer(vr.findings, vr.languageCaveat, vr.notices, vr.projectMap)) && /3 個疑似沒在使用/.test(findingRenderer(vr.findings, vr.languageCaveat, vr.notices, vr.projectMap)));
+const vrHtml = findingRenderer(vr.findings, vr.languageCaveat, vr.notices, vr.projectMap);
+checkMap('畫面顯示檔案地圖與疑似沒用到的數量', /pm-tree/.test(vrHtml) && /2 個疑似沒在使用/.test(vrHtml));
+checkMap('畫面附上每種狀態的意思', /rs-legend/.test(vrHtml) && vrHtml.includes('疑似沒用到'));
+checkMap('畫面附上入口的引用關係樹', /引用關係/.test(vrHtml) && /src\/main\.ts/.test(vrHtml));
+checkMap('引用關係依層數上色(第一層 pm-l0、第二層 pm-l1…)', /pm-gnode pm-l0/.test(vrHtml) && /pm-gnode pm-l1/.test(vrHtml) && /pm-gnode pm-l2/.test(vrHtml));
+checkMap('檔案樹的狀態用有顏色的標籤而不是純文字', /pm-chip pm-used/.test(vrHtml) && /pm-chip pm-unused/.test(vrHtml));
+
+// 引用關係與分類:第六輪使用者回報「無法判斷太多」後補上的檢查
+const { projectGraphText } = require('../modules/finding-renderer');
+const graph = projectGraphText(vr.projectMap);
+checkMap('引用關係樹從入口往下展開', /^index\.html$/m.test(graph) && /\n {2}src\/main\.ts/.test(graph) && /\n {4}src\/App\.vue/.test(graph));
+
+// 註解裡寫 import(…) 不該讓整個專案變成「無法判斷」(本專案自己就踩過這個雷)
+const COMMENT_PROJECT = VITE_PROJECT.filter(f => f.filename !== 'src/App.vue').concat([
+  { filename: 'src/App.vue', code: "<script setup lang=\"ts\">\n// 說明:這裡不用 import(變數),也沒有 import.meta.glob\nimport Nav from '@/components/Nav.vue'\nimport Home from './views/Home.vue'\n</script>" }
+]);
+const cm = scanFiles(COMMENT_PROJECT);
+checkMap('註解裡提到 import( 不算動態載入', cm.projectMap.certain === true);
+
+// Node 工具鏈:require 也算引用,被測試腳本用到的檔案不是「沒用到」
+const NODE_PROJECT = [
+  { filename: 'index.html', code: '<!DOCTYPE html><html><body><script src="app.js"></script></body></html>' },
+  { filename: 'app.js', code: "const sw = './sw.js';\nnavigator.serviceWorker.register(sw ? './sw.js' : '');" },
+  { filename: 'sw.js', code: "self.addEventListener('install', () => {});" },
+  { filename: 'scripts/run-check.js', code: "const helper = require('./helper');\nhelper();" },
+  { filename: 'scripts/helper.js', code: 'module.exports = function () {};' },
+  { filename: 'lonely.js', code: 'export const unusedThing = 1;' }
+];
+const np = scanFiles(NODE_PROJECT);
+const nst = p => (np.projectMap.nodes.find(n => n.path === p) || {}).status;
+checkMap('字串路徑載入(sw.js)也算有在使用', nst('sw.js') === 'used');
+checkMap('被建置腳本 require 的檔案標成工具而不是沒用到', nst('scripts/helper.js') === 'build');
+checkMap('真的沒人用到的檔案才標為疑似沒用到', nst('lonely.js') === 'unused' && np.projectMap.certain === true);
 
 // 檔案情境(需要檔名,直接用 scanCode 檢查層級)
 // 看起來像真的金鑰:拆開組合,避免本檔案在「掃描本專案自己」時被當成外洩
