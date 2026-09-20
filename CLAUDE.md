@@ -21,6 +21,9 @@
   因為那本來就是公開資訊;個別使用者的專案不適用這條例外。
 - 變數、欄位、路徑一律改成通用名稱(`item.name`、`v1.0.0/`、`draft.html`)。
 - 這條規則同時適用於 `eval/cases/`、`eval/reference_cases/`、`docs/CHANGELOG.md`、程式碼註解與測試資料。
+- `npm run verify` 會跑 `scripts/check-deidentified.js`:抓外部網址主機、指向特定專案的原始碼網址、電子郵件。
+  **它只抓得到機器看得出來的那一半**——獨特的資料夾／檔名、變數命名、情境描述仍然要自己判斷,綠燈不等於沒問題。
+  要放行新的網域請改 `scripts/deidentify-allowlist.json` 並在該檔案裡寫清楚理由。
 
 ## 改東西前先知道
 
@@ -29,6 +32,7 @@
 - **改了任何 `assets/`、`modules/`、`vendor/` 的 JS/CSS 後執行 `npm run build:single`**：它會先更新 `index.html` 裡的檔案指紋（`?v=…`）與頁尾版本號，再產生單檔版。指紋過期 verify 會失敗。不要手改 `?v=` 或版本號。
 - 修正紀錄寫在 `docs/CHANGELOG.md`；程式碼旁只留一行 `為什麼:…(背景見 docs/CHANGELOG.md)`。
 - 報告數字（README「準確度驗證」、`eval/EVAL_REPORT.md`）只在跑過 `npm run eval` / `eval:ast` 後依實際輸出更新。
+  這兩份文件用 `<!-- eval-numbers: cases.regex=20/21 … -->` 標記自己宣告了哪些數字，verify 會實際重跑比對，對不上就紅燈。
 
 ## 架構
 
@@ -48,7 +52,9 @@ modules/scan-orchestrator.js  掃描流程唯一來源:scanCode(code, {filename}
 modules/finding-renderer.js   結果 HTML(依問題類型分組)、白話標題(PLAIN_TITLES)、結論與步驟(buildVerdict)、報告(buildReportMarkdown)
 scripts/stamp-version.js      index.html 本地 CSS/JS 網址加內容指紋 ?v=…、寫入頁尾版本號(避免 GitHub Pages 快取造成新舊版混用)
 scripts/build-single.js       index.html → referencesingle/index.html(內嵌 css/js/字型,改寫 CSP 為 sha256)
-scripts/verify.js             一鍵驗證;snapshot.js / check-report.js / ui-smoke.js 為其子步驟
+scripts/verify.js             一鍵驗證;snapshot.js / check-report.js / ui-smoke.js /
+                              check-deidentified.js / check-eval-numbers.js 為其子步驟
+scripts/deidentify-allowlist.json  去識別化檢查的允許清單(放寬會出現在 git diff 裡)
 eval/load-ast.js              讓 Node 使用 vendor/ 內與網頁相同的 acorn(require 它 = AST 版)
 eval/                         驗證案例與報告(見 eval/CASE_FORMAT.md)
 docs/USER_TEST_KIT.md         真人測試任務腳本(擁有者執行,結果回饋給 Claude)
@@ -112,7 +118,8 @@ notices（本次檢查的限制）：`{ id, level: 'warn' | 'info', text }`，�
 |---|---|
 | `npm run verify` | 改完必跑，全綠才寫回 |
 | `npm run build:single` | 更新檔案指紋與版本號，並重新產生單檔版 |
-| `npm run eval` / `eval:ast` / `eval:fp` | 準確度統計（更新報告數字時用） |
+| `npm run eval` / `eval:ast` / `eval:fp` | 主要案例集（49 個）的準確度統計與信賴區間 |
+| `npm run eval:legacy` / `eval:legacy:ast` | 早期案例集（10 個，已全部併入 `eval/cases/`，可考慮退場） |
 | `npm run test:ui` | 畫面驗收（需 playwright；可用 `CHROMIUM_PATH` 指定瀏覽器） |
 
 本專案沒有 npm 相依套件；`npm install` 不需要執行。

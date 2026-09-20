@@ -1,0 +1,44 @@
+{
+  "_說明": [
+    "去識別化檢查的允許清單(scripts/check-deidentified.js 使用)。",
+    "新增任何一筆之前先想清楚:這個網址／信箱寫進公開 repo,會不會讓人認出某個「沒同意被公開」的專案?",
+    "會的話不要加進來,改寫成通用情境(example.com、a/b、v1.0.0/)。",
+    "這份清單會出現在 git diff 裡,就是要讓「放寬」這件事看得見。"
+  ],
+  "hosts": [
+    "example.com", "example.org", "example.net", "example.edu", "example-cdn.com",
+    "cdn.example.com", "api.example.com", "static.example.com", "backend.example.com",
+    "app.example.com", "demo.example.com",
+    "localhost", "127.0.0.1",
+    "*.test", "*.example", "*.invalid", "*.localhost",
+
+    "api.github.com", "raw.githubusercontent.com",
+    "github.com", "gitlab.com",
+    "api.openai.com", "api.anthropic.com",
+    "fonts.googleapis.com", "fonts.gstatic.com",
+    "csp-evaluator.withgoogle.com",
+    "owasp.org", "cheatsheetseries.owasp.org", "developer.mozilla.org", "www.w3.org",
+
+    "kenyuiyui.github.io",
+    "xyzcompany.supabase.co",
+    "exampleproj.supabase.co",
+    "someone.github.io",
+    "demo.firebaseapp.com"
+  ],
+  "_hosts_說明": [
+    "只有 *.test / *.example / *.invalid / *.localhost 這四個 RFC 保留網域是「整個尾碼都算」,",
+    "其餘一律要完全相同——因為 someproject.netlify.app 這種子網域正好就是會指認出某個專案的東西。",
+    "modules/csp-detector.js 內建的網域清單會自動併入(平台本身,不含任何子網域),不必在這裡重複列。",
+    "最後五筆逐一說明:kenyuiyui.github.io 是本專案自己的網站;",
+    "xyzcompany.supabase.co 是 Supabase 官方文件的佔位網址;exampleproj / someone / demo 是測試用的佔位名稱。"
+  ],
+  "repoOwners": ["a", "b", "owner", "user", "demo", "example", "me", "帳號", "s2e-lab", "kenyuiyui"],
+  "_repoOwners_說明": [
+    "github.com/<擁有者>/<專案> 只允許這些擁有者名稱。",
+    "a/b、owner/repo、demo/app 是刻意的通用佔位名稱;",
+    "s2e-lab 是 README 引用的公開學術資料集 SecurityEval;",
+    "kenyuiyui 是本專案自己的帳號(寫自己的沒問題)。"
+  ],
+  "urls": [],
+  "emails": []
+}

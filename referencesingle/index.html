@@ -8,7 +8,7 @@
   唯一例外:使用者按下「從 GitHub 匯入」時,讀取 api.github.com 與 raw.githubusercontent.com 上的公開檔案(只讀取,不送出程式碼)。
   單檔版由 scripts/build-single.js 改寫這一行(行內 script/style 改用 sha256 雜湊、字型改用 data:)。
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tQN3P01k+9fYTJxjz1bz9sk4ixh28eNMwMOygJKvYHA=' 'sha256-r2Ulx/KLJ3bwPptcn/Gxn23scblhvMWjB2MSqkYA4GY=' 'sha256-k4Dsl4phnEVoWRV6BGYpsCAjEiqhiFqyyqFmNTpECOY=' 'sha256-AvGuu4qO0PTKlZOxSFM5OZdwoGBGMcuTTMqsy4/n/zE=' 'sha256-Kz1bcHKV44I2OKFIEpq+iclqwXOorzYOHcgUVYXJdaw=' 'sha256-s6wK40PdWN1WO56UYib9d+evKEx9zrGhFp1jXa+P+bU=' 'sha256-w9tDV4ToqGvFljYpLINp/oeLBzxAX1ZCL21aTbIMXcE=' 'sha256-8ZqKMlOH5MjSWLMiy13BEO4qPrHonb2ogwoH+rmKY2s=' 'sha256-VZp1cQkMn5vAgipZgGuOssEGS5fdf/+Kna6RLVPTD2o=' 'sha256-VF7EbVkdcEb/5TRO0cqx51QYwoWGkFPl+O/f3MwcOBM=' 'sha256-KjZdCklqc4O8cs2Pg0FS+9aTNC9SOrRlh8G0HRjF29I=' 'sha256-nT4uWDvxIao1wumfkyd+jiE5hRAmSEYDZDLjL8kG37w=' 'sha256-0pOxSQ9PNKtU4R7szM6TT7hYjIr5M9Q6ebZB4CGAZFI=' 'sha256-PIv8TVCXCC8t+Pdd/bp7vMH3ycEqSmtgj05fwYo+5wE=' 'sha256-oMcRnEhoBVhFfAKGp7IKU0F/2a9JOXV4OXT2OQi84xY=' 'sha256-YPKriWmcdloU/53/GV6xGDoRNk6O25Fe/3mCwh3Ku+0=' 'sha256-MkhJSNhhn6SqYzLWDW+T8J4PNIbQLFBBKzie516HbkQ=' 'sha256-cmLyYxrHv9dqB9fvRph7+9gAY7NMsMz99f7Q0K37ioo=' 'sha256-bXPxT5AsUti/gASwZ+XMpnyKzyiC3pQrjpZ0en2IYv0=' 'sha256-xZQkkSa264miFJm8yfibQKGc3PVNTz40HvWCUjoTA/0=' 'sha256-Wyyh4pGZCu33knKPa4k+JP95Q4DQlB07lPvliCyAa5o='; style-src 'sha256-yVZD3pDEYI+5GpYuMKxafiMqHiUD1ZRJ4fxaLl7b0Yw='; font-src data:; img-src data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tQN3P01k+9fYTJxjz1bz9sk4ixh28eNMwMOygJKvYHA=' 'sha256-r2Ulx/KLJ3bwPptcn/Gxn23scblhvMWjB2MSqkYA4GY=' 'sha256-k4Dsl4phnEVoWRV6BGYpsCAjEiqhiFqyyqFmNTpECOY=' 'sha256-AvGuu4qO0PTKlZOxSFM5OZdwoGBGMcuTTMqsy4/n/zE=' 'sha256-Kz1bcHKV44I2OKFIEpq+iclqwXOorzYOHcgUVYXJdaw=' 'sha256-s6wK40PdWN1WO56UYib9d+evKEx9zrGhFp1jXa+P+bU=' 'sha256-w9tDV4ToqGvFljYpLINp/oeLBzxAX1ZCL21aTbIMXcE=' 'sha256-8ZqKMlOH5MjSWLMiy13BEO4qPrHonb2ogwoH+rmKY2s=' 'sha256-J/SPqHhofqv2ORlDJaGQfn9tioZ+MBhmJXdOmtN2xM8=' 'sha256-VF7EbVkdcEb/5TRO0cqx51QYwoWGkFPl+O/f3MwcOBM=' 'sha256-KjZdCklqc4O8cs2Pg0FS+9aTNC9SOrRlh8G0HRjF29I=' 'sha256-nT4uWDvxIao1wumfkyd+jiE5hRAmSEYDZDLjL8kG37w=' 'sha256-0pOxSQ9PNKtU4R7szM6TT7hYjIr5M9Q6ebZB4CGAZFI=' 'sha256-PIv8TVCXCC8t+Pdd/bp7vMH3ycEqSmtgj05fwYo+5wE=' 'sha256-oMcRnEhoBVhFfAKGp7IKU0F/2a9JOXV4OXT2OQi84xY=' 'sha256-YPKriWmcdloU/53/GV6xGDoRNk6O25Fe/3mCwh3Ku+0=' 'sha256-MkhJSNhhn6SqYzLWDW+T8J4PNIbQLFBBKzie516HbkQ=' 'sha256-cmLyYxrHv9dqB9fvRph7+9gAY7NMsMz99f7Q0K37ioo=' 'sha256-bXPxT5AsUti/gASwZ+XMpnyKzyiC3pQrjpZ0en2IYv0=' 'sha256-xZQkkSa264miFJm8yfibQKGc3PVNTz40HvWCUjoTA/0=' 'sha256-Wyyh4pGZCu33knKPa4k+JP95Q4DQlB07lPvliCyAa5o='; style-src 'sha256-yVZD3pDEYI+5GpYuMKxafiMqHiUD1ZRJ4fxaLl7b0Yw='; font-src data:; img-src data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>未發現 ≠ 安全 — AI 產出程式碼資安檢查器</title>
@@ -1424,7 +1424,7 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
     <footer>
       <p>本工具只做靜態比對：不執行、不上傳、不儲存你貼上的內容。適合上線前快速自我檢查，不能取代正式的資安審查或滲透測試。</p>
       <p>「需要處理」是高信心度的結果；「請你確認」代表看起來可疑，需要你對照程式判斷。</p>
-      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">b2e6b18d</span></p>
+      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">18671150</span></p>
     </footer>
   </div>
 
@@ -2823,7 +2823,7 @@ function cspDetector(code) {
 // 瀏覽器環境: module 不存在 → 略過這段,函式/常數已是全域作用域下的宣告,
 //            可直接被 index.html 或其他 <script> 使用
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { cspDetector, cspSiteWide };
+  module.exports = { cspDetector, cspSiteWide, CSP_BYPASS_HOSTS, CSP_SHARED_HOSTING };
 }
 </script>
 <script>

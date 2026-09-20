@@ -444,5 +444,5 @@ function cspDetector(code) {
 // 瀏覽器環境: module 不存在 → 略過這段,函式/常數已是全域作用域下的宣告,
 //            可直接被 index.html 或其他 <script> 使用
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { cspDetector, cspSiteWide };
+  module.exports = { cspDetector, cspSiteWide, CSP_BYPASS_HOSTS, CSP_SHARED_HOSTING };
 }

@@ -10,6 +10,8 @@
     "eval": "cd eval && node run_scaled_eval.js",
     "eval:ast": "cd eval && node -e \"require('./load-ast');require('./run_scaled_eval.js');\"",
     "eval:fp": "cd eval && node run_fp_eval.js",
+    "eval:legacy": "cd eval && node run_eval.js",
+    "eval:legacy:ast": "cd eval && node -e \"require('./load-ast');require('./run_eval.js');\"",
     "stamp": "node scripts/stamp-version.js",
     "build:single": "node scripts/stamp-version.js && node scripts/build-single.js",
     "check:single": "node scripts/build-single.js --check"

@@ -127,6 +127,8 @@ step('掃描本專案自己:「需要處理」必須是 0', () => {
 });
 
 // ── 4c. GitHub 網址解析與檔案篩選 ──
+step('去識別化:沒有可指認特定專案的內容', () => run('node', ['scripts/check-deidentified.js']).trim());
+step('報告數字與實際跑出來的一致', () => run('node', ['scripts/check-eval-numbers.js']).trim());
 step('GitHub 匯入的網址解析與檔案篩選', () => {
   const { parseGitHubUrl, selectGitHubFiles } = require(path.join(root, 'assets', 'github-import'));
   const cases = [
