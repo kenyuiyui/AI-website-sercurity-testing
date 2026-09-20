@@ -66,7 +66,7 @@
 
 單檔版是由拆分版產生的，**只改 `index.html`、`assets/`、`vendor/`、`modules/`**，改完執行 `npm run build:single`：更新檔案指紋與版本號，並重新產生 `referencesingle/index.html`。
 
-模組對照表：M1 key-detector（明文金鑰）／M2 jwt-analyzer（JWT/Supabase）／M3 hash-detector（弱雜湊）／M4 secret-heuristics（自訂密鑰啟發式）／M5 csp-detector（CSP 缺失與內容品質）／M6 idor-detector（IDOR）／M7 language-detector／M8 finding-renderer（結果呈現、報告）／M9 sql-injection-detector／M10 insecure-deserialize-detector／M11 field-masking-consistency-detector（多檔案模式）／M12 rate-limit-coverage-detector／M13 project-map（檔案地圖、引用關係與檢查範圍，多檔案模式）／M14 xss-detector（資料被直接組成 HTML）；scan-orchestrator 負責依序呼叫並合併結果。
+模組對照表：M1 key-detector（明文金鑰）／M2 jwt-analyzer（JWT/Supabase）／M3 hash-detector（弱雜湊）／M4 secret-heuristics（自訂密鑰啟發式）／M5 csp-detector（CSP 缺失與內容品質）／M6 idor-detector（IDOR）／M7 language-detector／M8 finding-renderer（結果呈現、報告）／M9 sql-injection-detector／M10 insecure-deserialize-detector／M11 field-masking-consistency-detector（多檔案模式）／M12 rate-limit-coverage-detector／M13 project-map（檔案地圖、引用關係與檢查範圍，多檔案模式）／M14 xss-detector（資料被直接組成 HTML）／M15 db-rules-detector（資料庫權限規則）；scan-orchestrator 負責依序呼叫並合併結果。
 
 ---
 
@@ -77,6 +77,7 @@
 ### 查得到
 
 - 已知格式的明文 API 金鑰（OpenAI／Anthropic／Gemini／Line／AWS），並依上下文分辨 Firebase 設定這類「本來就可公開」的值
+- **資料庫權限規則**：Firebase Security Rules（`firestore.rules`、`storage.rules`）、Realtime Database 規則（`database.rules.json`）、Supabase／Postgres 的 RLS policy（`supabase/`、`migrations/`、`db/` 等資料夾裡的 `.sql`）。判斷四種情況：條件永遠成立（`if true`、`USING (true)`、`GRANT … TO anon`、`DISABLE ROW LEVEL SECURITY`）、還停在 Firebase 測試模式（`request.time < timestamp.date(…)`）、只檢查有沒有登入而沒有比對資料擁有者、以及「有 `CREATE TABLE` 卻整批檔案都找不到 `ENABLE ROW LEVEL SECURITY`」。最後一項是跨檔案判斷，而且只在專案確實有 Supabase 用戶端（瀏覽器直連資料庫）時才報
 - HTML／框架設定檔是否有 CSP，以及設得緊不緊：`unsafe-inline`／`unsafe-eval`／整個協定（`https:`、`data:`）／`*`／http 來源／寫死的 nonce、沒有 `script-src`；白名單放了別人也能放程式碼的網域（公共 CDN、`*.github.io` 這類人人可架站的平台、JSONP／AngularJS 託管網域）；缺 `object-src`、用 nonce 卻沒管 `base-uri`。判斷依現代瀏覽器的語意：有 nonce／雜湊時 `'unsafe-inline'` 會被忽略、有 `'strict-dynamic'` 時白名單會被忽略，這些常見的相容寫法不會被冤枉
 - CSP 寫了但沒生效：指令拼錯（並提示「是不是想寫 …」）、漏分號、`'self'` 漏了單引號、nonce／雜湊格式不對、指令重複（只有第一個算）、已淘汰的指令、`<meta>` 不支援的指令（`frame-ancestors`、`report-uri`、`sandbox`）、CSP 標籤放在腳本後面、只回報不阻擋（Report-Only）。可讀 `<meta>`、HTTP 標頭設定（JSON、nginx、Apache、`_headers`）、存進變數的 CSP 字串，以及 Express `helmet` 設定（含 `contentSecurityPolicy: false`）
 - 多檔案掃描時，若專案裡有一處「整站生效」的 CSP（伺服器標頭／框架設定檔／`helmet`／建置時統一注入的腳本），其他沒寫 CSP 的網頁會自動降為「參考」；`<meta>` 只管自己那一頁，不會連帶降級。政策可以寫成一整條字串，也可以是「一條指令一個字串」的清單再 join（Python list、JS 陣列、Go slice 都讀得到）；說明文件（`.md`／`.txt`）裡的 CSP 視為在描述政策，不算數
@@ -100,7 +101,7 @@
 - 打包壓縮過的程式碼（例如「檢視網頁原始碼」取得的）：金鑰檢查仍有效，權限、SQL 這類邏輯檢查幾乎無法判斷
 - CSP 只看你貼上的文字：CDN／反向代理層另外加上的 HTTP 標頭看不到；「可被借用的網域」清單只收常見例子（比 Google CSP Evaluator 的清單少得多），沒列到不代表安全；多份 CSP 疊加後的實際效果、執行時才組出來的 CSP 不判斷。想再確認可以把 CSP 字串貼到 Google 的 CSP Evaluator 交叉比對
 - 私人 GitHub 專案無法直接匯入（請下載後用拖放或開啟檔案）；工具不會主動讀取你電腦裡的檔案
-- 資料庫規則（.sql）與部署設定（.yml／.toml）不在檢查範圍，報告只列出數量；「疑似沒用到」是用 import／require／字串路徑追蹤的推測，遇到動態載入、多頁面設定或框架檔案路由時不判斷
+- 資料庫權限規則只看得懂寫在檔案裡的：在 Firebase／Supabase **後台手動改過**的設定、用後台建立而沒有 migration 檔的資料表，本工具都看不到；規則裡呼叫自訂函式（`allow read: if isOwner()`）時追不進函式內容，一律不報。放在 `supabase`／`migrations`／`db` 等資料夾之外的 `.sql`，以及部署設定（.yml／.toml）不在檢查範圍，報告只列出數量；「疑似沒用到」是用 import／require／字串路徑追蹤的推測，遇到動態載入、多頁面設定或框架檔案路由時不判斷
 - 後端是否真的驗證了前端送出的密鑰／權杖——這是後端邏輯，工具只看得到你貼的這份程式碼
 - 雲端 IAM 權限設定完全不在範圍內
 
@@ -112,7 +113,7 @@
 
 | 分類 | 涵蓋程度 | 對應模組 |
 |---|---|---|
-| A01 – Broken Access Control | ✅ 完整 | M6 idor-detector |
+| A01 – Broken Access Control | ✅ 完整 | M6 idor-detector、M15 db-rules-detector（資料庫權限規則） |
 | A05 – Injection | ✅ 完整 | M9 sql-injection-detector、M10 insecure-deserialize-detector、M14 xss-detector |
 | A02 – Security Misconfiguration | 🟡 部分（僅 CSP：缺失、放寬、可被借用的白名單、寫錯或沒生效） | M5 csp-detector |
 | A04 – Cryptographic Failures | 🟡 部分（僅弱雜湊） | M3 hash-detector |
@@ -169,11 +170,11 @@
 
 用貼近真實世界的案例做了驗證，數字要一起看，不能只看 AST 版（這些數字由 `npm run verify` 實際重跑比對，對不上會紅燈）：
 
-<!-- eval-numbers: cases.regex=20/21 cases.ast=21/21 cases.fp=0/29 -->
+<!-- eval-numbers: cases.regex=19/20 cases.ast=20/20 cases.fp=0/29 -->
 
 | 驗證方向 | 案例數 | 正則保底版 | AST 完整版 |
 |---|---|---|---|
-| 真實案例命中率 | 20 個（真實蒐集，含 SecurityEval 學術資料集；共 21 個應偵測項目） | 95.2%（20/21） | 100%（21/21） |
+| 真實案例命中率 | 20 個（真實蒐集，含 SecurityEval 學術資料集；共 20 個應偵測項目） | 95.0%（19/20） | 100%（20/20） |
 | 誤判率 | 29 個（含邊界值測試） | 0%（0/29） | 0%（0/29） |
 
 語法分析函式庫（Acorn、acorn-jsx）現在放在本站 `vendor/`，網頁上一律使用 AST 完整版。正則保底版仍是程式碼含 TypeScript 型別語法、語法分析無法解析時的退路；它唯一的漏判是 `legacy-tp-002`：函式裡出現 `session` 字樣就會被當成「已檢查權限」，分辨不出只是登入檢查、而非擁有權檢查，這是正則能力的天花板。

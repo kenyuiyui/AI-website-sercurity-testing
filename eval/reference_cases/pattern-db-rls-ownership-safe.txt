@@ -1,0 +1,26 @@
+===SOURCE===
+非真實蒐集樣本。依「Supabase 的 RLS 政策有正確比對資料擁有者」這個寫法改寫，
+不對應任何特定專案。放這個負向案例是為了確認：寫對的權限規則不會被誤報。
+
+===CATEGORY===
+Supabase RLS 政策正確比對 auth.uid() 與擁有者欄位（不應命中）
+
+===EXPECTED===
+NONE
+
+===CODE===
+create table public.notes (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users (id),
+  body text
+);
+
+alter table public.notes enable row level security;
+
+create policy "owners can read their notes"
+  on public.notes for select
+  using (auth.uid() = user_id);
+
+create policy "owners can insert their notes"
+  on public.notes for insert
+  with check (auth.uid() = user_id);

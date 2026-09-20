@@ -158,7 +158,9 @@ step('GitHub 匯入的網址解析與檔案篩選', () => {
   // 檢查範圍:不檢查的類型(.sql/.yml)、太大的檔案、超過上限被擠掉的檔案都要記錄下來,才能在報告裡告訴使用者
   const { GH_MAX_FILES } = require(path.join(root, 'assets', 'github-import'));
   const covTree = tree.concat([
+    // supabase/ 底下的 .sql 是資料庫權限規則,要檢查;匯出的資料檔不是,只計入「不檢查的類型」
     { path: 'supabase/schema.sql', type: 'blob', size: 100 },
+    { path: 'exports/data_dump.sql', type: 'blob', size: 100 },
     { path: '.github/workflows/ci.yml', type: 'blob', size: 100 },
     { path: 'src/big.js', type: 'blob', size: 3 * 1024 * 1024 },
     // 單檔式網站的 index.html 常有 300KB～1MB,必須留在檢查範圍內(第五輪的真實案例)
@@ -166,7 +168,10 @@ step('GitHub 匯入的網址解析與檔案篩選', () => {
   ]);
   const cov = selectGitHubFiles(covTree, '').coverage;
   if (JSON.stringify(cov.notChecked) !== JSON.stringify({ sql: 1, yml: 1 })) problems.push(`不檢查的類型 ${JSON.stringify(cov.notChecked)}`);
-  if (cov.skippedLarge.join(',') !== 'src/big.js' || cov.total !== 7) problems.push(`太大的檔案／總數 ${JSON.stringify(cov)}`);
+  if (cov.skippedLarge.join(',') !== 'src/big.js' || cov.total !== 8) problems.push(`太大的檔案／總數 ${JSON.stringify(cov)}`);
+  const covFiles = selectGitHubFiles(covTree, '').files.map(f => f.path);
+  if (covFiles.indexOf('supabase/schema.sql') < 0) problems.push('supabase/ 底下的 .sql 是資料庫權限規則,應該要檢查');
+  if (covFiles.indexOf('exports/data_dump.sql') >= 0) problems.push('匯出的資料檔不該被下載');
   if (!selectGitHubFiles(covTree, '').files.some(f => f.path === 'singlefile/index.html')) problems.push('900KB 的單檔式網頁應該要檢查');
   const many = Array.from({ length: GH_MAX_FILES + 25 }, (_, i) => ({ path: `src/f${i}.js`, type: 'blob', size: 10 }));
   const cap = selectGitHubFiles(many, '');

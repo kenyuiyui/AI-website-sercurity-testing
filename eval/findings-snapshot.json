@@ -91,7 +91,6 @@
    "insecure_yaml_load@1:8"
   ],
   "cases/securityeval-cwe522-pearce1.txt": [
-   "env_file_secret@2:11",
    "weak_hash@1:12"
   ],
   "cases/securityeval-cwe759-mitre1.txt": [
@@ -132,6 +131,10 @@
   ],
   "reference_cases/pattern-csp-unsafe-inline.txt": [
    "csp_weak@2:5"
+  ],
+  "reference_cases/pattern-db-rls-ownership-safe.txt": [],
+  "reference_cases/pattern-db-rules-test-mode.txt": [
+   "db_rules_test_mode@1:6"
   ],
   "reference_cases/pattern-xss-escaped-safe.txt": [],
   "reference_cases/pattern-xss-innerhtml-unescaped.txt": [
@@ -297,7 +300,6 @@
    "insecure_yaml_load@1:8"
   ],
   "cases/securityeval-cwe522-pearce1.txt": [
-   "env_file_secret@2:11",
    "weak_hash@1:12"
   ],
   "cases/securityeval-cwe759-mitre1.txt": [
@@ -338,6 +340,10 @@
   ],
   "reference_cases/pattern-csp-unsafe-inline.txt": [
    "csp_weak@2:5"
+  ],
+  "reference_cases/pattern-db-rls-ownership-safe.txt": [],
+  "reference_cases/pattern-db-rules-test-mode.txt": [
+   "db_rules_test_mode@1:6"
   ],
   "reference_cases/pattern-xss-escaped-safe.txt": [],
   "reference_cases/pattern-xss-innerhtml-unescaped.txt": [

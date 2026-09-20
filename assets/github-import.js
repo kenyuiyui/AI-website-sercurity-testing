@@ -16,6 +16,9 @@ const GH_CODE_EXT = /\.(m?[jt]sx?|cjs|vue|svelte|astro|py|html?|php|rb)$/i;
 const GH_ENV_FILE = /(^|\/)\.env(\.[\w-]+)?$/i;           // .env、.env.local…(公開 repo 出現就是問題)
 const GH_ENV_TEMPLATE = /\.(example|sample|template|dist)$/i;
 const GH_CONFIG_FILE = /(^|\/)(vercel|firebase|netlify)\.json$|(^|\/)(firestore|storage|database)\.rules(\.json)?$/i;
+// 資料庫權限規則寫在 .sql 裡(Supabase 的 RLS policy):只收「像是資料庫定義」的路徑,
+// 不是全部 .sql 都收——大型專案的資料匯出檔會把檔案數上限吃光,把真正的程式碼擠掉。
+const GH_DB_SQL = /(^|\/)(supabase|migrations?|db|database|sql|schema|prisma)\/[^/]*\.sql$|(^|\/)[^/]*(polic|rls|schema|security|seed|init)[^/]*\.sql$/i;
 const GH_SKIP_DIR = /(^|\/)(node_modules|dist|build|out|\.next|\.nuxt|\.svelte-kit|\.vercel|coverage|vendor|\.git|__pycache__|venv|\.venv)\//i;
 const GH_SKIP_FILE = /\.min\.[jc]ss?$|\.d\.ts$|\.map$|(^|\/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml)$/i;
 // 不檢查、但與安全有關的檔案類型(資料庫規則、部署設定):不下載,只在報告的檢查範圍裡列出數量,讓使用者知道要自己看
@@ -57,7 +60,7 @@ function parseGitHubUrl(input) {
 function isWantedPath(p) {
   if (GH_SKIP_DIR.test(p) || GH_SKIP_FILE.test(p)) return false;
   if (GH_ENV_FILE.test(p)) return !GH_ENV_TEMPLATE.test(p);
-  return GH_CODE_EXT.test(p) || GH_CONFIG_FILE.test(p);
+  return GH_CODE_EXT.test(p) || GH_CONFIG_FILE.test(p) || GH_DB_SQL.test(p);
 }
 
 /**
@@ -76,7 +79,7 @@ function selectGitHubFiles(tree, basePath) {
     if (prefix && !t.path.startsWith(prefix) && t.path !== basePath) return false;
     if (!isWantedPath(t.path)) {
       const ext = (t.path.match(GH_NOT_CHECKED) || [])[1];
-      if (ext && !GH_SKIP_DIR.test(t.path) && !GH_SKIP_FILE.test(t.path) && !GH_CONFIG_FILE.test(t.path)) {
+      if (ext && !GH_SKIP_DIR.test(t.path) && !GH_SKIP_FILE.test(t.path) && !GH_CONFIG_FILE.test(t.path) && !GH_DB_SQL.test(t.path)) {
         const k = ext.toLowerCase();
         notChecked[k] = (notChecked[k] || 0) + 1;
       }

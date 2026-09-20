@@ -8,7 +8,7 @@
   唯一例外:使用者按下「從 GitHub 匯入」時,讀取 api.github.com 與 raw.githubusercontent.com 上的公開檔案(只讀取,不送出程式碼)。
   單檔版由 scripts/build-single.js 改寫這一行(行內 script/style 改用 sha256 雜湊、字型改用 data:)。
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tQN3P01k+9fYTJxjz1bz9sk4ixh28eNMwMOygJKvYHA=' 'sha256-r2Ulx/KLJ3bwPptcn/Gxn23scblhvMWjB2MSqkYA4GY=' 'sha256-k4Dsl4phnEVoWRV6BGYpsCAjEiqhiFqyyqFmNTpECOY=' 'sha256-AvGuu4qO0PTKlZOxSFM5OZdwoGBGMcuTTMqsy4/n/zE=' 'sha256-Kz1bcHKV44I2OKFIEpq+iclqwXOorzYOHcgUVYXJdaw=' 'sha256-s6wK40PdWN1WO56UYib9d+evKEx9zrGhFp1jXa+P+bU=' 'sha256-w9tDV4ToqGvFljYpLINp/oeLBzxAX1ZCL21aTbIMXcE=' 'sha256-8ZqKMlOH5MjSWLMiy13BEO4qPrHonb2ogwoH+rmKY2s=' 'sha256-/+q+XzUADDSWcOikwnrUuZJ5xNBdOyBN2oW+NepbBMg=' 'sha256-VF7EbVkdcEb/5TRO0cqx51QYwoWGkFPl+O/f3MwcOBM=' 'sha256-KjZdCklqc4O8cs2Pg0FS+9aTNC9SOrRlh8G0HRjF29I=' 'sha256-vzGOcf2uKjE+3NQZnSqPwxVDUOKOzIGHIbF8f77q7vQ=' 'sha256-0pOxSQ9PNKtU4R7szM6TT7hYjIr5M9Q6ebZB4CGAZFI=' 'sha256-PIv8TVCXCC8t+Pdd/bp7vMH3ycEqSmtgj05fwYo+5wE=' 'sha256-oMcRnEhoBVhFfAKGp7IKU0F/2a9JOXV4OXT2OQi84xY=' 'sha256-YPKriWmcdloU/53/GV6xGDoRNk6O25Fe/3mCwh3Ku+0=' 'sha256-MkhJSNhhn6SqYzLWDW+T8J4PNIbQLFBBKzie516HbkQ=' 'sha256-cmLyYxrHv9dqB9fvRph7+9gAY7NMsMz99f7Q0K37ioo=' 'sha256-FoGJnnTfAMIiDP73uX3+tWy4vE2VmfdwxckcPeeRreU=' 'sha256-xZQkkSa264miFJm8yfibQKGc3PVNTz40HvWCUjoTA/0=' 'sha256-Wyyh4pGZCu33knKPa4k+JP95Q4DQlB07lPvliCyAa5o='; style-src 'sha256-yVZD3pDEYI+5GpYuMKxafiMqHiUD1ZRJ4fxaLl7b0Yw='; font-src data:; img-src data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tQN3P01k+9fYTJxjz1bz9sk4ixh28eNMwMOygJKvYHA=' 'sha256-r2Ulx/KLJ3bwPptcn/Gxn23scblhvMWjB2MSqkYA4GY=' 'sha256-k4Dsl4phnEVoWRV6BGYpsCAjEiqhiFqyyqFmNTpECOY=' 'sha256-AvGuu4qO0PTKlZOxSFM5OZdwoGBGMcuTTMqsy4/n/zE=' 'sha256-Kz1bcHKV44I2OKFIEpq+iclqwXOorzYOHcgUVYXJdaw=' 'sha256-s6wK40PdWN1WO56UYib9d+evKEx9zrGhFp1jXa+P+bU=' 'sha256-w9tDV4ToqGvFljYpLINp/oeLBzxAX1ZCL21aTbIMXcE=' 'sha256-uYEVA0dCCUQA5MIVVfJIwk8Ia2HY2ZC5YpF7lNSzIGA=' 'sha256-/+q+XzUADDSWcOikwnrUuZJ5xNBdOyBN2oW+NepbBMg=' 'sha256-VF7EbVkdcEb/5TRO0cqx51QYwoWGkFPl+O/f3MwcOBM=' 'sha256-KjZdCklqc4O8cs2Pg0FS+9aTNC9SOrRlh8G0HRjF29I=' 'sha256-/JtFIIrSJLmeyb5m2Wd9DiOeJEF7391nf/lIaj8LjQ8=' 'sha256-0pOxSQ9PNKtU4R7szM6TT7hYjIr5M9Q6ebZB4CGAZFI=' 'sha256-PIv8TVCXCC8t+Pdd/bp7vMH3ycEqSmtgj05fwYo+5wE=' 'sha256-oMcRnEhoBVhFfAKGp7IKU0F/2a9JOXV4OXT2OQi84xY=' 'sha256-YPKriWmcdloU/53/GV6xGDoRNk6O25Fe/3mCwh3Ku+0=' 'sha256-MkhJSNhhn6SqYzLWDW+T8J4PNIbQLFBBKzie516HbkQ=' 'sha256-mluVhD2qQznJUhrZE26DHO0oHGVL0GBMwSRd5Q3bIyg=' 'sha256-cmLyYxrHv9dqB9fvRph7+9gAY7NMsMz99f7Q0K37ioo=' 'sha256-N8Z0o8GOlrYZOWybCmx/I+3vBzbopLg28bCnGzULuoQ=' 'sha256-JuBvlkSVStdED3ZWGx0p9lndYlY+qc7WNx4MgEHnGNg=' 'sha256-Wyyh4pGZCu33knKPa4k+JP95Q4DQlB07lPvliCyAa5o='; style-src 'sha256-yVZD3pDEYI+5GpYuMKxafiMqHiUD1ZRJ4fxaLl7b0Yw='; font-src data:; img-src data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>未發現 ≠ 安全 — AI 產出程式碼資安檢查器</title>
@@ -1424,7 +1424,7 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
     <footer>
       <p>本工具只做靜態比對：不執行、不上傳、不儲存你貼上的內容。適合上線前快速自我檢查，不能取代正式的資安審查或滲透測試。</p>
       <p>「需要處理」是高信心度的結果；「請你確認」代表看起來可疑，需要你對照程式判斷。</p>
-      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">385250a9</span></p>
+      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">1898d896</span></p>
     </footer>
   </div>
 
@@ -1442,6 +1442,7 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
           <ul>
             <li>已知格式的明文 API 金鑰（OpenAI／Anthropic／Gemini／AWS／LINE），並分辨 Firebase 設定這類「本來就可公開」的值</li>
             <li>Supabase／JWT 金鑰，區分 anon（可公開）與 service_role（絕不可公開）</li>
+            <li><strong>資料庫有沒有上鎖</strong>：Firebase 規則檔（firestore.rules、database.rules.json）與 Supabase 的權限設定（supabase／migrations 資料夾裡的 .sql）——條件永遠成立（任何人都能拿資料）、還停在「測試模式」、只檢查有沒有登入卻沒比對資料屬於誰、建了資料表卻沒開 RLS</li>
             <li>密碼用 MD5／SHA1 這類容易被破解的方式儲存</li>
             <li>網頁有沒有設「安全防線」（CSP，瀏覽器的額外一道鎖），以及鎖得緊不緊：有沒有放行寫在標籤上的程式碼、把文字當程式執行、整個協定或萬用字元、寫死的一次性通行碼；允許清單裡有沒有「別人也能放程式碼」的網站（公共檔案空間、人人可架站的平台）；有沒有漏掉 object-src、base-uri 這兩項</li>
             <li>安全防線寫了卻沒生效的情況：項目名稱拼錯、漏分號、'self' 的單引號漏掉、標籤放在程式碼後面、用 &lt;meta&gt; 寫了它不支援的項目、只回報不阻擋。設定寫在網頁標籤、伺服器設定檔（JSON、nginx、Apache、_headers）或 helmet 套件裡都讀得到</li>
@@ -1463,7 +1464,7 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
             <li>打包壓縮過的程式碼：金鑰檢查仍有效，權限、SQL 這類邏輯檢查幾乎無法判斷</li>
             <li>權限檢查只是模式比對，主要針對 JavaScript／Express，一定會有漏判與誤判</li>
             <li>疑似自訂密鑰、內部網址、環境變數明文備用值 — 沒有固定格式，誤判率較高</li>
-            <li>後端、資料庫權限規則（RLS／Security Rules）與雲端 IAM 設定；資料庫檔（.sql）與部署設定（.yml）不在檢查範圍，請自行檢視</li>
+            <li>資料庫規則只看得懂寫在檔案裡的：在 Firebase／Supabase 後台手動改過的設定、後台直接建立的資料表都看不到；規則裡呼叫自訂函式時追不進去。雲端 IAM 設定與部署設定（.yml）也不在檢查範圍</li>
             <li>「疑似沒用到」只是沿著程式引用推測，遇到動態載入或多頁面設定時不判斷</li>
             <li>安全防線只看你貼上的文字：代理層或託管平台另外加上的設定看不到；「別人也能放程式碼」的網站清單只收常見例子，沒列到不代表安全；多份設定疊加後的實際效果、程式執行時才組出來的設定都不判斷。想再確認，可以把設定內容貼到 Google 的 CSP Evaluator 交叉比對</li>
             <li>私人 GitHub 專案（請下載後用拖放或開啟檔案）</li>
@@ -2217,10 +2218,24 @@ if (typeof module !== 'undefined' && module.exports) {
  *    測試時不需要真的跑 M1,手工造一組假的 existingFindings 即可,見規格文件範例。
  */
 
+// 變數名稱看得出裝的是「給人看的文字」(錯誤訊息、標籤、輸入框類型)就不是密鑰。
+// 為什麼:passwordError = "Password must be 8 to 18 characters"、passwordType = 'password'
+//        這類寫法在真實專案裡很常見,名字裡有 password 不代表值是密碼。(背景見 docs/CHANGELOG.md)
+const UI_STRING_NAME = /(error|message|msg|label|title|hint|placeholder|prompt|tooltip|caption|warning|notice|type|text)/i;
+
+// 「等著被換掉」的佔位值。開頭關鍵字 + 結尾 here/_here 兩種寫法都很常見
+// (範本專案的 .env 常寫 SECRET_KEY=changethis、cookieSecret: "..._secret_key_here")。
+const PLACEHOLDER_PREFIX = /^(your|my|xxx|placeholder|example|test|todo|change[-_ ]?(me|this|it)|replace[-_ ]?(me|this)|set[-_ ]?me|fill[-_ ]?(me|in)|to[-_ ]?be[-_ ]?(set|filled)|insert[-_ ]?|<.*>|\{\{.*\}\}|\$\{.*\}|貼上|請輸入|輸入你|範例)/i;
+const PLACEHOLDER_SUFFIX = /[-_ ]?here$|goes[-_ ]?here$/i;
+const isPlaceholderValue = (val) => {
+  const v = String(val == null ? '' : val).trim();
+  return v === '' || PLACEHOLDER_PREFIX.test(v) || PLACEHOLDER_SUFFIX.test(v);
+};
+
 const CUSTOM_SECRET_RULES = [{
   name: '自訂密鑰／權杖變數含明文字串（疑似）',
   re: /\b((?:[a-zA-Z_$][a-zA-Z0-9_$]*)?(?:secret|token|apikey|api_key|password|passwd|credential)[a-zA-Z0-9_$]*)\s*[:=]\s*["']([^"'\n]{8,})["']/gi,
-  isPlaceholder: (val) => /^(your|my|xxx|placeholder|example|test|todo|change[-_]?me|<.*>|\{\{.*\}\}|\$\{.*\}|貼上|請輸入|輸入你|範例)/i.test(val.trim()) || val.trim() === ''
+  isPlaceholder: isPlaceholderValue
 }];
 
 const ENDPOINT_URL_RULES = [
@@ -2236,9 +2251,9 @@ const ENV_FALLBACK_RULES = [
 ];
 
 const ENV_FALLBACK_PLACEHOLDER = (val) =>
-  /^(your|my|xxx|placeholder|example|test|todo|change[-_]?me|<.*>|\{\{.*\}\}|\$\{.*\}|貼上|請輸入|輸入你|範例|localhost|127\.0\.0\.1)/i.test(val.trim())
-  || val.trim() === ''
-  || /^\d+$/.test(val.trim()); // 純數字(連接埠號、逾時秒數等常見設定值)不可能是密鑰,誤判率評測(fp-8)發現的修正
+  isPlaceholderValue(val)
+  || /^(localhost|127\.0\.0\.1)/i.test(String(val).trim())
+  || /^\d+$/.test(String(val).trim()); // 純數字(連接埠號、逾時秒數等常見設定值)不可能是密鑰,誤判率評測(fp-8)發現的修正
 
 // 為什麼:變數名不像密鑰、值又只是沒帳密的網址(SEO_URL、API_BASE 的預設值)——不是「備用密碼」。(背景見 docs/CHANGELOG.md)
 const SECRET_LIKE_NAME = /(secret|token|key|password|passwd|pwd|credential|auth)/i;
@@ -2254,8 +2269,22 @@ const ENV_FALLBACK_BENIGN_URL = (varName, val) =>
  * @param {string[]} knownValues - M1／M2 回報過的原始片段
  * @returns {Array}
  */
+function looksLikeEnvFile(code) {
+  const lines = code.split('\n').map(l => l.trim()).filter(l => l && l.charAt(0) !== '#');
+  if (!lines.length) return false;   // 使用者只貼一行 .env 也要算
+  // 有這些才是程式碼/標記語言,不是 .env(export FOO=bar 是 .env 常見寫法,不算)
+  if (lines.some(l => /^(import|from|const|let|var|function|class|def|package|using|require|return|if|for|while)\b/.test(l))) return false;
+  if (/<\/?[a-z!]/i.test(code)) return false;
+  const kv = lines.filter(l => /^(export\s+)?[A-Za-z_][A-Za-z0-9_]*\s*=/.test(l)).length;
+  return kv / lines.length >= 0.6;
+}
+
 function scanEnvFormatLines(code, knownValues) {
   const findings = [];
+  // 為什麼:這條規則原本對每個檔案逐行跑,結果 password=settings.X、foreign_key="user.id"、
+  //        storageKey = "vite-ui-theme" 這類程式碼都被當成 .env 明文密鑰。
+  //        .env 沒有程式語法,所以先確認「整份內容真的像 .env」再跑。(背景見 docs/CHANGELOG.md)
+  if (!looksLikeEnvFile(code)) return findings;
   const lines = code.split('\n');
   const envLinePattern = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+?)\s*$/;
   const secretNamePattern = /(secret|token|key|password|passwd|credential)/i;
@@ -2305,6 +2334,7 @@ function secretHeuristics(code, existingFindings) {
       const varName = cm[1];
       const val = cm[2];
       if (rule.isPlaceholder(val)) continue;
+      if (UI_STRING_NAME.test(varName)) continue;
       const alreadyFlagged = knownValues.some(v => val.includes(v) || v.includes(val));
       if (alreadyFlagged) continue;
       findings.push({
@@ -2368,6 +2398,8 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
   secretHeuristics,
   scanEnvFormatLines,
+  looksLikeEnvFile,
+  isPlaceholderValue,
   CUSTOM_SECRET_RULES,
   ENDPOINT_URL_RULES,
   ENV_FALLBACK_RULES,
@@ -3458,6 +3490,46 @@ const FINDING_GUIDE = {
       '4. 幫我確認專案根目錄的 .gitignore 裡有沒有正確包含 .env 相關檔案，避免以後再次發生。\n' +
       '完成後請告訴我：這組密鑰是否需要重新產生，以及 .gitignore 現在有沒有正確排除這類檔案。'
   },
+  db_rules_public: {
+    plain: '用 Supabase、Firebase 這類服務做的網站，瀏覽器是「直接連到資料庫」的——中間沒有你自己的伺服器把關。擋住別人看你資料的唯一一道牆，就是資料庫的權限規則。現在這道牆等於沒關：規則的條件寫成永遠成立（`if true`、`USING (true)`），或是直接把權限發給未登入的訪客。任何人只要從網頁原始碼裡撈到你的連線網址與公開金鑰（那本來就是公開的），就能把整張表的資料抓走，能寫入的話還能改或刪。這是 AI 產生的網站最常見、後果也最嚴重的一種問題。\n\n**分成兩種層級看**：開放「寫入」列為需要處理，因為任何人都能改或刪你的資料，幾乎沒有正當理由。只開放「讀取」列為請你確認——商品目錄、公告這類內容本來就該公開讀，寫法沒錯；你要做的是打開那張表看一眼，確認裡面沒有個人資料、聯絡方式或其他不該外流的欄位。',
+    handoff:
+      '我的專案用資料庫的權限規則被檢查出「條件永遠成立」（Firebase 的 allow … : if true，或 SQL 的 USING (true)／GRANT TO anon／DISABLE ROW LEVEL SECURITY），等於完全沒有限制。請幫我：\n' +
+      '1. 先列出這個專案有哪些資料表／集合，各自存的是什麼，並逐一判斷：哪些是真的要公開給所有人看的，哪些是「只有資料的擁有者才能看」的。\n' +
+      '2. 針對「只有擁有者能看」的部分，改寫規則成比對身分的寫法：Firebase 用 request.auth.uid == resource.data.userId（或路徑上的 uid）；Supabase 用 auth.uid() = user_id 這類條件，並確認該表已 ENABLE ROW LEVEL SECURITY。\n' +
+      '3. 針對真的要公開的部分，只開放讀取（select／read），不要一併開放寫入。\n' +
+      '4. 改完後提醒我：規則要重新部署（Firebase 是 firebase deploy --only firestore:rules，Supabase 是跑 migration）才會生效，只改檔案沒有用。\n' +
+      '完成後請告訴我：每張表最後的規則是什麼，以及哪些資料現在仍然是公開的。'
+  },
+  db_rules_test_mode: {
+    plain: '建立 Firebase 資料庫時如果選了「測試模式」，系統會產生一條有時限的規則：在某個日期之前，任何人都能讀寫你的全部資料；過了那一天，就變成任何人都不能讀寫，網站會突然壞掉。它的用意是讓你開發時不被擋，**上線前要自己換掉**。很多照著教學或 AI 指示做出來的專案就這樣留著沒改，等於資料庫從頭到尾沒上鎖。',
+    handoff:
+      '我的 Firebase 規則還停在測試模式（allow read, write: if request.time < timestamp.date(…)）。請幫我：\n' +
+      '1. 先列出這個專案實際會用到哪些集合（collection）與路徑，每一個存的是什麼資料、誰應該看得到。\n' +
+      '2. 依這份清單改寫成正式規則：預設全部擋掉，再逐一開放；需要登入才能看的用 request.auth != null 並加上 request.auth.uid == resource.data.userId 這類擁有者比對；真的要公開的只開 read。\n' +
+      '3. 一併檢查 Storage 的規則（storage.rules），它常常也留著測試模式。\n' +
+      '4. 提醒我用 firebase deploy --only firestore:rules,storage:rules 重新部署，並在後台確認生效日期欄位已經消失。\n' +
+      '完成後請告訴我：新的規則內容，以及哪些路徑仍然開放未登入存取。'
+  },
+  db_rules_any_user: {
+    plain: '規則只確認「這個人有沒有登入」，沒有確認「這筆資料是不是他的」。這兩件事差很多：任何人都可以在你的網站上註冊一個帳號，一旦規則只看有沒有登入，他登入後就能讀到**所有使用者**的資料，能寫入的話還能改別人的。實際發生過的外洩事件裡，這是最常見的成因之一——網站看起來有登入機制，感覺很安全，但門後面是通的。',
+    handoff:
+      '我的資料庫權限規則只檢查「有沒有登入」（Firebase 的 if request.auth != null，或 SQL 的 auth.role() = \'authenticated\'），沒有比對資料的擁有者。請幫我：\n' +
+      '1. 列出每張資料表／集合裡，哪一個欄位代表「這筆資料屬於誰」（常見是 user_id、owner_id、uid；如果沒有這個欄位，請告訴我，那要先加）。\n' +
+      '2. 改寫規則加上擁有者比對：Firebase 用 request.auth.uid == resource.data.userId（寫入時還要檢查 request.resource.data）；Supabase 用 auth.uid() = user_id，讀寫各自的 policy 都要加。\n' +
+      '3. 特別確認「新增」的情境：要防止使用者把 user_id 填成別人的（Firebase 檢查 request.resource.data.userId == request.auth.uid，Supabase 用 WITH CHECK）。\n' +
+      '4. 告訴我怎麼實際驗證：用兩個不同帳號登入，確認 A 拿不到 B 的資料。\n' +
+      '完成後請告訴我：每張表的最終規則，以及你怎麼確認擁有者比對有生效。'
+  },
+  db_rls_missing: {
+    plain: '這個專案的瀏覽器會直接連資料庫（Supabase 這類服務），而 Postgres 的資料表預設是「沒有列級權限（RLS）」的——沒開的話，權限規則寫得再好也不會被套用，拿得到公開金鑰的人就能把整張表撈走。公開金鑰本來就會出現在網頁原始碼裡，這是設計如此，安全性完全建立在「RLS 有開、而且政策寫對」這個前提上。檢查發現有 CREATE TABLE，卻在整批檔案裡找不到對應的 ENABLE ROW LEVEL SECURITY。',
+    handoff:
+      '我的 Supabase 專案有資料表沒有開啟 RLS（Row Level Security）。請幫我：\n' +
+      '1. 列出專案裡所有資料表，逐一確認有沒有 ALTER TABLE … ENABLE ROW LEVEL SECURITY；沒有的補上。\n' +
+      '2. 開啟 RLS 之後那張表會變成「全部拒絕」，所以要接著為它寫存取政策：只有擁有者能讀寫的用 auth.uid() = user_id；需要公開讀取的只開 SELECT。\n' +
+      '3. 提醒我在 Supabase 後台的 Table Editor 逐張確認 RLS 的開關狀態——用後台手動建立的表不會出現在 migration 檔裡，這次檢查也看不到。\n' +
+      '4. 告訴我怎麼驗證：用 anon 金鑰直接打 REST API（curl），確認拿不到不該拿到的資料。\n' +
+      '完成後請告訴我：每張表的 RLS 狀態與政策內容，以及哪些表是刻意保持公開的。'
+  },
   csp_weak: {
     plain: '這個頁面有設定「內容安全政策（CSP）」——瀏覽器的一道額外防線——但裡面有放寬的地方，讓它擋不住最常見的攻擊。例如放寬了「允許直接寫在網頁標籤裡的程式碼執行」（設定裡寫成 unsafe-inline），那正是把別人的程式碼塞進你網頁的攻擊最常用的方式；「*」或「https:」這類寫法等於允許任何網站的程式碼；一次性通行碼（nonce，本來每次開啟網頁都該重新產生）如果寫死成固定值，攻擊者照樣能拿來用。等於門鎖裝了，但鑰匙插在門上。',
     handoff:
@@ -3961,6 +4033,10 @@ const PLAIN_TITLES = {
   endpoint_url: { title: '內部服務網址（Webhook 等）直接寫在程式碼裡', action: '確認這個網址有驗證機制，必要時重新產生網址' },
   env_fallback: { title: '讀取環境變數時帶了一組明文備用值', action: '移除明文備用值，缺少設定時讓程式直接報錯' },
   env_file_secret: { title: '.env 設定檔裡有疑似真實的密鑰', action: '確認 .env 沒有上傳到 GitHub；已上傳就更換密鑰' },
+  db_rules_public: { title: '資料庫對外開著，沒有限制是誰', action: '把規則改成只允許資料的擁有者存取；真的要公開的部分只開放讀取。改完要重新部署規則才生效' },
+  db_rules_test_mode: { title: '資料庫還停在「測試模式」，現在等於沒上鎖', action: '把測試模式的規則換成正式規則，再重新部署' },
+  db_rules_any_user: { title: '只要註冊一個帳號，就看得到所有人的資料', action: '規則裡加上「這筆資料是不是他的」的比對，不能只檢查有沒有登入' },
+  db_rls_missing: { title: '資料表沒有上鎖（沒開 RLS）', action: '對每一張表開啟 RLS，再逐張寫存取政策' },
   no_csp_html: { title: '網頁沒有設定額外的安全防線（CSP）', action: '為網頁加上一段安全防線設定（技術名稱 Content Security Policy）' },
   xss_from_url: { title: '網址裡的內容會被當成程式執行（XSS）', action: '改用 textContent，或先做 HTML 跳脫再放進頁面' },
   html_from_data: { title: '資料被直接組成網頁內容，可能被插入惡意程式碼', action: '只顯示文字就改用 textContent，需要 HTML 就先跳脫' },
@@ -5270,6 +5346,241 @@ if (typeof module !== 'undefined' && module.exports) {
 }
 </script>
 <script>
+// ── 內嵌: modules/db-rules-detector.js ──
+/**
+ * M15 — db-rules-detector
+ *
+ * 職責:判斷「資料庫權限規則」有沒有把資料整個對外打開
+ *   - Firebase Security Rules(firestore.rules、storage.rules)
+ *   - Realtime Database 規則(database.rules.json)
+ *   - Postgres／Supabase 的 Row Level Security policy(.sql)
+ * 輸入: code (string), ctx?: { filename?, language? }
+ * 輸出: Finding[]
+ *
+ * 這是純函式,不依賴任何其他模組,可完全獨立開發與測試。
+ *
+ * 為什麼:用 Supabase／Firebase 做的網站,瀏覽器是直接連資料庫的——
+ *        擋住別人看到你資料的唯一一道牆就是這些規則檔,金鑰可公開正是建立在這個前提上。
+ *        本工具原本會說「這是可公開的金鑰，但要確認資料表權限」然後就停住,
+ *        把最關鍵的判斷丟回給看不懂的人。(背景見 docs/CHANGELOG.md)
+ *
+ * 能力邊界:只看得懂寫在檔案裡的規則。在 Firebase／Supabase 後台手動改過的設定看不到;
+ *          規則裡呼叫自訂函式(allow read: if isOwner())時,追不進函式內容,一律不報。
+ */
+
+// 這個檔案是不是「資料庫權限規則」——不是的話整個模組不跑,避免對一般程式碼誤報
+const DB_RULES_FILE = /(^|\/)(firestore|storage|database)\.rules(\.json)?$|\.sql$/i;
+const FIREBASE_HINT = /\brules_version\s*=|service\s+(cloud\.firestore|firebase\.storage)|^\s*match\s+\//mi;
+const RTDB_HINT = /"\s*\.(read|write)\s*"\s*:/;
+const SQL_HINT = /\bcreate\s+policy\b|\brow\s+level\s+security\b|\bcreate\s+table\b|\bgrant\s+/i;
+
+/** @returns {'firebase'|'rtdb'|'sql'|null} */
+function dbRulesKind(code, filename) {
+  const name = String(filename || '');
+  if (/(^|\/)database\.rules\.json$/i.test(name) || (!name && RTDB_HINT.test(code) && !FIREBASE_HINT.test(code))) return 'rtdb';
+  if (/(^|\/)(firestore|storage)\.rules$/i.test(name) || FIREBASE_HINT.test(code)) return 'firebase';
+  if (/\.sql$/i.test(name) || SQL_HINT.test(code)) return 'sql';
+  if (RTDB_HINT.test(code)) return 'rtdb';
+  return null;
+}
+
+// 只開放「讀」和開放「寫」的嚴重度差很多:商品目錄、公告這類表本來就該公開讀,
+// 但任何人都能寫入就是另一回事。為什麼:官方的 Supabase 範本就有一條
+// 「for select using (true)」的商品表政策,一律報「需要處理」等於對正確的寫法亂叫。(背景見 docs/CHANGELOG.md)
+const OPEN = { tier: 1, category: '資料庫權限', kind: 'db_rules_public' };
+const OPEN_READ = { tier: 2, category: '建議人工複查', kind: 'db_rules_public' };
+const TESTMODE = { tier: 1, category: '資料庫權限', kind: 'db_rules_test_mode' };
+const ANYUSER = { tier: 2, category: '建議人工複查', kind: 'db_rules_any_user' };
+
+/** 註解裡的規則不算數(官方範本就把「進階寫法」註解在檔案最上面);換成等長空白,行號才不會跑掉 */
+function blankComments(code, lineMark) {
+  const blank = m => m.replace(/[^\n]/g, ' ');
+  return code
+    .replace(/\/\*[\s\S]*?\*\//g, blank)
+    .replace(new RegExp(lineMark + '[^\n]*', 'g'), blank);
+}
+
+function add(findings, meta, name, evidence, index, match) {
+  findings.push(Object.assign({}, meta, { name, evidence, index, match }));
+}
+
+/** 條件式裡有沒有「比對這筆資料屬於誰」——有就不是單純的登入檢查 */
+function hasOwnerCheck(cond) {
+  // 條件裡有呼叫函式(自訂的 isOwner()、unchanged()、get()…)就追不進去,一律當作「有再判斷」不報
+  return /request\.auth\.uid\s*(==|in)|\buid\s*==|resource\.data|request\.resource\.data|[A-Za-z_][\w.]*\s*\(/i.test(cond);
+}
+
+function scanFirebase(code, findings) {
+  // allow read, write: if <條件>;  以及沒有條件的 allow read;(等同 if true)
+  const re = /\ballow\s+([a-z,\s]+?)\s*(?::\s*if\s+([^;{}]+))?;/gi;
+  let m;
+  while ((m = re.exec(code))) {
+    const ops = m[1].replace(/\s+/g, ' ').trim();
+    if (!/^(read|write|get|list|create|update|delete)(\s*,\s*(read|write|get|list|create|update|delete))*$/i.test(ops)) continue;
+    const cond = (m[2] || 'true').replace(/\s+/g, ' ').trim();
+    const writes = /write|create|update|delete/i.test(ops);
+    if (/^true$/i.test(cond)) {
+      add(findings, writes ? OPEN : OPEN_READ,
+        writes ? 'Firebase 規則允許任何人讀寫（if true）' : 'Firebase 規則允許任何人讀取（if true）',
+        writes
+          ? `規則寫著 ${m[0].trim()} —— 任何人只要知道你的專案網址，就能讀取、修改甚至刪除這裡的全部資料，不需要登入`
+          : `規則寫著 ${m[0].trim()} —— 這裡的資料對所有人公開讀取，不需要登入。如果是公告、商品這類本來就要公開的內容就沒問題；請確認裡面沒有個人資料或不該外流的欄位`,
+        m.index, m[0]);
+      continue;
+    }
+    if (/request\.time\s*<\s*timestamp\.date/i.test(cond)) {
+      add(findings, TESTMODE, 'Firebase 規則還停在「測試模式」',
+        `規則寫著 allow ${ops}: if request.time < timestamp.date(…) —— 這是建立資料庫時選「測試模式」留下的預設值：在那個日期之前，任何人都能讀寫你的全部資料；過了那天則全部被擋，網站會壞掉`,
+        m.index, m[0]);
+      continue;
+    }
+    // 只有 create 的「登入就能新增」是正常設計(留言、評論),不報;危險的是讀取與修改別人的資料
+    const onlyCreate = /^(create)(\s*,\s*create)*$/i.test(ops);
+    if (!onlyCreate && /request\.auth\s*!=\s*null|request\.auth\.uid\s*!=\s*null|request\.auth\s*is\s*not\s*null/i.test(cond) && !hasOwnerCheck(cond)) {
+      add(findings, ANYUSER, 'Firebase 規則只檢查有沒有登入',
+        `規則寫著 allow ${ops}: if ${cond} —— 只確認「有登入」，沒有比對「這筆資料是不是他的」。任何人註冊一個帳號，就能${writes ? '讀取並修改' : '讀取'}所有使用者的資料`,
+        m.index, m[0]);
+    }
+  }
+}
+
+function scanRtdb(code, findings) {
+  const re = /"\s*\.(read|write)\s*"\s*:\s*(true|"[^"]*")/gi;
+  let m;
+  while ((m = re.exec(code))) {
+    const op = m[1].toLowerCase();
+    const val = m[2];
+    if (/^true$/i.test(val)) {
+      add(findings, op === 'write' ? OPEN : OPEN_READ,
+        op === 'write' ? 'Realtime Database 規則允許任何人寫入' : 'Realtime Database 規則允許任何人讀取',
+        op === 'write'
+          ? '規則寫著 ".write": true —— 任何人只要知道你的資料庫網址，就能修改或刪除這裡的全部資料，不需要登入'
+          : '規則寫著 ".read": true —— 這裡的資料對所有人公開讀取，不需要登入。確認裡面沒有個人資料或不該外流的欄位',
+        m.index, m[0]);
+      continue;
+    }
+    const cond = val.slice(1, -1).replace(/\s+/g, ' ').trim();
+    if (/^auth\s*!==?\s*null$/i.test(cond)) {
+      add(findings, ANYUSER, 'Realtime Database 規則只檢查有沒有登入',
+        `規則寫著 ".${op}": "auth != null" —— 只確認「有登入」，沒有比對資料屬於誰。任何人註冊一個帳號就能${op === 'write' ? '修改' : '讀取'}所有人的資料`,
+        m.index, m[0]);
+    }
+  }
+}
+
+function scanSql(code, findings) {
+  // 明確關掉 RLS:等於把整張表對外打開
+  let m;
+  const off = /alter\s+table\s+(?:if\s+exists\s+)?([\w."]+)\s+disable\s+row\s+level\s+security/gi;
+  while ((m = off.exec(code))) {
+    add(findings, OPEN, 'SQL 明確關閉了資料表的列級權限（RLS）',
+      `${m[1]} 這張表寫著 DISABLE ROW LEVEL SECURITY —— 關掉之後，拿得到公開金鑰的人就能讀取這張表的全部資料`,
+      m.index, m[0]);
+  }
+  // GRANT … TO anon／public:把權限直接發給未登入身分
+  const grant = /grant\s+([\w\s,]+?)\s+on\s+([^\s;]+(?:\s+[^\s;]+)*?)\s+to\s+(anon|public)\b/gi;
+  while ((m = grant.exec(code))) {
+    add(findings, OPEN, 'SQL 把資料表權限直接給了未登入身分',
+      `寫著 GRANT ${m[1].replace(/\s+/g, ' ').trim()} … TO ${m[3]} —— ${m[3] === 'anon' ? 'anon 是「沒有登入的訪客」' : 'public 是「所有人」'}，等於把這張表對外公開`,
+      m.index, m[0]);
+  }
+  // CREATE POLICY:看它的條件式
+  const pol = /create\s+policy\s+("[^"]+"|'[^']+'|[\w]+)([\s\S]{0,600}?)(?=;|create\s+policy|$)/gi;
+  while ((m = pol.exec(code))) {
+    const body = m[2].replace(/\s+/g, ' ');
+    const conds = [];
+    let c;
+    const condRe = /(using|with\s+check)\s*\(([\s\S]*?)\)\s*(?=$|using|with\s+check|;)/gi;
+    while ((c = condRe.exec(body))) conds.push(c[2].trim());
+    if (!conds.length) continue;
+    const roleAnon = /\bto\s+(anon|public)\b/i.test(body);
+    const forOp = (body.match(/\bfor\s+(select|insert|update|delete|all)\b/i) || [])[1];
+    const readOnly = forOp && forOp.toLowerCase() === 'select'; // 沒寫 for 時預設是 ALL
+    const allTrue = conds.every(x => /^true$/i.test(x));
+    if (allTrue) {
+      add(findings, readOnly ? OPEN_READ : OPEN,
+        readOnly ? 'SQL 的政策讓這張表對所有人公開讀取' : 'SQL 的權限規則條件永遠成立（USING (true)）',
+        readOnly
+          ? `政策 ${m[1]} 是 for select 而條件寫著 true —— 這張表對所有人公開讀取${roleAnon ? '（包含未登入的訪客）' : ''}。商品、公告這類本來就要公開的內容沒問題；請確認裡面沒有個人資料或不該外流的欄位`
+          : `政策 ${m[1]} 的條件寫著 true —— 條件永遠成立，等於沒有限制${roleAnon ? '，而且對象是未登入的訪客' : ''}。拿得到公開金鑰的人就能${forOp ? '對' : '讀取、修改甚至刪除'}這張表${forOp ? '做 ' + forOp.toLowerCase() : '的全部資料'}`,
+        m.index, ('create policy ' + m[1]));
+      continue;
+    }
+    const onlyLoggedIn = conds.every(x => /auth\.role\s*\(\s*\)\s*=\s*'authenticated'|auth\.uid\s*\(\s*\)\s+is\s+not\s+null/i.test(x))
+      && !conds.some(x => /auth\.uid\s*\(\s*\)\s*=|=\s*auth\.uid\s*\(\s*\)|auth\.uid\s*\(\s*\)\s*(in|::)/i.test(x));
+    if (onlyLoggedIn) {
+      add(findings, ANYUSER, 'SQL 的權限規則只檢查有沒有登入',
+        `政策 ${m[1]} 只確認「有登入」，沒有比對 auth.uid() 與資料的擁有者欄位。任何人註冊一個帳號，就能看到所有使用者在這張表裡的資料`,
+        m.index, ('create policy ' + m[1]));
+    }
+  }
+}
+
+/**
+ * @param {string} code
+ * @param {{filename?: string}} [ctx]
+ * @returns {Array<{tier:number, category:string, name:string, kind:string, evidence:string}>}
+ */
+function dbRulesDetector(code, ctx) {
+  code = code || '';
+  const filename = ctx && ctx.filename;
+  // 有檔名時以檔名為準:.js 裡出現 "allow read" 之類的字樣不該被當成規則檔
+  if (filename && !DB_RULES_FILE.test(filename)) return [];
+  const kind = dbRulesKind(code, filename);
+  if (!kind) return [];
+  const findings = [];
+  if (kind === 'firebase') scanFirebase(blankComments(code, '\\/\\/'), findings);
+  else if (kind === 'rtdb') scanRtdb(code, findings);
+  else scanSql(blankComments(code, '--'), findings);
+  return findings;
+}
+
+// ── 跨檔案:建了資料表卻沒開 RLS ──
+// 只在「瀏覽器直接連資料庫」的專案才有意義(Supabase 這種)。
+// 一般後端自己連資料庫時,擋在中間的是伺服器程式,沒開 RLS 不是問題。
+const SUPABASE_SIGNAL = /@supabase\/|createClient\s*\(|supabase\.from\s*\(|SUPABASE_URL|supabase\.co/i;
+const CREATE_TABLE_RE = /create\s+table\s+(?:if\s+not\s+exists\s+)?(?:public\.)?("?[\w]+"?)/gi;
+const ENABLE_RLS_RE = /alter\s+table\s+(?:if\s+exists\s+)?(?:public\.)?("?[\w]+"?)\s+enable\s+row\s+level\s+security/gi;
+
+/**
+ * @param {Array<{filename: string, code: string}>} files
+ * @returns {Array} 每張「有建表但整批檔案裡都沒開 RLS」的資料表一筆
+ */
+function dbRlsCoverage(files) {
+  files = files || [];
+  if (!files.some(f => SUPABASE_SIGNAL.test(f.code || ''))) return [];
+  const created = new Map(); // 表名 → { filename, index }
+  const enabled = new Set();
+  files.forEach(f => {
+    if (!/\.sql$/i.test(f.filename || '')) return;
+    const code = f.code || '';
+    let m;
+    const ct = new RegExp(CREATE_TABLE_RE.source, CREATE_TABLE_RE.flags);
+    while ((m = ct.exec(code))) {
+      const t = m[1].replace(/"/g, '').toLowerCase();
+      if (!created.has(t)) created.set(t, { filename: f.filename, index: m.index, match: m[0] });
+    }
+    const en = new RegExp(ENABLE_RLS_RE.source, ENABLE_RLS_RE.flags);
+    while ((m = en.exec(code))) enabled.add(m[1].replace(/"/g, '').toLowerCase());
+  });
+  const missing = [...created.keys()].filter(t => !enabled.has(t));
+  // 一張表都沒開過 RLS,和「開了一部分、漏了幾張」都要報;完全沒有建表就不報
+  if (!missing.length) return [];
+  return missing.map(t => Object.assign({
+    tier: 2,
+    category: '建議人工複查',
+    name: '資料表沒有開啟列級權限（RLS）',
+    kind: 'db_rls_missing',
+    evidence: `資料表 ${t} 有 CREATE TABLE，但整批檔案裡找不到對應的 ENABLE ROW LEVEL SECURITY。這個專案的瀏覽器會直接連資料庫，沒開 RLS 等於拿得到公開金鑰的人就能讀取這張表的全部資料`
+  }, { filename: created.get(t).filename, index: created.get(t).index, match: created.get(t).match }));
+}
+
+// ── 環境相容匯出:Node.js(require)與瀏覽器(<script src>)共用同一份檔案 ──
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { dbRulesDetector, dbRlsCoverage, dbRulesKind };
+}
+</script>
+<script>
 // ── 內嵌: modules/project-map.js ──
 /**
  * M13 — project-map
@@ -5494,7 +5805,8 @@ if (typeof module !== 'undefined' && module.exports && typeof keyDetector === 'u
   [
     'source-mask', 'key-detector', 'jwt-analyzer', 'hash-detector', 'secret-heuristics', 'csp-detector', 'project-map',
     'idor-detector', 'language-detector', 'finding-renderer', 'sql-injection-detector',
-    'insecure-deserialize-detector', 'rate-limit-coverage-detector', 'field-masking-consistency-detector', 'xss-detector'
+    'insecure-deserialize-detector', 'rate-limit-coverage-detector', 'field-masking-consistency-detector', 'xss-detector',
+    'db-rules-detector'
   ].forEach(name => Object.assign(globalThis, require('./' + name)));
 }
 
@@ -5519,7 +5831,9 @@ function getSingleFileDetectors() {
     { id: 'M10', run: (code, ctx) => insecureDeserializeDetector(code, ctx) },
     { id: 'M14', run: (code, ctx) => xssDetector(code, ctx) },
     // M12 需要看字串裡的路由路徑,所以只把註解換成空白(字串保留)
-    { id: 'M12', run: (code, ctx) => rateLimitCoverageDetector(blankNonCode(code, ctx.mask, Infinity)) }
+    { id: 'M12', run: (code, ctx) => rateLimitCoverageDetector(blankNonCode(code, ctx.mask, Infinity)) },
+    // M15 只對規則檔本身跑(內部會依檔名／內容自己判斷),一般程式碼一律回空陣列
+    { id: 'M15', run: (code, ctx) => dbRulesDetector(code, ctx) }
   ];
 }
 
@@ -5620,7 +5934,7 @@ function hasSequentialRun(s, len) {
 function looksLikePlaceholderSecret(value) {
   if (!value) return false;
   const v = String(value);
-  if (/(test|fake|dummy|example|sample|placeholder|demo|xxxx|your[-_]?(api|key|token|secret)|change[-_]?me|redacted|not[-_]?a[-_]?real)/i.test(v)) return true;
+  if (/(test|fake|dummy|example|sample|placeholder|demo|xxxx|your[-_]?(api|key|token|secret)|change[-_ ]?(me|this|it)|redacted|not[-_]?a[-_]?real)/i.test(v)) return true;
   // 連續字元,也檢查只取字母、只取數字後的序列(a1B2c3D4… 這類交錯寫法)
   if (hasSequentialRun(v, 8) || hasSequentialRun(v.replace(/[^a-z]/gi, '').toLowerCase(), 8) || hasSequentialRun(v.replace(/\D/g, ''), 8)) return true;
   const body = v.replace(/^[a-z]{2,4}[-_](proj[-_]|ant[-_])?/i, '');
@@ -5685,7 +5999,7 @@ function buildCoverageNotices(projectMap, scanned) {
     }
     const types = Object.keys(cov.notChecked || {});
     if (types.length) {
-      notices.push({ id: 'not-checked', level: 'info', text: `本工具不檢查資料庫規則與部署設定檔（${types.map(t => `.${t} ${cov.notChecked[t]} 個`).join('、')}）。其中的權限設定（例如 Supabase 的 RLS 規則就寫在 .sql 檔）請自行確認。` });
+      notices.push({ id: 'not-checked', level: 'info', text: `這些檔案不在檢查範圍（${types.map(t => `.${t} ${cov.notChecked[t]} 個`).join('、')}）。資料庫權限規則本工具會檢查（firestore.rules、database.rules.json，以及 supabase／migrations 等資料夾裡的 .sql），但放在其他位置的 .sql、或在 Firebase／Supabase 後台手動改過的設定看不到，請自行確認。` });
     }
   }
   if (projectMap.entrySkipped && projectMap.entrySkipped.length) {
@@ -5820,7 +6134,7 @@ function scanCode(code, opts) {
   code = code || '';
   const filename = opts && opts.filename;
   const language = languageFromFilename(filename) || guessMaskLanguage(code);
-  const ctx = { byId: {}, astUsed: false, language, mask: buildCodeMask(code, { language }) };
+  const ctx = { byId: {}, astUsed: false, language, filename, mask: buildCodeMask(code, { language }) };
   let findings = [];
   getSingleFileDetectors().forEach(d => {
     const out = d.run(code, ctx) || [];
@@ -5871,6 +6185,8 @@ function scanFiles(files, opts) {
       return { filename: f.filename, code: blankNonCode(f.code, buildCodeMask(f.code, { language })) };
     });
   findings = findings.concat(fieldMaskingConsistencyDetector(m11Files));
+  // M15 跨檔案:建了資料表卻整批檔案都沒開 RLS(只在瀏覽器直連資料庫的專案才有意義)
+  findings = findings.concat(dbRlsCoverage(files));
 
   let projectMap = null;
   if (isMultiFile) {
@@ -5908,6 +6224,9 @@ const GH_CODE_EXT = /\.(m?[jt]sx?|cjs|vue|svelte|astro|py|html?|php|rb)$/i;
 const GH_ENV_FILE = /(^|\/)\.env(\.[\w-]+)?$/i;           // .env、.env.local…(公開 repo 出現就是問題)
 const GH_ENV_TEMPLATE = /\.(example|sample|template|dist)$/i;
 const GH_CONFIG_FILE = /(^|\/)(vercel|firebase|netlify)\.json$|(^|\/)(firestore|storage|database)\.rules(\.json)?$/i;
+// 資料庫權限規則寫在 .sql 裡(Supabase 的 RLS policy):只收「像是資料庫定義」的路徑,
+// 不是全部 .sql 都收——大型專案的資料匯出檔會把檔案數上限吃光,把真正的程式碼擠掉。
+const GH_DB_SQL = /(^|\/)(supabase|migrations?|db|database|sql|schema|prisma)\/[^/]*\.sql$|(^|\/)[^/]*(polic|rls|schema|security|seed|init)[^/]*\.sql$/i;
 const GH_SKIP_DIR = /(^|\/)(node_modules|dist|build|out|\.next|\.nuxt|\.svelte-kit|\.vercel|coverage|vendor|\.git|__pycache__|venv|\.venv)\//i;
 const GH_SKIP_FILE = /\.min\.[jc]ss?$|\.d\.ts$|\.map$|(^|\/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml)$/i;
 // 不檢查、但與安全有關的檔案類型(資料庫規則、部署設定):不下載,只在報告的檢查範圍裡列出數量,讓使用者知道要自己看
@@ -5949,7 +6268,7 @@ function parseGitHubUrl(input) {
 function isWantedPath(p) {
   if (GH_SKIP_DIR.test(p) || GH_SKIP_FILE.test(p)) return false;
   if (GH_ENV_FILE.test(p)) return !GH_ENV_TEMPLATE.test(p);
-  return GH_CODE_EXT.test(p) || GH_CONFIG_FILE.test(p);
+  return GH_CODE_EXT.test(p) || GH_CONFIG_FILE.test(p) || GH_DB_SQL.test(p);
 }
 
 /**
@@ -5968,7 +6287,7 @@ function selectGitHubFiles(tree, basePath) {
     if (prefix && !t.path.startsWith(prefix) && t.path !== basePath) return false;
     if (!isWantedPath(t.path)) {
       const ext = (t.path.match(GH_NOT_CHECKED) || [])[1];
-      if (ext && !GH_SKIP_DIR.test(t.path) && !GH_SKIP_FILE.test(t.path) && !GH_CONFIG_FILE.test(t.path)) {
+      if (ext && !GH_SKIP_DIR.test(t.path) && !GH_SKIP_FILE.test(t.path) && !GH_CONFIG_FILE.test(t.path) && !GH_DB_SQL.test(t.path)) {
         const k = ext.toLowerCase();
         notChecked[k] = (notChecked[k] || 0) + 1;
       }

@@ -112,6 +112,46 @@ const FINDING_GUIDE = {
       '4. 幫我確認專案根目錄的 .gitignore 裡有沒有正確包含 .env 相關檔案，避免以後再次發生。\n' +
       '完成後請告訴我：這組密鑰是否需要重新產生，以及 .gitignore 現在有沒有正確排除這類檔案。'
   },
+  db_rules_public: {
+    plain: '用 Supabase、Firebase 這類服務做的網站，瀏覽器是「直接連到資料庫」的——中間沒有你自己的伺服器把關。擋住別人看你資料的唯一一道牆，就是資料庫的權限規則。現在這道牆等於沒關：規則的條件寫成永遠成立（`if true`、`USING (true)`），或是直接把權限發給未登入的訪客。任何人只要從網頁原始碼裡撈到你的連線網址與公開金鑰（那本來就是公開的），就能把整張表的資料抓走，能寫入的話還能改或刪。這是 AI 產生的網站最常見、後果也最嚴重的一種問題。\n\n**分成兩種層級看**：開放「寫入」列為需要處理，因為任何人都能改或刪你的資料，幾乎沒有正當理由。只開放「讀取」列為請你確認——商品目錄、公告這類內容本來就該公開讀，寫法沒錯；你要做的是打開那張表看一眼，確認裡面沒有個人資料、聯絡方式或其他不該外流的欄位。',
+    handoff:
+      '我的專案用資料庫的權限規則被檢查出「條件永遠成立」（Firebase 的 allow … : if true，或 SQL 的 USING (true)／GRANT TO anon／DISABLE ROW LEVEL SECURITY），等於完全沒有限制。請幫我：\n' +
+      '1. 先列出這個專案有哪些資料表／集合，各自存的是什麼，並逐一判斷：哪些是真的要公開給所有人看的，哪些是「只有資料的擁有者才能看」的。\n' +
+      '2. 針對「只有擁有者能看」的部分，改寫規則成比對身分的寫法：Firebase 用 request.auth.uid == resource.data.userId（或路徑上的 uid）；Supabase 用 auth.uid() = user_id 這類條件，並確認該表已 ENABLE ROW LEVEL SECURITY。\n' +
+      '3. 針對真的要公開的部分，只開放讀取（select／read），不要一併開放寫入。\n' +
+      '4. 改完後提醒我：規則要重新部署（Firebase 是 firebase deploy --only firestore:rules，Supabase 是跑 migration）才會生效，只改檔案沒有用。\n' +
+      '完成後請告訴我：每張表最後的規則是什麼，以及哪些資料現在仍然是公開的。'
+  },
+  db_rules_test_mode: {
+    plain: '建立 Firebase 資料庫時如果選了「測試模式」，系統會產生一條有時限的規則：在某個日期之前，任何人都能讀寫你的全部資料；過了那一天，就變成任何人都不能讀寫，網站會突然壞掉。它的用意是讓你開發時不被擋，**上線前要自己換掉**。很多照著教學或 AI 指示做出來的專案就這樣留著沒改，等於資料庫從頭到尾沒上鎖。',
+    handoff:
+      '我的 Firebase 規則還停在測試模式（allow read, write: if request.time < timestamp.date(…)）。請幫我：\n' +
+      '1. 先列出這個專案實際會用到哪些集合（collection）與路徑，每一個存的是什麼資料、誰應該看得到。\n' +
+      '2. 依這份清單改寫成正式規則：預設全部擋掉，再逐一開放；需要登入才能看的用 request.auth != null 並加上 request.auth.uid == resource.data.userId 這類擁有者比對；真的要公開的只開 read。\n' +
+      '3. 一併檢查 Storage 的規則（storage.rules），它常常也留著測試模式。\n' +
+      '4. 提醒我用 firebase deploy --only firestore:rules,storage:rules 重新部署，並在後台確認生效日期欄位已經消失。\n' +
+      '完成後請告訴我：新的規則內容，以及哪些路徑仍然開放未登入存取。'
+  },
+  db_rules_any_user: {
+    plain: '規則只確認「這個人有沒有登入」，沒有確認「這筆資料是不是他的」。這兩件事差很多：任何人都可以在你的網站上註冊一個帳號，一旦規則只看有沒有登入，他登入後就能讀到**所有使用者**的資料，能寫入的話還能改別人的。實際發生過的外洩事件裡，這是最常見的成因之一——網站看起來有登入機制，感覺很安全，但門後面是通的。',
+    handoff:
+      '我的資料庫權限規則只檢查「有沒有登入」（Firebase 的 if request.auth != null，或 SQL 的 auth.role() = \'authenticated\'），沒有比對資料的擁有者。請幫我：\n' +
+      '1. 列出每張資料表／集合裡，哪一個欄位代表「這筆資料屬於誰」（常見是 user_id、owner_id、uid；如果沒有這個欄位，請告訴我，那要先加）。\n' +
+      '2. 改寫規則加上擁有者比對：Firebase 用 request.auth.uid == resource.data.userId（寫入時還要檢查 request.resource.data）；Supabase 用 auth.uid() = user_id，讀寫各自的 policy 都要加。\n' +
+      '3. 特別確認「新增」的情境：要防止使用者把 user_id 填成別人的（Firebase 檢查 request.resource.data.userId == request.auth.uid，Supabase 用 WITH CHECK）。\n' +
+      '4. 告訴我怎麼實際驗證：用兩個不同帳號登入，確認 A 拿不到 B 的資料。\n' +
+      '完成後請告訴我：每張表的最終規則，以及你怎麼確認擁有者比對有生效。'
+  },
+  db_rls_missing: {
+    plain: '這個專案的瀏覽器會直接連資料庫（Supabase 這類服務），而 Postgres 的資料表預設是「沒有列級權限（RLS）」的——沒開的話，權限規則寫得再好也不會被套用，拿得到公開金鑰的人就能把整張表撈走。公開金鑰本來就會出現在網頁原始碼裡，這是設計如此，安全性完全建立在「RLS 有開、而且政策寫對」這個前提上。檢查發現有 CREATE TABLE，卻在整批檔案裡找不到對應的 ENABLE ROW LEVEL SECURITY。',
+    handoff:
+      '我的 Supabase 專案有資料表沒有開啟 RLS（Row Level Security）。請幫我：\n' +
+      '1. 列出專案裡所有資料表，逐一確認有沒有 ALTER TABLE … ENABLE ROW LEVEL SECURITY；沒有的補上。\n' +
+      '2. 開啟 RLS 之後那張表會變成「全部拒絕」，所以要接著為它寫存取政策：只有擁有者能讀寫的用 auth.uid() = user_id；需要公開讀取的只開 SELECT。\n' +
+      '3. 提醒我在 Supabase 後台的 Table Editor 逐張確認 RLS 的開關狀態——用後台手動建立的表不會出現在 migration 檔裡，這次檢查也看不到。\n' +
+      '4. 告訴我怎麼驗證：用 anon 金鑰直接打 REST API（curl），確認拿不到不該拿到的資料。\n' +
+      '完成後請告訴我：每張表的 RLS 狀態與政策內容，以及哪些表是刻意保持公開的。'
+  },
   csp_weak: {
     plain: '這個頁面有設定「內容安全政策（CSP）」——瀏覽器的一道額外防線——但裡面有放寬的地方，讓它擋不住最常見的攻擊。例如放寬了「允許直接寫在網頁標籤裡的程式碼執行」（設定裡寫成 unsafe-inline），那正是把別人的程式碼塞進你網頁的攻擊最常用的方式；「*」或「https:」這類寫法等於允許任何網站的程式碼；一次性通行碼（nonce，本來每次開啟網頁都該重新產生）如果寫死成固定值，攻擊者照樣能拿來用。等於門鎖裝了，但鑰匙插在門上。',
     handoff:
@@ -615,6 +655,10 @@ const PLAIN_TITLES = {
   endpoint_url: { title: '內部服務網址（Webhook 等）直接寫在程式碼裡', action: '確認這個網址有驗證機制，必要時重新產生網址' },
   env_fallback: { title: '讀取環境變數時帶了一組明文備用值', action: '移除明文備用值，缺少設定時讓程式直接報錯' },
   env_file_secret: { title: '.env 設定檔裡有疑似真實的密鑰', action: '確認 .env 沒有上傳到 GitHub；已上傳就更換密鑰' },
+  db_rules_public: { title: '資料庫對外開著，沒有限制是誰', action: '把規則改成只允許資料的擁有者存取；真的要公開的部分只開放讀取。改完要重新部署規則才生效' },
+  db_rules_test_mode: { title: '資料庫還停在「測試模式」，現在等於沒上鎖', action: '把測試模式的規則換成正式規則，再重新部署' },
+  db_rules_any_user: { title: '只要註冊一個帳號，就看得到所有人的資料', action: '規則裡加上「這筆資料是不是他的」的比對，不能只檢查有沒有登入' },
+  db_rls_missing: { title: '資料表沒有上鎖（沒開 RLS）', action: '對每一張表開啟 RLS，再逐張寫存取政策' },
   no_csp_html: { title: '網頁沒有設定額外的安全防線（CSP）', action: '為網頁加上一段安全防線設定（技術名稱 Content Security Policy）' },
   xss_from_url: { title: '網址裡的內容會被當成程式執行（XSS）', action: '改用 textContent，或先做 HTML 跳脫再放進頁面' },
   html_from_data: { title: '資料被直接組成網頁內容，可能被插入惡意程式碼', action: '只顯示文字就改用 textContent，需要 HTML 就先跳脫' },

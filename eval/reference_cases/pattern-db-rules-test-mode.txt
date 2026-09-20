@@ -1,0 +1,21 @@
+===SOURCE===
+非真實蒐集樣本。依「Firebase 資料庫建立時選了測試模式，上線後忘記換掉」這個問題模式改寫，
+不對應任何特定專案。這是照著教學或 AI 指示做出來的專案最常見的一種：測試模式的規則在某個
+日期之前對任何人全開，過了那天則整個擋掉，兩種結果都不是你要的。
+
+===CATEGORY===
+Firebase 規則停留在測試模式（有時限的全開規則）
+
+===EXPECTED===
+db_rules_test_mode
+
+===CODE===
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if request.time < timestamp.date(2026, 12, 31);
+    }
+  }
+}

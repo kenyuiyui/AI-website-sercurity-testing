@@ -15,6 +15,7 @@ const VALID_KINDS = new Set([
   'weak_hash',
   'no_csp_html', 'no_csp_config',
   'csp_allowlist_bypass', 'csp_missing_directive', 'csp_syntax', 'csp_not_enforced',
+  'db_rules_public', 'db_rules_test_mode', 'db_rules_any_user', 'db_rls_missing',
   'possible_idor',
   'possible_sql_injection', 'insecure_eval', 'insecure_exec',
   'insecure_function_constructor', 'insecure_pickle', 'insecure_yaml_load',

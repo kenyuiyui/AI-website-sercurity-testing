@@ -10,10 +10,24 @@
  *    測試時不需要真的跑 M1,手工造一組假的 existingFindings 即可,見規格文件範例。
  */
 
+// 變數名稱看得出裝的是「給人看的文字」(錯誤訊息、標籤、輸入框類型)就不是密鑰。
+// 為什麼:passwordError = "Password must be 8 to 18 characters"、passwordType = 'password'
+//        這類寫法在真實專案裡很常見,名字裡有 password 不代表值是密碼。(背景見 docs/CHANGELOG.md)
+const UI_STRING_NAME = /(error|message|msg|label|title|hint|placeholder|prompt|tooltip|caption|warning|notice|type|text)/i;
+
+// 「等著被換掉」的佔位值。開頭關鍵字 + 結尾 here/_here 兩種寫法都很常見
+// (範本專案的 .env 常寫 SECRET_KEY=changethis、cookieSecret: "..._secret_key_here")。
+const PLACEHOLDER_PREFIX = /^(your|my|xxx|placeholder|example|test|todo|change[-_ ]?(me|this|it)|replace[-_ ]?(me|this)|set[-_ ]?me|fill[-_ ]?(me|in)|to[-_ ]?be[-_ ]?(set|filled)|insert[-_ ]?|<.*>|\{\{.*\}\}|\$\{.*\}|貼上|請輸入|輸入你|範例)/i;
+const PLACEHOLDER_SUFFIX = /[-_ ]?here$|goes[-_ ]?here$/i;
+const isPlaceholderValue = (val) => {
+  const v = String(val == null ? '' : val).trim();
+  return v === '' || PLACEHOLDER_PREFIX.test(v) || PLACEHOLDER_SUFFIX.test(v);
+};
+
 const CUSTOM_SECRET_RULES = [{
   name: '自訂密鑰／權杖變數含明文字串（疑似）',
   re: /\b((?:[a-zA-Z_$][a-zA-Z0-9_$]*)?(?:secret|token|apikey|api_key|password|passwd|credential)[a-zA-Z0-9_$]*)\s*[:=]\s*["']([^"'\n]{8,})["']/gi,
-  isPlaceholder: (val) => /^(your|my|xxx|placeholder|example|test|todo|change[-_]?me|<.*>|\{\{.*\}\}|\$\{.*\}|貼上|請輸入|輸入你|範例)/i.test(val.trim()) || val.trim() === ''
+  isPlaceholder: isPlaceholderValue
 }];
 
 const ENDPOINT_URL_RULES = [
@@ -29,9 +43,9 @@ const ENV_FALLBACK_RULES = [
 ];
 
 const ENV_FALLBACK_PLACEHOLDER = (val) =>
-  /^(your|my|xxx|placeholder|example|test|todo|change[-_]?me|<.*>|\{\{.*\}\}|\$\{.*\}|貼上|請輸入|輸入你|範例|localhost|127\.0\.0\.1)/i.test(val.trim())
-  || val.trim() === ''
-  || /^\d+$/.test(val.trim()); // 純數字(連接埠號、逾時秒數等常見設定值)不可能是密鑰,誤判率評測(fp-8)發現的修正
+  isPlaceholderValue(val)
+  || /^(localhost|127\.0\.0\.1)/i.test(String(val).trim())
+  || /^\d+$/.test(String(val).trim()); // 純數字(連接埠號、逾時秒數等常見設定值)不可能是密鑰,誤判率評測(fp-8)發現的修正
 
 // 為什麼:變數名不像密鑰、值又只是沒帳密的網址(SEO_URL、API_BASE 的預設值)——不是「備用密碼」。(背景見 docs/CHANGELOG.md)
 const SECRET_LIKE_NAME = /(secret|token|key|password|passwd|pwd|credential|auth)/i;
@@ -47,8 +61,22 @@ const ENV_FALLBACK_BENIGN_URL = (varName, val) =>
  * @param {string[]} knownValues - M1／M2 回報過的原始片段
  * @returns {Array}
  */
+function looksLikeEnvFile(code) {
+  const lines = code.split('\n').map(l => l.trim()).filter(l => l && l.charAt(0) !== '#');
+  if (!lines.length) return false;   // 使用者只貼一行 .env 也要算
+  // 有這些才是程式碼/標記語言,不是 .env(export FOO=bar 是 .env 常見寫法,不算)
+  if (lines.some(l => /^(import|from|const|let|var|function|class|def|package|using|require|return|if|for|while)\b/.test(l))) return false;
+  if (/<\/?[a-z!]/i.test(code)) return false;
+  const kv = lines.filter(l => /^(export\s+)?[A-Za-z_][A-Za-z0-9_]*\s*=/.test(l)).length;
+  return kv / lines.length >= 0.6;
+}
+
 function scanEnvFormatLines(code, knownValues) {
   const findings = [];
+  // 為什麼:這條規則原本對每個檔案逐行跑,結果 password=settings.X、foreign_key="user.id"、
+  //        storageKey = "vite-ui-theme" 這類程式碼都被當成 .env 明文密鑰。
+  //        .env 沒有程式語法,所以先確認「整份內容真的像 .env」再跑。(背景見 docs/CHANGELOG.md)
+  if (!looksLikeEnvFile(code)) return findings;
   const lines = code.split('\n');
   const envLinePattern = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+?)\s*$/;
   const secretNamePattern = /(secret|token|key|password|passwd|credential)/i;
@@ -98,6 +126,7 @@ function secretHeuristics(code, existingFindings) {
       const varName = cm[1];
       const val = cm[2];
       if (rule.isPlaceholder(val)) continue;
+      if (UI_STRING_NAME.test(varName)) continue;
       const alreadyFlagged = knownValues.some(v => val.includes(v) || v.includes(val));
       if (alreadyFlagged) continue;
       findings.push({
@@ -161,6 +190,8 @@ if (typeof module !== 'undefined' && module.exports) {
   module.exports = {
   secretHeuristics,
   scanEnvFormatLines,
+  looksLikeEnvFile,
+  isPlaceholderValue,
   CUSTOM_SECRET_RULES,
   ENDPOINT_URL_RULES,
   ENV_FALLBACK_RULES,

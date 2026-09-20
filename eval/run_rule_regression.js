@@ -544,6 +544,132 @@ console.log('── 第十六輪:CSP 取值的涵蓋範圍 ──');
   }
 }
 
+// ── 第十七輪:密鑰猜測規則的誤報邊界(拿公開專案實測後補的) ──
+console.log();
+console.log('── 第十七輪:密鑰猜測的誤報邊界 ──');
+{
+  const hit = (code, kind, filename) => scanCode(code, filename ? { filename } : undefined)
+    .findings.some(f => f.kind === kind && f.tier === 2);
+  const chk = (label, code, kind, want, filename) => {
+    const got = hit(code, kind, filename);
+    const ok = got === want;
+    if (!ok) failCount++;
+    console.log(`${ok ? '✅' : '❌'} ${label}(實際 ${got})`);
+  };
+
+  // 名字裡有 password/token,但裝的是給人看的文字
+  chk('[密鑰] 錯誤訊息文字不算密鑰',
+    'const passwordError = "Password must be 8 to 18 characters";', 'custom_secret_var', false);
+  chk('[密鑰] 輸入框類型不算密鑰',
+    "data() { return { passwordType: 'password' }; }", 'custom_secret_var', false);
+  chk('[密鑰] 提示訊息不算密鑰',
+    'const invalidPasswordErrorMessage = "Invalid username or password";', 'custom_secret_var', false);
+  chk('[密鑰] 真的寫死的金鑰仍要報',
+    'const zapApiKey = "v9dn0balpqas1pcc281tn5ood1";', 'custom_secret_var', true);
+
+  // 等著被換掉的佔位值
+  chk('[密鑰] 值是 changethis 的佔位字不算外洩',
+    'SECRET_KEY=changethis\nDATABASE_PASSWORD=changethis\nSERVER_HOST=localhost\n', 'env_file_secret', false);
+  chk('[密鑰] 值以 _here 結尾的佔位字不算外洩',
+    'const cookieSecret = "session_cookie_secret_key_here";', 'custom_secret_var', false);
+  chk('[密鑰] .env 裡真的密鑰仍要報',
+    'API_TOKEN=k3Rm9QzP4tLw7XbN2sVh\nSERVER_PORT=8080\n', 'env_file_secret', true);
+
+  // 「.env 格式」規則不該對程式碼逐行跑
+  chk('[密鑰] Python 把設定值傳給參數不算 .env 明文',
+    'def init_db(session):\n    user = User(\n        email=settings.FIRST_SUPERUSER,\n        password=settings.FIRST_SUPERUSER_PASSWORD,\n    )\n', 'env_file_secret', false, 'app/core/db.py');
+  chk('[密鑰] ORM 欄位宣告不算 .env 明文',
+    'class Item(SQLModel, table=True):\n    owner_id: uuid.UUID = Field(\n        foreign_key="user.id", nullable=False, ondelete="CASCADE"\n    )\n', 'env_file_secret', false, 'app/models.py');
+  chk('[密鑰] 前端的 storage key 名稱不算 .env 明文',
+    'export function ThemeProvider({\n  storageKey = "vite-ui-theme",\n}) {\n  return null;\n}\n', 'env_file_secret', false, 'src/theme-provider.tsx');
+}
+
+// ── 第十八輪:M15 資料庫權限規則 ──
+console.log();
+console.log('── 第十八輪:資料庫權限規則 ──');
+{
+  const k = (code, filename) => scanCode(code, { filename }).findings.map(f => f.kind);
+  const chk = (label, code, filename, want) => {
+    const got = k(code, filename).filter(x => x.indexOf('db_') === 0);
+    const ok = JSON.stringify(got.slice().sort()) === JSON.stringify(want.slice().sort());
+    if (!ok) failCount++;
+    console.log(`${ok ? '✅' : '❌'} ${label}(實際 ${JSON.stringify(got)})`);
+  };
+  const FB = (rule) => `rules_version = '2';\nservice cloud.firestore {\n  match /databases/{db}/documents {\n    match /{document=**} {\n      ${rule}\n    }\n  }\n}\n`;
+
+  chk('[資料庫] Firebase 條件永遠成立 → 需要處理', FB('allow read, write: if true;'), 'firestore.rules', ['db_rules_public']);
+  chk('[資料庫] Firebase 測試模式', FB('allow read, write: if request.time < timestamp.date(2026, 12, 31);'), 'firestore.rules', ['db_rules_test_mode']);
+  chk('[資料庫] Firebase 只檢查登入', FB('allow read, write: if request.auth != null;'), 'firestore.rules', ['db_rules_any_user']);
+  chk('[資料庫] Firebase 有比對擁有者 → 不報', FB('allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;'), 'firestore.rules', []);
+  chk('[資料庫] Firebase 全部擋掉 → 不報', FB('allow read, write: if false;'), 'firestore.rules', []);
+  chk('[資料庫] Firebase 呼叫自訂函式 → 追不進去就不報', FB('allow read, write: if isOwner();'), 'firestore.rules', []);
+
+  // 分兩行寫才會各報一筆:同一行同一種問題只留一筆(applyFileContext 的去重複)
+  chk('[資料庫] Realtime Database 全開', '{\n  "rules": {\n    ".read": true,\n    ".write": true\n  }\n}\n', 'database.rules.json', ['db_rules_public', 'db_rules_public']);
+  chk('[資料庫] Realtime Database 讀寫寫同一行 → 去重複只留一筆', '{ "rules": { ".read": true, ".write": true } }', 'database.rules.json', ['db_rules_public']);
+  chk('[資料庫] Realtime Database 比對 uid → 不報', '{ "rules": { "users": { "$uid": { ".read": "$uid === auth.uid", ".write": "$uid === auth.uid" } } } }', 'database.rules.json', []);
+
+  chk('[資料庫] SQL 政策條件永遠成立', 'create policy "read all" on public.notes for select to anon using (true);', 'supabase/migrations/001.sql', ['db_rules_public']);
+  chk('[資料庫] SQL 明確關掉 RLS', 'alter table public.orders disable row level security;', 'supabase/migrations/002.sql', ['db_rules_public']);
+  chk('[資料庫] SQL 把權限給未登入身分', 'grant all on table public.orders to anon;', 'supabase/migrations/003.sql', ['db_rules_public']);
+  chk('[資料庫] SQL 只檢查登入', "create policy \"read\" on public.notes for select using (auth.role() = 'authenticated');", 'supabase/migrations/004.sql', ['db_rules_any_user']);
+  chk('[資料庫] SQL 有比對擁有者 → 不報', 'create policy "own" on public.notes for select using (auth.uid() = user_id);', 'supabase/migrations/005.sql', []);
+
+  // 一般程式碼與說明文件裡出現規則字樣,不該被當成規則檔
+  chk('[資料庫] JS 裡的字串出現 allow read → 不報', 'const example = "allow read, write: if true;";', 'src/app.js', []);
+  chk('[資料庫] 說明文件裡的規則範例 → 不報', '錯誤示範:\n\n```\nallow read, write: if true;\n```\n', 'docs/security.md', []);
+
+  // 嚴重度要分「只開放讀」與「開放寫」——官方範本就有刻意公開讀取的商品表
+  const tiers = (code, filename) => scanCode(code, { filename }).findings
+    .filter(f => f.kind.indexOf('db_') === 0).map(f => f.tier + ':' + f.kind);
+  const chkT = (label, code, filename, want) => {
+    const got = tiers(code, filename);
+    const ok = JSON.stringify(got.slice().sort()) === JSON.stringify(want.slice().sort());
+    if (!ok) failCount++;
+    console.log(`${ok ? '✅' : '❌'} ${label}(實際 ${JSON.stringify(got)})`);
+  };
+  chkT('[資料庫] 只開放讀 → 請你確認,不是需要處理', FB('allow read: if true;'), 'firestore.rules', ['2:db_rules_public']);
+  chkT('[資料庫] 開放寫 → 需要處理', FB('allow write: if true;'), 'firestore.rules', ['1:db_rules_public']);
+  chkT('[資料庫] 沒寫條件的 allow read; 等同 if true', FB('allow read;'), 'firestore.rules', ['2:db_rules_public']);
+  chkT('[資料庫] SQL for select 的公開政策 → 請你確認',
+    'create policy "public products" on public.products for select using (true);', 'supabase/migrations/006.sql', ['2:db_rules_public']);
+  chkT('[資料庫] SQL 沒寫 for(預設 ALL)的公開政策 → 需要處理',
+    'create policy "open" on public.notes using (true);', 'supabase/migrations/007.sql', ['1:db_rules_public']);
+  chkT('[資料庫] Realtime Database 只開放讀 → 請你確認', '{\n  "rules": {\n    ".read": true\n  }\n}\n', 'database.rules.json', ['2:db_rules_public']);
+
+  chkT('[資料庫] 只有 create 的登入檢查是正常設計 → 不報', FB('allow create: if request.auth != null;'), 'firestore.rules', []);
+  chkT('[資料庫] 條件含自訂函式 → 追不進去就不報', FB('allow update: if request.auth != null && unchanged("name");'), 'firestore.rules', []);
+  chkT('[資料庫] 註解掉的規則不算數',
+    'rules_version = \'2\';\n// allow read, write: if true;\nservice cloud.firestore {\n  match /x/{id} {\n    allow read, write: if false;\n  }\n}\n', 'firestore.rules', []);
+  chkT('[資料庫] SQL 註解掉的政策不算數',
+    '-- create policy "open" on t for all using (true);\ncreate policy "own" on t for select using (auth.uid() = user_id);', 'supabase/migrations/008.sql', []);
+
+  // 跨檔案:建了資料表卻沒開 RLS
+  const rls = (files) => scanFiles(files).findings.filter(f => f.kind === 'db_rls_missing').map(f => f.evidence.match(/資料表 (\w+)/)[1]).sort();
+  const SB = { filename: 'src/lib/db.js', code: "import { createClient } from '@supabase/supabase-js';\nexport const db = createClient(url, key);" };
+  {
+    const got = rls([SB, { filename: 'supabase/migrations/001.sql', code: 'create table public.notes (id uuid primary key);\ncreate table public.profiles (id uuid);' }]);
+    const ok = JSON.stringify(got) === JSON.stringify(['notes', 'profiles']);
+    if (!ok) failCount++;
+    console.log(`${ok ? '✅' : '❌'} [資料庫] 建了表卻沒開 RLS → 每張表各報一筆(實際 ${JSON.stringify(got)})`);
+  }
+  {
+    const got = rls([SB,
+      { filename: 'supabase/migrations/001.sql', code: 'create table public.notes (id uuid primary key);' },
+      { filename: 'supabase/migrations/002.sql', code: 'alter table public.notes enable row level security;' }]);
+    const ok = got.length === 0;
+    if (!ok) failCount++;
+    console.log(`${ok ? '✅' : '❌'} [資料庫] RLS 寫在另一個 migration → 不報(實際 ${JSON.stringify(got)})`);
+  }
+  {
+    const got = rls([{ filename: 'server.js', code: 'const pg = require("pg");\nconst pool = new pg.Pool();' },
+      { filename: 'db/schema.sql', code: 'create table users (id serial primary key);' }]);
+    const ok = got.length === 0;
+    if (!ok) failCount++;
+    console.log(`${ok ? '✅' : '❌'} [資料庫] 沒有瀏覽器直連資料庫的訊號 → 不報(實際 ${JSON.stringify(got)})`);
+  }
+}
+
 // reference_cases/ 全部應命中 EXPECTED
 console.log();
 const refDir = path.join(__dirname, 'reference_cases');

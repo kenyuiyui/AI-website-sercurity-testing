@@ -13,7 +13,8 @@ if (typeof module !== 'undefined' && module.exports && typeof keyDetector === 'u
   [
     'source-mask', 'key-detector', 'jwt-analyzer', 'hash-detector', 'secret-heuristics', 'csp-detector', 'project-map',
     'idor-detector', 'language-detector', 'finding-renderer', 'sql-injection-detector',
-    'insecure-deserialize-detector', 'rate-limit-coverage-detector', 'field-masking-consistency-detector', 'xss-detector'
+    'insecure-deserialize-detector', 'rate-limit-coverage-detector', 'field-masking-consistency-detector', 'xss-detector',
+    'db-rules-detector'
   ].forEach(name => Object.assign(globalThis, require('./' + name)));
 }
 
@@ -38,7 +39,9 @@ function getSingleFileDetectors() {
     { id: 'M10', run: (code, ctx) => insecureDeserializeDetector(code, ctx) },
     { id: 'M14', run: (code, ctx) => xssDetector(code, ctx) },
     // M12 需要看字串裡的路由路徑,所以只把註解換成空白(字串保留)
-    { id: 'M12', run: (code, ctx) => rateLimitCoverageDetector(blankNonCode(code, ctx.mask, Infinity)) }
+    { id: 'M12', run: (code, ctx) => rateLimitCoverageDetector(blankNonCode(code, ctx.mask, Infinity)) },
+    // M15 只對規則檔本身跑(內部會依檔名／內容自己判斷),一般程式碼一律回空陣列
+    { id: 'M15', run: (code, ctx) => dbRulesDetector(code, ctx) }
   ];
 }
 
@@ -139,7 +142,7 @@ function hasSequentialRun(s, len) {
 function looksLikePlaceholderSecret(value) {
   if (!value) return false;
   const v = String(value);
-  if (/(test|fake|dummy|example|sample|placeholder|demo|xxxx|your[-_]?(api|key|token|secret)|change[-_]?me|redacted|not[-_]?a[-_]?real)/i.test(v)) return true;
+  if (/(test|fake|dummy|example|sample|placeholder|demo|xxxx|your[-_]?(api|key|token|secret)|change[-_ ]?(me|this|it)|redacted|not[-_]?a[-_]?real)/i.test(v)) return true;
   // 連續字元,也檢查只取字母、只取數字後的序列(a1B2c3D4… 這類交錯寫法)
   if (hasSequentialRun(v, 8) || hasSequentialRun(v.replace(/[^a-z]/gi, '').toLowerCase(), 8) || hasSequentialRun(v.replace(/\D/g, ''), 8)) return true;
   const body = v.replace(/^[a-z]{2,4}[-_](proj[-_]|ant[-_])?/i, '');
@@ -204,7 +207,7 @@ function buildCoverageNotices(projectMap, scanned) {
     }
     const types = Object.keys(cov.notChecked || {});
     if (types.length) {
-      notices.push({ id: 'not-checked', level: 'info', text: `本工具不檢查資料庫規則與部署設定檔（${types.map(t => `.${t} ${cov.notChecked[t]} 個`).join('、')}）。其中的權限設定（例如 Supabase 的 RLS 規則就寫在 .sql 檔）請自行確認。` });
+      notices.push({ id: 'not-checked', level: 'info', text: `這些檔案不在檢查範圍（${types.map(t => `.${t} ${cov.notChecked[t]} 個`).join('、')}）。資料庫權限規則本工具會檢查（firestore.rules、database.rules.json，以及 supabase／migrations 等資料夾裡的 .sql），但放在其他位置的 .sql、或在 Firebase／Supabase 後台手動改過的設定看不到，請自行確認。` });
     }
   }
   if (projectMap.entrySkipped && projectMap.entrySkipped.length) {
@@ -339,7 +342,7 @@ function scanCode(code, opts) {
   code = code || '';
   const filename = opts && opts.filename;
   const language = languageFromFilename(filename) || guessMaskLanguage(code);
-  const ctx = { byId: {}, astUsed: false, language, mask: buildCodeMask(code, { language }) };
+  const ctx = { byId: {}, astUsed: false, language, filename, mask: buildCodeMask(code, { language }) };
   let findings = [];
   getSingleFileDetectors().forEach(d => {
     const out = d.run(code, ctx) || [];
@@ -390,6 +393,8 @@ function scanFiles(files, opts) {
       return { filename: f.filename, code: blankNonCode(f.code, buildCodeMask(f.code, { language })) };
     });
   findings = findings.concat(fieldMaskingConsistencyDetector(m11Files));
+  // M15 跨檔案:建了資料表卻整批檔案都沒開 RLS(只在瀏覽器直連資料庫的專案才有意義)
+  findings = findings.concat(dbRlsCoverage(files));
 
   let projectMap = null;
   if (isMultiFile) {
