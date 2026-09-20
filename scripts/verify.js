@@ -158,11 +158,14 @@ step('GitHub 匯入的網址解析與檔案篩選', () => {
   const covTree = tree.concat([
     { path: 'supabase/schema.sql', type: 'blob', size: 100 },
     { path: '.github/workflows/ci.yml', type: 'blob', size: 100 },
-    { path: 'src/big.js', type: 'blob', size: 400 * 1024 }
+    { path: 'src/big.js', type: 'blob', size: 3 * 1024 * 1024 },
+    // 單檔式網站的 index.html 常有 300KB～1MB,必須留在檢查範圍內(第五輪的真實案例)
+    { path: 'singlefile/index.html', type: 'blob', size: 900 * 1024 }
   ]);
   const cov = selectGitHubFiles(covTree, '').coverage;
   if (JSON.stringify(cov.notChecked) !== JSON.stringify({ sql: 1, yml: 1 })) problems.push(`不檢查的類型 ${JSON.stringify(cov.notChecked)}`);
-  if (cov.skippedLarge.join(',') !== 'src/big.js' || cov.total !== 6) problems.push(`太大的檔案／總數 ${JSON.stringify(cov)}`);
+  if (cov.skippedLarge.join(',') !== 'src/big.js' || cov.total !== 7) problems.push(`太大的檔案／總數 ${JSON.stringify(cov)}`);
+  if (!selectGitHubFiles(covTree, '').files.some(f => f.path === 'singlefile/index.html')) problems.push('900KB 的單檔式網頁應該要檢查');
   const many = Array.from({ length: GH_MAX_FILES + 25 }, (_, i) => ({ path: `src/f${i}.js`, type: 'blob', size: 10 }));
   const cap = selectGitHubFiles(many, '');
   if (cap.files.length !== GH_MAX_FILES || cap.coverage.skippedLimit.length !== 25) problems.push(`上限處理 ${cap.files.length}／${cap.coverage.skippedLimit.length}`);

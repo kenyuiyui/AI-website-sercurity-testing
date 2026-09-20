@@ -4,7 +4,7 @@
  * 職責:多檔案專案的「檔案地圖」。從網站入口(index.html)沿 import 一路往下追,
  * 標出每個檔案是 使用中／疑似沒用到／建置設定／測試,並附上檢查範圍(掃了幾個、哪些沒掃)。
  * 輸入: files [{filename, code}]、coverage(選用,見 assets/github-import.js)、isTest(filename)(選用)
- * 輸出: { analyzed, certain, note, entries, nodes: [{path, status}], counts, coverage }
+ * 輸出: { analyzed, certain, note, entries, entrySkipped, nodes: [{path, status}], counts, coverage }
  *
  * 只用 regex 追 import(acorn 解析不了 TypeScript),也追不到動態拼出來的路徑,
  * 所以「沒用到」一律稱「疑似」;無法確定時(缺檔、動態載入、多頁面設定)certain = false,
@@ -67,7 +67,10 @@ function buildProjectMap(files, coverage, isTest) {
   const byPath = new Map(files.map(f => [f.filename, f]));
   const cov = coverage || null;
   const missing = cov ? cov.skippedLimit.length + cov.skippedLarge.length + cov.failed.length : 0;
-  const map = { analyzed: false, certain: false, note: null, entries: [], nodes: [], counts: { used: 0, unused: 0, build: 0, test: 0, unknown: 0 }, coverage: cov };
+  const map = { analyzed: false, certain: false, note: null, entries: [], entrySkipped: [], nodes: [], counts: { used: 0, unused: 0, build: 0, test: 0, unknown: 0 }, coverage: cov };
+  // 入口本身沒被檢查(太大／被上限擠掉／下載失敗)時,整份結果都不能當作「沒問題」,要單獨講清楚
+  const skippedPaths = cov ? [].concat(cov.skippedLimit, cov.skippedLarge, cov.failed) : [];
+  map.entrySkipped = skippedPaths.filter(p => /(^|\/)index\.html?$/i.test(p));
 
   // 入口:最上層的 index.html
   const htmls = files.map(f => f.filename).filter(p => /(^|\/)index\.html$/i.test(p));
@@ -90,9 +93,10 @@ function buildProjectMap(files, coverage, isTest) {
   }
 
   let note = null;
-  if (!entries.length) note = '找不到網站入口（index.html），所以沒有判斷哪些檔案有在使用。';
+  if (!entries.length && map.entrySkipped.length) note = `網站主檔 ${map.entrySkipped[0]} 這次沒有被檢查（檔案太大或下載失敗），所以這次幾乎沒有看到你的網站內容。`;
+  else if (!entries.length) note = '找不到網站入口（index.html），所以沒有判斷哪些檔案有在使用。';
   else if (files.some(f => PM_FILE_ROUTING_RE.test(f.filename))) note = '這個專案用 Next.js／Nuxt 之類的框架，頁面由檔案位置決定，本工具沒有判斷哪些檔案有在使用。';
-  else if (reached.size <= entries.length) note = '入口 index.html 沒有引用任何程式檔，所以沒有判斷哪些檔案有在使用。';
+  else if (reached.size <= entries.length) note = '這是單檔式網站（程式碼都寫在 index.html 裡），沒有其他程式檔要追蹤，所以不需要判斷哪些檔案有在使用。';
   if (note) { map.note = note; map.nodes = files.map(f => ({ path: f.filename, status: 'unknown' })); map.counts.unknown = files.length; return map; }
 
   const multiPage = files.some(f => /(^|\/)vite\.config\.[cm]?[jt]s$/.test(f.filename) && /rollupOptions[\s\S]{0,300}input/.test(f.code));

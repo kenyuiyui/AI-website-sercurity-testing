@@ -8,7 +8,8 @@
  */
 
 const GH_MAX_FILES = 150; // 為什麼:60 個上限曾讓 104 個程式碼檔的專案漏掃 44 個(含後台頁面)。(背景見 docs/CHANGELOG.md)
-const GH_MAX_FILE_BYTES = 300 * 1024;
+// 為什麼:300KB 曾讓一個 307KB 的單檔式網站(所有程式都在 index.html)整份被略過,報告卻說「沒問題」。(背景見 docs/CHANGELOG.md)
+const GH_MAX_FILE_BYTES = 2 * 1024 * 1024;
 const GH_CONCURRENCY = 6;
 
 const GH_CODE_EXT = /\.(m?[jt]sx?|cjs|vue|svelte|astro|py|html?|php|rb)$/i;
@@ -160,7 +161,7 @@ async function importFromGitHub(input, onProgress) {
     coverage = picked.coverage;
     if (tree.truncated) notes.push('專案太大，GitHub 只回傳部分檔案清單；建議改貼子資料夾的網址（例如 …/tree/main/src）。');
     if (picked.total > picked.files.length) notes.push(`符合條件的檔案有 ${picked.total} 個，已優先匯入最可能有問題的 ${picked.files.length} 個；想檢查其他檔案，可改貼子資料夾的網址。`);
-    if (picked.skippedTooLarge) notes.push(`略過 ${picked.skippedTooLarge} 個超過 300KB 的檔案。`);
+    if (picked.skippedTooLarge) notes.push(`略過 ${picked.skippedTooLarge} 個超過 2MB 的檔案。`);
   }
   if (!targets.length) throw new GitHubImportError('這個專案裡沒有找到可以檢查的程式碼檔案（.js／.ts／.jsx／.tsx／.py／.html 等）。');
 

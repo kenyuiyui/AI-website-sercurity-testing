@@ -363,10 +363,12 @@ function idorDetector(code) {
 /**
  * 為什麼:回傳 astUsed,讓畫面提示「這次 IDOR 用的是較弱的正則版」。(背景見 docs/CHANGELOG.md)
  * @param {string} code
+ * @param {string} [codeOnly] - 只保留程式碼的同長度版本;提供時正則比對只看它
  * @returns {{findings: Array, astUsed: boolean}}
  */
-function idorDetectorWithMeta(code) {
-  const regexFindings = idorDetectorRegex(code);
+function idorDetectorWithMeta(code, codeOnly) {
+  // codeOnly:字串／註解已被抹成空白、但長度與位置不變的同一份程式碼(見 source-mask.blankNonCode)
+  const regexFindings = idorDetectorRegex(typeof codeOnly === 'string' ? codeOnly : code);
 
   const acornRef = resolveAcorn();
   if (!acornRef) {

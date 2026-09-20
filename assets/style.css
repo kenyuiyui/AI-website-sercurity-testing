@@ -1175,3 +1175,61 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
 .rc-more-locs .rc-line-tag, .rc-more-locs .rc-loc { margin: 0 6px 6px 0; display: inline-block; }
 .rc-ref-body > summary { font-size: 11px; color: var(--text-dimmer); cursor: pointer; }
 .rc-ref-body[open] > summary { margin-bottom: 6px; }
+
+/* 問題標題:卡片上最先被看到的一行,字級明顯大於技術名稱與其他附註 */
+.result-card .rc-title-text { font-size: 16.5px; line-height: 1.5; }
+
+/* 「要做什麼」:使用者看完標題的下一個問題,提到說明之前並加底色,不必展開就看得到 */
+.result-card .rc-action {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 7px 0 8px;
+  padding: 8px 11px;
+  border-radius: 6px;
+  background: var(--bg-input);
+  border-left: 2px solid var(--border);
+}
+.result-card.tier1 .rc-action { border-left-color: var(--amber); }
+.result-card .rc-action-label {
+  flex: none;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--text-dimmer);
+}
+.result-card .rc-action-text { font-size: 14.5px; line-height: 1.6; color: var(--text); font-weight: 500; }
+
+/* 說明改條列:一句一點,取代原本一整段讀不完的文字 */
+.result-card .rc-points {
+  margin: 6px 0 10px;
+  padding-left: 1.15rem;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--text);
+}
+.result-card .rc-points li { margin-bottom: 4px; }
+.result-card .rc-points li:last-child { margin-bottom: 0; }
+
+/* 「參考」整組收合:預設只佔一行,展開才列出卡片 */
+.rs-ref-group {
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 10px;
+}
+.rs-ref-group > summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--text-dim);
+  user-select: none;
+}
+.rs-ref-group > summary b { color: var(--text); font-weight: 600; }
+.rs-ref-group[open] > summary { margin-bottom: 8px; }
+.rs-ref-group .result-card:last-child { margin-bottom: 0; }
+
+@media (max-width: 560px) {
+  .result-card .rc-title-text { font-size: 15.5px; }
+  .result-card .rc-action { flex-direction: column; gap: 3px; }
+  .result-card .rc-action-text { font-size: 14px; }
+}

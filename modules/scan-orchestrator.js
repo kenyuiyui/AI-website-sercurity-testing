@@ -32,7 +32,8 @@ function getSingleFileDetectors() {
     { id: 'M3', run: (code, ctx) => hashDetector(code, ctx) },
     { id: 'M4', run: (code, ctx) => secretHeuristics(code, ctx.byId.M1.concat(ctx.byId.M2)) },
     { id: 'M5', run: code => cspDetector(code) },
-    { id: 'M6', run: (code, ctx) => { const r = idorDetectorWithMeta(code); ctx.astUsed = r.astUsed; return r.findings; } },
+    // 為什麼:正則版 IDOR 只看真正的程式碼,否則字串裡的範例程式碼(單檔版網頁內嵌的示範字串)會誤報。(背景見 docs/CHANGELOG.md)
+    { id: 'M6', run: (code, ctx) => { const r = idorDetectorWithMeta(code, blankNonCode(code, ctx.mask)); ctx.astUsed = r.astUsed; return r.findings; } },
     { id: 'M9', run: code => sqlInjectionDetector(code) },
     { id: 'M10', run: (code, ctx) => insecureDeserializeDetector(code, ctx) },
     // M12 需要看字串裡的路由路徑,所以只把註解換成空白(字串保留)
@@ -191,7 +192,7 @@ function buildCoverageNotices(projectMap, scanned) {
   if (cov) {
     const reasons = [];
     if (cov.skippedLimit.length) reasons.push(`${cov.skippedLimit.length} 個超過一次檢查的檔案數上限`);
-    if (cov.skippedLarge.length) reasons.push(`${cov.skippedLarge.length} 個超過 300KB`);
+    if (cov.skippedLarge.length) reasons.push(`${cov.skippedLarge.length} 個超過 2MB`);
     if (cov.failed.length) reasons.push(`${cov.failed.length} 個下載失敗`);
     if (reasons.length) {
       notices.push({ id: 'coverage', level: 'warn', text: `這次沒有檢查全部檔案：專案有 ${cov.total} 個程式碼檔，實際檢查了 ${scanned} 個，其餘 ${cov.total - scanned} 個沒檢查到（${reasons.join('、')}）。想檢查其他檔案，可改貼子資料夾的網址。` });
@@ -200,6 +201,9 @@ function buildCoverageNotices(projectMap, scanned) {
     if (types.length) {
       notices.push({ id: 'not-checked', level: 'info', text: `本工具不檢查資料庫規則與部署設定檔（${types.map(t => `.${t} ${cov.notChecked[t]} 個`).join('、')}）。其中的權限設定（例如 Supabase 的 RLS 規則就寫在 .sql 檔）請自行確認。` });
     }
+  }
+  if (projectMap.entrySkipped && projectMap.entrySkipped.length) {
+    notices.unshift({ id: 'entry-skipped', level: 'warn', text: `網站主檔 ${projectMap.entrySkipped[0]} 沒有被檢查到（檔案太大或下載失敗）。單檔式網站的程式碼幾乎都在這個檔案裡，所以這次的結果不能當作「沒問題」。請把這個檔案直接拖進來，或用「開啟檔案」單獨檢查它。` });
   }
   // 貼上的幾段程式碼(沒有真實專案結構)不需要「找不到入口」的提示;GitHub 匯入或有入口時才說明
   if (projectMap.note && (cov || projectMap.analyzed)) notices.push({ id: 'usage', level: 'info', text: projectMap.note });

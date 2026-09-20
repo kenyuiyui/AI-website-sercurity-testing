@@ -70,6 +70,11 @@
     return window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   }
 
+  // 為什麼:「參考」整組收在 <details> 裡,直接捲過去會停在收合狀態看不到內容。(背景見 docs/CHANGELOG.md)
+  function revealInDetails(el) {
+    for (let d = el.closest('details'); d; d = d.parentElement && d.parentElement.closest('details')) d.open = true;
+  }
+
   function scrollIntoViewSmart(el) {
     el.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'start' });
   }
@@ -468,7 +473,7 @@
     const chip = t.closest('.rs-chip[data-jump]');
     if (chip) {
       const card = $(chip.dataset.jump);
-      if (card) { scrollIntoViewSmart(card); card.focus({ preventScroll: true }); }
+      if (card) { revealInDetails(card); scrollIntoViewSmart(card); card.focus({ preventScroll: true }); }
       return;
     }
     const lineTag = t.closest('.rc-line-tag');

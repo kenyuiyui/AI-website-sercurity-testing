@@ -14,7 +14,7 @@
 // 這個字典的 key 必須跟 M1-M6 會產生的所有 kind 值對齊,見規格文件對照表。
 const FINDING_GUIDE = {
   plain_key: {
-    plain: '這組金鑰目前寫死在程式碼裡，任何看得到這份程式碼的人（包含之後公開的原始碼、瀏覽器開發者工具）都能直接複製走並冒用。',
+    plain: '這組金鑰目前寫死在程式碼裡。任何看得到這份程式碼的人都能直接複製走冒用，包括公開後的原始碼、瀏覽器的開發者工具。金鑰被別人拿去用，費用和責任都算在你頭上。',
     handoff:
       '我的程式碼裡有一組 API 金鑰是直接寫死在原始碼中的明文字串（不是透過環境變數讀取）。請幫我：\n' +
       '1. 找出這組金鑰目前寫死的位置，改成從環境變數讀取（例如 process.env.對應名稱），不要保留任何明文的金鑰內容在程式碼裡。\n' +
@@ -41,7 +41,7 @@ const FINDING_GUIDE = {
       '完成後請告訴我：現在前端使用的是哪一組金鑰，以及高權限操作實際是在哪個後端位置執行的。'
   },
   supabase_anon: {
-    plain: '這組 Supabase 金鑰本身設計上是可以出現在前端的，不算外洩，但它的安全性完全取決於你有沒有正確設定「資料列層級安全性（RLS）」規則——如果沒設定，等於任何人都能透過這組公開金鑰直接讀寫你的資料庫。',
+    plain: '這組 Supabase 金鑰設計上就是可以放在前端的，出現在程式碼裡不算外洩。但它的安全性完全取決於你有沒有設定「資料列層級安全性（RLS）」規則。如果沒設定，任何人都能用這組公開金鑰直接讀寫你的資料庫。',
     handoff:
       '我的專案中有一組 Supabase 的 anon（匿名）金鑰出現在前端程式碼裡，這本身是官方允許的正常用法，但我需要確認資料庫的安全性有沒有正確設定。請幫我：\n' +
       '1. 說明什麼是 Row Level Security（RLS），以及為什麼只有 anon 金鑰本身不足以保護資料。\n' +
@@ -50,7 +50,7 @@ const FINDING_GUIDE = {
       '完成後請告訴我：我的哪些資料表目前可能還沒有 RLS 保護，需要優先處理。'
   },
   jwt_unknown_role: {
-    plain: '偵測到一段長得像身分驗證金鑰（JWT）的字串，但沒辦法判斷它的權限等級高不高，需要你自己確認一下這是什麼服務的金鑰、能做到什麼事。',
+    plain: '偵測到一段長得像身分驗證金鑰（JWT）的字串。工具沒辦法判斷它的權限等級高不高。請你自己確認這是哪個服務的金鑰、能做到什麼事。',
     handoff:
       '我的程式碼裡有一段 JWT 格式（eyJ 開頭）的字串，我不確定這是哪個服務的金鑰、權限有多高。請幫我：\n' +
       '1. 告訴我這段字串大概是哪一種服務常見的金鑰格式（如果看得出來的話）。\n' +
@@ -67,7 +67,7 @@ const FINDING_GUIDE = {
       '完成後請告訴我：這段字串實際上是不是 Line Bot 權杖，以及如果是，現在是從哪個環境變數讀取的。'
   },
   weak_hash: {
-    plain: '密碼目前是用一種已經被證實不安全的方式加密儲存（MD5 或 SHA1），這類方式可以被現成的工具快速破解還原成原始密碼，一旦資料庫外洩，使用者的密碼幾乎等於明文外流。',
+    plain: '密碼是用 MD5 或 SHA1 這種已經被證實不安全的方式儲存的。這類方式可以用現成工具快速破解、還原成原始密碼。資料庫一旦外洩，使用者的密碼幾乎等於明文流出去。',
     handoff:
       '我的程式碼裡用 MD5 或 SHA1 來雜湊儲存使用者密碼，這是已知不安全的做法。請幫我：\n' +
       '1. 找出目前用 MD5／SHA1 處理密碼的位置，改成使用 bcrypt 或 argon2 這類專門為密碼儲存設計的雜湊演算法。\n' +
@@ -76,7 +76,7 @@ const FINDING_GUIDE = {
       '完成後請告訴我：新的雜湊方式是什麼，以及既有使用者資料需不需要額外遷移。'
   },
   custom_secret_var: {
-    plain: '有一個變數名稱看起來像是密碼或金鑰，而且直接被寫成明文字串，這通常代表這組密鑰之後會被不小心一起提交到版本控制系統（如 GitHub），造成外洩。',
+    plain: '有一個變數名稱看起來像密碼或金鑰，而且值直接寫成明文。這種寫法很容易連同程式碼一起被提交到 GitHub 之類的地方。一旦提交上去，就算之後刪掉，紀錄裡仍然查得到。',
     handoff:
       '我的程式碼裡有一個變數名稱看起來像密鑰／密碼，但被直接寫成明文字串，而不是透過環境變數讀取。請幫我：\n' +
       '1. 找出這個變數目前寫死明文的位置，改成從環境變數讀取。\n' +
@@ -85,7 +85,7 @@ const FINDING_GUIDE = {
       '完成後請告訴我：這個變數現在是從哪個環境變數名稱讀取的。'
   },
   endpoint_url: {
-    plain: '程式碼裡寫死了一個內部服務的網址（例如自動化腳本或通知服務的專屬連結），這個網址本身通常不需要密碼就能被呼叫，一旦外流，任何人都可能利用這個網址觸發你的自動化流程或發送訊息。',
+    plain: '程式碼裡寫死了一個內部服務的網址，例如自動化腳本或通知服務的專屬連結。這種網址通常不需要密碼就能呼叫。一旦外流，任何人都可能拿它觸發你的自動化流程或發送訊息。',
     handoff:
       '我的程式碼裡寫死了一個內部服務的端點網址（例如 Google Apps Script 部署網址或 Webhook 網址），這個網址如果外流，可能被任何人拿去呼叫。請幫我：\n' +
       '1. 評估這個網址目前有沒有做任何呼叫端的身分驗證（例如檢查一組只有我知道的密鑰參數），如果沒有，幫我加上。\n' +
@@ -94,7 +94,7 @@ const FINDING_GUIDE = {
       '完成後請告訴我：這個端點現在有沒有身分驗證機制，以及網址是否還存在於前端程式碼中。'
   },
   env_fallback: {
-    plain: '程式碼有使用環境變數的正確習慣，但同時又寫了一組明文的「備用密碼」——如果上線時忘記設定正式的環境變數，系統會悄悄改用這組所有人都看得到的備用密碼，而且不會有任何警告。',
+    plain: '程式碼有使用環境變數的正確習慣，但同時又寫了一組明文的「備用值」。如果上線時忘了設定正式的環境變數，系統會悄悄改用這組所有人都看得到的值。而且不會有任何警告，你不會發現。',
     handoff:
       '我的程式碼在讀取環境變數時，帶了一組明文字串作為備用預設值（fallback），如果正式環境忘記設定對應的環境變數，就會直接使用這組所有人都看得到的明文值。請幫我：\n' +
       '1. 找出這個帶明文備用值的地方，移除明文備用值，改成如果環境變數沒有設定時，程式應該直接報錯並提醒開發者，而不是悄悄使用一組不安全的預設值。\n' +
@@ -158,7 +158,7 @@ const FINDING_GUIDE = {
       '完成後請告訴我：原本 eval() 的用途是什麼，以及你改用了什麼替代方案。'
   },
   insecure_pickle: {
-    plain: 'Python 的 pickle.loads() 被用來還原（反序列化）資料，但 pickle 格式本身設計上就不安全——如果還原的內容來自不可信的來源（例如使用者上傳的檔案、網路請求的內容），惡意的 pickle 資料可以讓程式在還原的當下就直接執行任意程式碼，不需要額外的漏洞就能被攻擊。',
+    plain: '程式用 Python 的 pickle 還原資料，但這個格式本身設計上就不安全。只要還原的內容來自不可信的來源（例如使用者上傳的檔案、網路請求），惡意資料可以在還原的當下直接執行任意程式碼。不需要任何額外漏洞就能被攻擊。',
     handoff:
       '我的 Python 程式碼裡使用了 pickle.loads()（或 pickle.load()）來反序列化資料，這個函式如果處理不可信來源的資料會有高風險（惡意資料可以在反序列化當下直接執行任意程式碼）。請幫我：\n' +
       '1. 先確認被反序列化的資料是否可能來自使用者輸入、網路請求、或其他不可信的來源，如果是，這是需要優先處理的高風險問題。\n' +
@@ -450,11 +450,34 @@ function buildAttackDemoHtml(f) {
  * @param {object} f - Finding
  * @returns {string} HTML
  */
+/**
+ * 長句說明拆成條列。為什麼:一整段 4～5 句的說明,不懂程式的人讀不完也抓不到重點。
+ * 以句號斷句,過長的句子再用分號斷一次;只有一句時不做成清單(單點清單更雜亂)。
+ * @param {string} text
+ * @returns {string[]}
+ */
+function toPoints(text) {
+  const out = [];
+  String(text || '').split('。').forEach(seg => {
+    const s = seg.trim();
+    if (!s) return;
+    if (s.length > 70 && s.indexOf('；') > 0) s.split('；').forEach(p => { if (p.trim()) out.push(p.trim() + '。'); });
+    else out.push(s + '。');
+  });
+  return out;
+}
+
+function plainHtmlOf(text) {
+  const points = toPoints(text);
+  if (points.length < 2) return `<div class="rc-plain">${escapeHtml(text)}</div>`;
+  return `<ul class="rc-points">${points.map(p => `<li>${escapeHtml(p)}</li>`).join('')}</ul>`;
+}
+
 function buildCardBody(f, evidences) {
   const guide = getFindingGuide(f.kind);
   // 同一組有多筆時,技術細節列出所有不重複的 evidence(最多 10 筆)
   const evList = evidences && evidences.length ? evidences : [f.evidence];
-  const plainHtml = guide ? `<div class="rc-plain">${escapeHtml(guide.plain)}</div>` : '';
+  const plainHtml = guide ? plainHtmlOf(guide.plain) : '';
   const attackDemoHtml = buildAttackDemoHtml(f);
   const keyImpactHtml = buildKeyImpactHtml(f);
   const keyCapabilityHtml = buildKeyCapabilityHtml(f);
@@ -626,6 +649,10 @@ function buildVerdict(findings, notices) {
   const s = tierStats(groups);
   const hasLeak = findings.some(f => f.tier === 1 && LEAKED_KEY_KINDS.has(f.kind));
   const refNote = s[3].items ? `另有 ${s[3].items} 項「參考」（測試檔、範例假金鑰等），可以略過。` : null;
+  // 入口主檔沒被檢查到:整份結果都不能當作「沒問題」,結論要先講這件事
+  const entrySkipped = (notices || []).some(n => n.id === 'entry-skipped');
+  const entryNote = entrySkipped ? '注意：這次沒有檢查到你的網站主檔（index.html），下面只是其餘檔案的結果。' : null;
+  const join = (a, b) => [a, b].filter(Boolean).join(' ');
   if (s[1].items > 0) {
     const steps = [];
     if (hasLeak) steps.push('先到外洩金鑰所屬的服務後台「撤銷並重新產生」金鑰——只改程式碼的話，舊金鑰仍然有效。');
@@ -633,18 +660,26 @@ function buildVerdict(findings, notices) {
     steps.push('改完後回到這裡再掃一次，確認「需要處理」的項目都消失了。');
     return {
       headline: `有 ${countPhrase(s[1], '事')}需要處理` + (s[2].items > 0 ? `，另有 ${countPhrase(s[2], '')}請你確認` : '') + '。',
-      calm: '先別慌：這些都是 AI 產生的程式碼常見的問題，有標準的修法，照下面的步驟做就好。',
+      calm: join('先別慌：這些都是 AI 產生的程式碼常見的問題，有標準的修法，照下面的步驟做就好。', entryNote),
       steps
     };
   }
   if (s[2].items > 0) {
     return {
       headline: `沒有確定的問題，但有 ${countPhrase(s[2], '事')}請你確認。`,
-      calm: '「請你確認」代表看起來可疑、不一定真的有問題。' + (refNote ? ' ' + refNote : ''),
+      calm: join('「請你確認」代表看起來可疑、不一定真的有問題。' + (refNote ? ' ' + refNote : ''), entryNote),
       steps: [
         '逐項展開下方說明，判斷是否符合你的情況。',
         '不確定的話，按「複製全部修正指令」貼給 AI，請它幫你檢查。'
       ]
+    };
+  }
+  if (entrySkipped) {
+    return {
+      headline: '這次沒有檢查到你的網站主檔，結果不能當作「沒問題」。',
+      calm: '單檔式網站的程式碼幾乎都寫在 index.html 裡，那個檔案因為太大或下載失敗而沒被讀到。',
+      steps: ['把 index.html 直接拖進這個頁面，或用「開啟檔案」單獨選它，就能完整檢查。'],
+      partial: true
     };
   }
   if ((notices || []).some(n => n.id === 'minified')) {
@@ -764,8 +799,14 @@ function buildGroupCardHtml(g, idx) {
   const countHtml = g.items.length > 1 ? `<span class="rc-count">${g.items.length} 處</span>` : '';
   const noteHtml = g.context && CONTEXT_NOTES[g.context] ? `<div class="rc-context">${escapeHtml(CONTEXT_NOTES[g.context])}</div>` : '';
   const evidences = [...new Set(g.items.map(f => f.evidence).filter(Boolean))];
+  // 「要做什麼」提到標題下方並放大:使用者最常問的是「所以我現在該做什麼」,不該埋在展開的說明裡
+  const action = plainAction(first);
+  const actionHtml = g.tier < 3 && action
+    ? `<div class="rc-action"><span class="rc-action-label">要做什麼</span><span class="rc-action-text">${escapeHtml(action)}</span></div>`
+    : '';
   return `<div class="result-card ${meta.cls}" id="finding-${idx}" tabindex="-1" data-where="${escapeHtml(describeLocations(g.items))}">
       <div class="rc-title"><span class="rc-tag">${meta.tag}</span><span class="rc-title-text">${escapeHtml(g.title)}</span>${countHtml}</div>
+      ${actionHtml}
       <div class="rc-subtitle">${escapeHtml([...new Set(g.items.map(f => f.name))].join('、'))}</div>
       ${noteHtml}
       ${locsHtml}
@@ -820,7 +861,21 @@ function findingRenderer(findings, languageCaveat, notices, projectMap) {
     </div>`;
   }
 
-  groups.forEach((g, idx) => { html += buildGroupCardHtml(g, idx); });
+  // 「參考」整組收在一行摘要裡:它們多半是測試檔或假金鑰,攤開來會蓋掉真正要看的東西
+  const refCards = [];
+  groups.forEach((g, idx) => {
+    if (g.tier === 3) refCards.push(buildGroupCardHtml(g, idx));
+    else html += buildGroupCardHtml(g, idx);
+  });
+  if (refCards.length) {
+    const ctx = new Set(groups.filter(g => g.tier === 3).map(g => g.context || ''));
+    const allTestLike = [...ctx].every(c => c === 'test' || c === 'placeholder' || c === 'unused');
+    const why = allTestLike ? '都在測試／範例檔，或是假金鑰' : '不需要立刻處理';
+    html += `<details class="rs-ref-group">
+      <summary><b>參考 ${s[3].items} 項</b>：${why}，可以略過</summary>
+      ${refCards.join('')}
+    </details>`;
+  }
 
   const langCaveatHtml = (!notices && languageCaveat) ? `<p class="cb-lang">${escapeHtml(languageCaveat)}</p>` : '';
   html += `<details class="cannot-block">

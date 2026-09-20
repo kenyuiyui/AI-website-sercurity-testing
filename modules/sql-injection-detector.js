@@ -15,6 +15,8 @@
  *
  * 為什麼:SQL 關鍵字需搭配第二關鍵字(FROM/INTO/SET…)才算語句,避免一般文字誤判(fp-26)。(背景見 docs/CHANGELOG.md)
  *
+ * 為什麼:模板字面值／f-string 同樣要求第二關鍵字,否則 `...update(${id})...` 這種組 HTML 的寫法會誤報。(背景見 docs/CHANGELOG.md)
+ *
  * 已知限制(誠實記錄):
  * - 無法判斷拼接進SQL字串的變數是否經過消毒(sanitize)處理,只要偵測到拼接
  *   模式就會標記,即使該變數其實是安全的固定值
@@ -39,14 +41,16 @@ const CONCAT_PATTERN = new RegExp(
 );
 
 // 模式2: JS模板字面值插值 — `...SQL...${...}...`
+// 兩個關鍵字都要出現(同模式1):單看 UPDATE/DELETE 會把 `onblur="X.update(${id})"`、
+// 壓縮後的函式庫(含 delete 運算子)這類組 HTML／一般程式碼的模板字串當成 SQL。
 const TEMPLATE_INTERP_PATTERN = new RegExp(
-  `\`[^\`]*\\b${SQL_KEYWORD_PATTERN}\\b[^\`]*\\$\\{[^}]+\\}[^\`]*\``,
+  `\`[^\`]*\\b${SQL_KEYWORD_PATTERN}\\b[^\`]{0,60}?\\b${SQL_SECOND_KEYWORD_PATTERN}\\b[^\`]*\\$\\{[^}]+\\}[^\`]*\`|\`[^\`]*\\$\\{[^}]+\\}[^\`]*\\b${SQL_KEYWORD_PATTERN}\\b[^\`]{0,60}?\\b${SQL_SECOND_KEYWORD_PATTERN}\\b[^\`]*\``,
   'i'
 );
 
 // 模式3: Python f-string — f"...SQL...{...}..."
 const FSTRING_PATTERN = new RegExp(
-  `f["'][^"']*\\b${SQL_KEYWORD_PATTERN}\\b[^"']*\\{[^}]+\\}[^"']*["']`,
+  `f["'][^"']*\\b${SQL_KEYWORD_PATTERN}\\b[^"']{0,60}?\\b${SQL_SECOND_KEYWORD_PATTERN}\\b[^"']*\\{[^}]+\\}[^"']*["']|f["'][^"']*\\{[^}]+\\}[^"']*\\b${SQL_KEYWORD_PATTERN}\\b[^"']{0,60}?\\b${SQL_SECOND_KEYWORD_PATTERN}\\b[^"']*["']`,
   'i'
 );
 

@@ -131,6 +131,19 @@ check('.env 的管理者密碼仍報 .env 密鑰', `VITE_ADMIN_PASSWORD=Sup3rS3c
 check('.env 的 OpenAI 金鑰 → 只報明文金鑰', 'OPENAI_API_KEY=sk-proj-' + 'Xa7Qm2Lp9Rt4Vn8Kc3Zw6Hy1Bd5Fg0Js', 'plain_key', true);
 check('.env 的 OpenAI 金鑰 → 不重複報 .env 密鑰', 'OPENAI_API_KEY=sk-proj-' + 'Xa7Qm2Lp9Rt4Vn8Kc3Zw6Hy1Bd5Fg0Js', 'env_file_secret', false);
 
+// 第五輪:單檔式網頁(所有程式碼都寫在一個 index.html)造成的誤判
+check('組 HTML 的模板字串不是 SQL 拼接', 'const h = `<span onblur="Card.update(${id}, v)">${esc(t)}</span>`;', 'possible_sql_injection', false);
+check('真正的 SELECT 模板字串仍會報', 'const q = `SELECT * FROM users WHERE id = ${id}`;', 'possible_sql_injection', true);
+check('真正的 UPDATE 模板字串仍會報', 'const q = `UPDATE users SET name = \'${n}\'`;', 'possible_sql_injection', true);
+check('一般 f-string 不是 SQL', 'msg = f"update {n} rows"', 'possible_sql_injection', false);
+check('SQL f-string 仍會報', 'q = f"SELECT * FROM t WHERE id={x}"', 'possible_sql_injection', true);
+check('字串裡的範例程式碼不算缺少擁有權檢查',
+  "const demo = ['export async function deleteProperty(propertyId) {', '  const r = await db.from(\"p\").delete().eq(\"id\", propertyId);', '  return r;', '}'].join('\\n');",
+  'possible_idor', false);
+check('真正的函式仍會報缺少擁有權檢查',
+  'export async function deleteProperty(propertyId) {\n  const r = await db.from("p").delete().eq("id", propertyId);\n  return r;\n}',
+  'possible_idor', true);
+
 // ── 檔案地圖(project-map)、檢查範圍、沒用到檔案的降級 ──
 const { scanFiles } = require('../modules/scan-orchestrator');
 const { findingRenderer } = require('../modules/finding-renderer');
