@@ -33,14 +33,21 @@ const ENV_FALLBACK_PLACEHOLDER = (val) =>
   || val.trim() === ''
   || /^\d+$/.test(val.trim()); // 純數字(連接埠號、逾時秒數等常見設定值)不可能是密鑰,誤判率評測(fp-8)發現的修正
 
+// 為什麼:變數名不像密鑰、值又只是沒帳密的網址(SEO_URL、API_BASE 的預設值)——不是「備用密碼」。(背景見 docs/CHANGELOG.md)
+const SECRET_LIKE_NAME = /(secret|token|key|password|passwd|pwd|credential|auth)/i;
+const ENV_FALLBACK_BENIGN_URL = (varName, val) =>
+  !SECRET_LIKE_NAME.test(varName) && /^https?:\/\/[^\s@]*$/i.test(val.trim());
+
 /**
  * .env 格式內容逐行掃描(KEY=VALUE 格式,與程式碼賦值語法不同,需獨立處理)
  * 排除程式碼賦值語法(交給 4.3 ENV_FALLBACK_RULES 處理,避免同一行被兩條規則各報一次)、
  * 佔位字樣、以及短於 8 字元的值(太短不足以構成有意義的密鑰判斷)。
+ * 同一個值已被 M1／M2 回報(明文金鑰、Supabase 公開金鑰…)就不再報一次,與 4.1 相同。
  * @param {string} code
+ * @param {string[]} knownValues - M1／M2 回報過的原始片段
  * @returns {Array}
  */
-function scanEnvFormatLines(code) {
+function scanEnvFormatLines(code, knownValues) {
   const findings = [];
   const lines = code.split('\n');
   const envLinePattern = /^\s*([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+?)\s*$/;
@@ -56,6 +63,7 @@ function scanEnvFormatLines(code) {
     if (!secretNamePattern.test(varName)) return;
     if (looksLikeCodeNotEnvValue.test(m[2])) return; // 這是程式碼賦值,不是 .env 字面值
     if (ENV_FALLBACK_PLACEHOLDER(val) || val.length < 8) return;
+    if ((knownValues || []).some(v => val.includes(v) || v.includes(val))) return;
     findings.push({
       tier: 2,
       category: '建議人工複查',
@@ -127,7 +135,7 @@ function secretHeuristics(code, existingFindings) {
     while ((em = re.exec(code)) !== null) {
       const varName = em[1];
       const val = em[2];
-      if (ENV_FALLBACK_PLACEHOLDER(val)) continue;
+      if (ENV_FALLBACK_PLACEHOLDER(val) || ENV_FALLBACK_BENIGN_URL(varName, val)) continue;
       findings.push({
         tier: 2,
         category: '建議人工複查',
@@ -140,7 +148,7 @@ function secretHeuristics(code, existingFindings) {
   });
 
   // 4.4 .env 格式內容
-  findings.push(...scanEnvFormatLines(code));
+  findings.push(...scanEnvFormatLines(code, knownValues));
 
   return findings;
 }

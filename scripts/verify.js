@@ -153,8 +153,21 @@ step('GitHub 匯入的網址解析與檔案篩選', () => {
   if (picked !== want) problems.push(`selectGitHubFiles 結果 ${picked},預期 ${want}`);
   const sub = selectGitHubFiles(tree, 'src/api').files.map(f => f.path).join(',');
   if (sub !== 'src/api/orders.ts') problems.push(`子資料夾篩選結果 ${sub}`);
+  // 檢查範圍:不檢查的類型(.sql/.yml)、太大的檔案、超過上限被擠掉的檔案都要記錄下來,才能在報告裡告訴使用者
+  const { GH_MAX_FILES } = require(path.join(root, 'assets', 'github-import'));
+  const covTree = tree.concat([
+    { path: 'supabase/schema.sql', type: 'blob', size: 100 },
+    { path: '.github/workflows/ci.yml', type: 'blob', size: 100 },
+    { path: 'src/big.js', type: 'blob', size: 400 * 1024 }
+  ]);
+  const cov = selectGitHubFiles(covTree, '').coverage;
+  if (JSON.stringify(cov.notChecked) !== JSON.stringify({ sql: 1, yml: 1 })) problems.push(`不檢查的類型 ${JSON.stringify(cov.notChecked)}`);
+  if (cov.skippedLarge.join(',') !== 'src/big.js' || cov.total !== 6) problems.push(`太大的檔案／總數 ${JSON.stringify(cov)}`);
+  const many = Array.from({ length: GH_MAX_FILES + 25 }, (_, i) => ({ path: `src/f${i}.js`, type: 'blob', size: 10 }));
+  const cap = selectGitHubFiles(many, '');
+  if (cap.files.length !== GH_MAX_FILES || cap.coverage.skippedLimit.length !== 25) problems.push(`上限處理 ${cap.files.length}／${cap.coverage.skippedLimit.length}`);
   if (problems.length) throw new Error(problems.join('\n'));
-  return `${cases.length} 個網址、2 組篩選`;
+  return `${cases.length} 個網址、3 組篩選`;
 });
 
 // ── 4d. 檔案指紋(避免瀏覽器快取造成新舊版混用) ──

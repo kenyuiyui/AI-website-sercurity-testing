@@ -12,7 +12,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>未發現 ≠ 安全 — AI 產出程式碼資安檢查器</title>
 <meta name="description" content="貼上程式碼或 GitHub 網址，檢查 AI 產出程式碼常見的資安問題：金鑰外洩、弱雜湊、SQL Injection、權限檢查缺漏。在你的瀏覽器內執行，內容不外送。">
-<link rel="stylesheet" href="assets/style.css?v=e1e4a3fc">
+<link rel="stylesheet" href="assets/style.css?v=db69497c">
 <script src="assets/theme-init.js?v=6a3a9a31"></script>
 </head>
 <body>
@@ -94,7 +94,7 @@
     <footer>
       <p>本工具只做靜態比對：不執行、不上傳、不儲存你貼上的內容。適合上線前快速自我檢查，不能取代正式的資安審查或滲透測試。</p>
       <p>「需要處理」是高信心度的結果；「請你確認」代表看起來可疑，需要你對照程式判斷。</p>
-      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">b489ee79</span></p>
+      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">d72e983f</span></p>
     </footer>
   </div>
 
@@ -118,6 +118,7 @@
             <li>把文字當程式執行（eval、exec、pickle、yaml.load）</li>
             <li>疑似缺少擁有權檢查（登入的人看得到別人的資料），含 Express 路由寫法</li>
             <li>多檔案：同一敏感欄位在不同檔案的遮罩不一致、路由缺少流量限制</li>
+            <li>多檔案：列出檢查範圍（掃了幾個、哪些沒掃到），並標出疑似沒在使用的檔案（這些檔案裡的發現降為「參考」，金鑰除外）</li>
           </ul>
         </div>
         <div class="boundary-col cannot">
@@ -128,7 +129,8 @@
             <li>打包壓縮過的程式碼：金鑰檢查仍有效，權限、SQL 這類邏輯檢查幾乎無法判斷</li>
             <li>權限檢查只是模式比對，主要針對 JavaScript／Express，一定會有漏判與誤判</li>
             <li>疑似自訂密鑰、內部網址、環境變數明文備用值 — 沒有固定格式，誤判率較高</li>
-            <li>後端、資料庫權限規則（RLS／Security Rules）與雲端 IAM 設定</li>
+            <li>後端、資料庫權限規則（RLS／Security Rules）與雲端 IAM 設定；資料庫檔（.sql）與部署設定（.yml）不在檢查範圍，請自行檢視</li>
+            <li>「疑似沒在使用」只是沿著程式引用推測，遇到動態載入或多頁面設定時不判斷</li>
             <li>私人 GitHub 專案（請下載後用拖放或開啟檔案）</li>
           </ul>
         </div>
@@ -201,20 +203,21 @@
 <script src="vendor/acorn.min.js?v=75730bd6"></script>
 <script src="vendor/acorn-jsx.min.js?v=58fa1ba4"></script>
 <script src="modules/source-mask.js?v=931033f0"></script>
-<script src="modules/key-detector.js?v=f74facaf"></script>
-<script src="modules/jwt-analyzer.js?v=4fa581e0"></script>
+<script src="modules/key-detector.js?v=e0ae96bc"></script>
+<script src="modules/jwt-analyzer.js?v=8c8a0407"></script>
 <script src="modules/hash-detector.js?v=9bb3cca5"></script>
-<script src="modules/secret-heuristics.js?v=22e5913b"></script>
+<script src="modules/secret-heuristics.js?v=070d28ad"></script>
 <script src="modules/csp-detector.js?v=29a4e3a2"></script>
 <script src="modules/idor-detector.js?v=d8747db4"></script>
 <script src="modules/language-detector.js?v=d31fbb9c"></script>
-<script src="modules/finding-renderer.js?v=d5269af5"></script>
+<script src="modules/finding-renderer.js?v=70eeb4d4"></script>
 <script src="modules/sql-injection-detector.js?v=d75b98dc"></script>
 <script src="modules/insecure-deserialize-detector.js?v=5d6fe669"></script>
 <script src="modules/rate-limit-coverage-detector.js?v=8233146a"></script>
 <script src="modules/field-masking-consistency-detector.js?v=6ad6c847"></script>
-<script src="modules/scan-orchestrator.js?v=19163e05"></script>
-<script src="assets/github-import.js?v=4f551e85"></script>
-<script src="assets/app.js?v=8d630769"></script>
+<script src="modules/project-map.js?v=ee29fb3b"></script>
+<script src="modules/scan-orchestrator.js?v=7c22d1bc"></script>
+<script src="assets/github-import.js?v=15573f93"></script>
+<script src="assets/app.js?v=d30f537f"></script>
 </body>
 </html>

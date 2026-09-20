@@ -581,7 +581,9 @@ function countByTier(findings) {
 const CONTEXT_NOTES = {
   placeholder: '看起來是範例用的假金鑰（含 test／example 字樣或連續字元），所以列為參考。如果這其實是真的金鑰，仍請撤銷並更換。',
   test: '位於測試或範例檔案，通常不會在正式網站執行，所以列為參考。',
-  'test-real-secret': '位於測試檔，但看起來像真的金鑰——公開專案的測試檔外洩一樣是外洩，請照常處理。'
+  'test-real-secret': '位於測試檔，但看起來像真的金鑰——公開專案的測試檔外洩一樣是外洩，請照常處理。',
+  unused: '這個檔案從網站入口追不到，看起來沒有在使用，所以列為參考。建議確認後直接刪除，避免舊程式碼留下風險。',
+  'unused-secret': '這個檔案看起來沒有在使用，但金鑰放在公開專案裡照樣會外洩，請照常處理。'
 };
 
 /**
@@ -654,6 +656,66 @@ function buildVerdict(findings, notices) {
   return { headline: '沒有比對到已知的問題模式。', calm: null, steps: [] };
 }
 
+// ── 檔案地圖(project-map.js 的結果):畫面的樹狀清單與報告的「檢查範圍」共用 ──
+const PM_LABELS = { used: '使用中', unused: '疑似沒用到', build: '建置／設定', test: '測試／範例', unknown: '無法判斷', skipped: '未檢查' };
+
+function projectMapRows(map) {
+  const rows = map.nodes.map(n => ({ path: n.path, status: n.status }));
+  const cov = map.coverage;
+  if (cov) [].concat(cov.skippedLimit, cov.skippedLarge, cov.failed).forEach(p => rows.push({ path: p, status: 'skipped' }));
+  return rows.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
+}
+
+function projectMapSkipped(map) {
+  return map.coverage ? map.coverage.skippedLimit.length + map.coverage.skippedLarge.length + map.coverage.failed.length : 0;
+}
+
+/** 依資料夾縮排的文字樹,每個檔案標上使用狀態與待處理項數 */
+function projectTreeText(map, findings) {
+  const count = {};
+  (findings || []).forEach(f => { if (f.filename && f.tier < 3) count[f.filename] = (count[f.filename] || 0) + 1; });
+  const seen = new Set();
+  const out = [];
+  projectMapRows(map).forEach(r => {
+    const parts = r.path.split('/');
+    for (let i = 0; i < parts.length - 1; i++) {
+      const dir = parts.slice(0, i + 1).join('/');
+      if (!seen.has(dir)) { seen.add(dir); out.push('  '.repeat(i) + parts[i] + '/'); }
+    }
+    const label = (!map.analyzed && r.status === 'unknown') ? '已檢查' : PM_LABELS[r.status];
+    const c = count[r.path];
+    out.push('  '.repeat(parts.length - 1) + parts[parts.length - 1] + '  [' + label + ']' + (c ? `  ← ${c} 項待處理／確認` : ''));
+  });
+  return out.join('\n');
+}
+
+function projectMapCounts(map) {
+  const parts = ['used', 'unused', 'build', 'test', 'unknown'].filter(k => map.counts[k]).map(k => `${PM_LABELS[k]} ${map.counts[k]}`);
+  return `${map.nodes.length} 個檔案` + (map.analyzed && parts.length ? '：' + parts.join('、') : '');
+}
+
+function buildProjectMapHtml(map, findings) {
+  if (!map || !(map.analyzed || map.coverage)) return '';
+  const missing = projectMapSkipped(map);
+  const head = `檔案地圖（${map.nodes.length} 個檔案` + (map.counts.unused ? `，${map.counts.unused} 個疑似沒在使用` : '') + (missing ? `，${missing} 個沒檢查到` : '') + '）';
+  const hint = map.analyzed ? '「疑似沒用到」是從網站入口（index.html）追不到的檔案，建議確認後刪除。' : '';
+  return `<details class="rs-notice info rs-map"><summary>${escapeHtml(head)}</summary><p>${escapeHtml(projectMapCounts(map) + '。' + hint)}</p><pre class="rs-tree" tabindex="0">${escapeHtml(projectTreeText(map, findings))}</pre></details>`;
+}
+
+function buildMapReportLines(map) {
+  if (!map || !(map.analyzed || map.coverage)) return [];
+  const names = paths => paths.slice(0, 30).join('、') + (paths.length > 30 ? `……等共 ${paths.length} 個` : '');
+  const lines = ['## 檢查範圍', ''];
+  lines.push(map.coverage ? `- 專案有 ${map.coverage.total} 個程式碼檔，實際檢查 ${map.nodes.length} 個。` : `- 檢查了 ${map.nodes.length} 個檔案。`);
+  if (map.analyzed) lines.push(`- 使用狀態：${projectMapCounts(map).replace(/^\d+ 個檔案：?/, '') || '無'}`);
+  const unused = map.nodes.filter(n => n.status === 'unused').map(n => n.path);
+  if (unused.length) lines.push(`- 疑似沒用到（從網站入口追不到，建議確認後刪除）：${names(unused)}`);
+  const skipped = projectMapRows(map).filter(r => r.status === 'skipped').map(r => r.path);
+  if (skipped.length) lines.push(`- 沒檢查到的檔案：${names(skipped)}`);
+  lines.push('');
+  return lines;
+}
+
 function buildNoticesHtml(notices) {
   if (!notices || notices.length === 0) return '';
   const warn = notices.filter(n => n.level === 'warn');
@@ -715,9 +777,10 @@ function buildGroupCardHtml(g, idx) {
  * @param {Array} findings - 合併後的 Finding[](見 scan-orchestrator.js)
  * @param {string|null} languageCaveat - 限制提示合併文字(未提供 notices 時顯示在「本工具無法檢測」區塊)
  * @param {Array} [notices] - scan-orchestrator 的 notices;提供時顯示在結果最上方
+ * @param {object} [projectMap] - scan-orchestrator 的 projectMap(多檔案時);提供時顯示檔案地圖
  * @returns {string} HTML
  */
-function findingRenderer(findings, languageCaveat, notices) {
+function findingRenderer(findings, languageCaveat, notices, projectMap) {
   const ordered = sortFindings(findings);
   const groups = groupFindings(ordered);
   const s = tierStats(groups);
@@ -749,6 +812,7 @@ function findingRenderer(findings, languageCaveat, notices) {
   </div>`;
 
   html += buildNoticesHtml(notices);
+  html += buildProjectMapHtml(projectMap, ordered);
 
   if (s[1].items + s[2].items === 0) {
     html += `<div class="result-card clean">
@@ -774,7 +838,7 @@ function findingRenderer(findings, languageCaveat, notices) {
  * scripts/verify.js 會檢查報告不含金鑰原文與程式碼行。
  * @param {Array} findings
  * @param {Array} notices
- * @param {{generatedAt?: string, mode?: string, source?: string, toolUrl?: string}} meta
+ * @param {{generatedAt?: string, mode?: string, source?: string, toolUrl?: string, version?: string, projectMap?: object}} meta
  * @returns {string}
  */
 function buildReportMarkdown(findings, notices, meta) {
@@ -823,6 +887,7 @@ function buildReportMarkdown(findings, notices, meta) {
     });
     lines.push('');
   });
+  lines.push(...buildMapReportLines(meta.projectMap));
   if (notices && notices.length) {
     lines.push('## 本次檢查的限制', '');
     notices.forEach(n => lines.push(`- ${n.text}`));
@@ -837,5 +902,5 @@ function buildReportMarkdown(findings, notices, meta) {
 // 瀏覽器環境: module 不存在 → 略過這段,函式/常數已是全域作用域下的宣告,
 //            可直接被 index.html 或其他 <script> 使用
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { findingRenderer, buildReportMarkdown, buildVerdict, groupFindings, describeLocations, plainTitle, plainAction, getFindingGuide, escapeHtml, buildCardBody, buildAttackDemoHtml, buildKeyImpactHtml, buildKeyCapabilityHtml, buildFilenameTagHtml, buildLineTagHtml, KEY_CAPABILITY_KB, FINDING_GUIDE, PLAIN_TITLES, TIER_META, CONTEXT_NOTES };
+  module.exports = { findingRenderer, buildReportMarkdown, projectTreeText, buildProjectMapHtml, buildVerdict, groupFindings, describeLocations, plainTitle, plainAction, getFindingGuide, escapeHtml, buildCardBody, buildAttackDemoHtml, buildKeyImpactHtml, buildKeyCapabilityHtml, buildFilenameTagHtml, buildLineTagHtml, KEY_CAPABILITY_KB, FINDING_GUIDE, PLAIN_TITLES, TIER_META, CONTEXT_NOTES };
 }

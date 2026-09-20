@@ -7,7 +7,7 @@
  * 未登入的 GitHub API 限制約每小時 60 次(= 約 30 次匯入)。私人專案回 404,請使用者改用拖放。
  */
 
-const GH_MAX_FILES = 60;
+const GH_MAX_FILES = 150; // 為什麼:60 個上限曾讓 104 個程式碼檔的專案漏掃 44 個(含後台頁面)。(背景見 docs/CHANGELOG.md)
 const GH_MAX_FILE_BYTES = 300 * 1024;
 const GH_CONCURRENCY = 6;
 
@@ -17,6 +17,8 @@ const GH_ENV_TEMPLATE = /\.(example|sample|template|dist)$/i;
 const GH_CONFIG_FILE = /(^|\/)(vercel|firebase|netlify)\.json$|(^|\/)(firestore|storage|database)\.rules(\.json)?$/i;
 const GH_SKIP_DIR = /(^|\/)(node_modules|dist|build|out|\.next|\.nuxt|\.svelte-kit|\.vercel|coverage|vendor|\.git|__pycache__|venv|\.venv)\//i;
 const GH_SKIP_FILE = /\.min\.[jc]ss?$|\.d\.ts$|\.map$|(^|\/)(package-lock\.json|yarn\.lock|pnpm-lock\.yaml)$/i;
+// 不檢查、但與安全有關的檔案類型(資料庫規則、部署設定):不下載,只在報告的檢查範圍裡列出數量,讓使用者知道要自己看
+const GH_NOT_CHECKED = /\.(sql|ya?ml|toml|conf)$/i;
 // 優先匯入:最可能含金鑰、權限、資料庫邏輯的路徑
 const GH_PRIORITY = /(api|server|route|routes|controller|service|lib|db|database|supabase|firebase|auth|middleware|functions|config|\.env)/i;
 
@@ -66,11 +68,20 @@ function isWantedPath(p) {
 function selectGitHubFiles(tree, basePath) {
   const prefix = basePath ? basePath.replace(/\/+$/, '') + '/' : '';
   let skippedTooLarge = 0;
+  const skippedLarge = [];
+  const notChecked = {};
   const candidates = tree.filter(t => {
     if (t.type !== 'blob') return false;
     if (prefix && !t.path.startsWith(prefix) && t.path !== basePath) return false;
-    if (!isWantedPath(t.path)) return false;
-    if ((t.size || 0) > GH_MAX_FILE_BYTES) { skippedTooLarge++; return false; }
+    if (!isWantedPath(t.path)) {
+      const ext = (t.path.match(GH_NOT_CHECKED) || [])[1];
+      if (ext && !GH_SKIP_DIR.test(t.path) && !GH_SKIP_FILE.test(t.path) && !GH_CONFIG_FILE.test(t.path)) {
+        const k = ext.toLowerCase();
+        notChecked[k] = (notChecked[k] || 0) + 1;
+      }
+      return false;
+    }
+    if ((t.size || 0) > GH_MAX_FILE_BYTES) { skippedTooLarge++; skippedLarge.push(t.path); return false; }
     return true;
   });
   candidates.sort((a, b) => {
@@ -78,7 +89,12 @@ function selectGitHubFiles(tree, basePath) {
     const pb = GH_PRIORITY.test(b.path) ? 0 : 1;
     return (pa - pb) || a.path.split('/').length - b.path.split('/').length || a.path.localeCompare(b.path);
   });
-  return { files: candidates.slice(0, GH_MAX_FILES), skippedTooLarge, total: candidates.length };
+  const files = candidates.slice(0, GH_MAX_FILES);
+  return {
+    files, skippedTooLarge, total: candidates.length,
+    // 檢查範圍(交給 scan-orchestrator 的 scanFiles 寫進報告):被上限擠掉的、太大的、不檢查的類型
+    coverage: { total: candidates.length + skippedTooLarge, skippedLimit: candidates.slice(GH_MAX_FILES).map(t => t.path), skippedLarge, failed: [], notChecked }
+  };
 }
 
 async function ghFetchJson(url) {
@@ -119,7 +135,7 @@ async function fetchRaw(url) {
  * 匯入公開 GitHub 專案
  * @param {string} input - 使用者輸入的網址
  * @param {(msg: string) => void} onProgress
- * @returns {Promise<{files: Array<{filename: string, code: string}>, label: string, notes: string[]}>}
+ * @returns {Promise<{files: Array<{filename: string, code: string}>, label: string, notes: string[], coverage: object|null}>}
  */
 async function importFromGitHub(input, onProgress) {
   const info = parseGitHubUrl(input);
@@ -133,6 +149,7 @@ async function importFromGitHub(input, onProgress) {
   const notes = [];
 
   let targets;
+  let coverage = null;
   if (info.singleFile) {
     targets = [{ path: info.path }];
   } else {
@@ -140,6 +157,7 @@ async function importFromGitHub(input, onProgress) {
     const tree = await ghFetchJson(`${api}/git/trees/${encodeURIComponent(ref)}?recursive=1`);
     const picked = selectGitHubFiles(tree.tree || [], info.path);
     targets = picked.files;
+    coverage = picked.coverage;
     if (tree.truncated) notes.push('專案太大，GitHub 只回傳部分檔案清單；建議改貼子資料夾的網址（例如 …/tree/main/src）。');
     if (picked.total > picked.files.length) notes.push(`符合條件的檔案有 ${picked.total} 個，已優先匯入最可能有問題的 ${picked.files.length} 個；想檢查其他檔案，可改貼子資料夾的網址。`);
     if (picked.skippedTooLarge) notes.push(`略過 ${picked.skippedTooLarge} 個超過 300KB 的檔案。`);
@@ -157,6 +175,7 @@ async function importFromGitHub(input, onProgress) {
         files.push({ filename: t.path, code: await fetchRaw(rawUrl(info.owner, info.repo, ref, t.path)) });
       } catch (e) {
         failed++;
+        if (coverage) coverage.failed.push(t.path);
       }
       done++;
       progress(`下載檔案 ${done}／${targets.length}…`);
@@ -167,7 +186,7 @@ async function importFromGitHub(input, onProgress) {
   if (failed) notes.push(`${failed} 個檔案下載失敗，已略過。`);
 
   files.sort((a, b) => targets.findIndex(t => t.path === a.filename) - targets.findIndex(t => t.path === b.filename));
-  return { files, label: `${info.owner}/${info.repo}（${ref}${info.path ? '／' + info.path : ''}）`, notes };
+  return { files, label: `${info.owner}/${info.repo}（${ref}${info.path ? '／' + info.path : ''}）`, notes, coverage };
 }
 
 if (typeof module !== 'undefined' && module.exports) {

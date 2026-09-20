@@ -118,6 +118,13 @@ function firebaseConfigDetector(code) {
   return findings;
 }
 
+/** index 位置是否落在 `data:…;base64,` 內嵌內容裡(往前走過 base64 字元,看前面是不是 base64,) */
+function isInsideBase64DataUri(code, index) {
+  let i = index;
+  while (i > 0 && /[A-Za-z0-9+/=_-]/.test(code[i - 1])) i--;
+  return /base64,$/i.test(code.slice(Math.max(0, i - 7), i));
+}
+
 /**
  * 獨立處理 Line Bot Access Token:tier2 猜測式規則(見檔案頂部修正紀錄2)。
  * 排除三段式JWT格式(交給M2處理),避免同一段字串被兩個不同模組各報一次、
@@ -131,6 +138,9 @@ function lineBotTokenDetector(code) {
   let m;
   while ((m = re.exec(code)) !== null) {
     const matched = m[0];
+
+    // 為什麼:data:…;base64, 後面是內嵌的圖片／檔案內容,不是權杖。(背景見 docs/CHANGELOG.md)
+    if (isInsideBase64DataUri(code, m.index)) continue;
 
     // 為什麼:排除 JWT 片段要檢查「前後緊鄰」是否有 .xxx 段,只看匹配片段本身會失效。(背景見 docs/CHANGELOG.md)
     const before = code.slice(Math.max(0, m.index - 400), m.index);

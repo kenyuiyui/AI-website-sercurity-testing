@@ -113,6 +113,62 @@ check('Python 真的 pickle.loads', `import pickle\nobj = pickle.loads(request.d
 check('SECRET_KEY = environ["SECRET_KEY"] 不是 .env 明文', `SECRET_KEY = environ["SECRET_KEY"]`, 'env_file_secret', false);
 check('拆開的 JWT payload 不是 LINE 權杖', `const parts = ['eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9', 'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InByb2plY3RyZWYiLCJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNzAwMDAwMDAwLCJleHAiOjIwMTU1NzYwMDB9'];`, 'line_bot_token_suspected', false);
 
+// 第四輪:整專案掃描實例(公開的 Vue + Supabase 專案)裡出現的誤判。字串一律拆開組合,避免本檔案在自我掃描時被當成外洩。
+const B64_BLOB = 'QUJD'.repeat(30); // 120 字元的 base64,長度足以觸發 LINE 權杖比對
+check('data URI 內的 base64 內容不是 LINE 權杖', `<link rel="preload" as="image" href="data:image/avif;base64,${B64_BLOB}">`, 'line_bot_token_suspected', false);
+check('一般變數裡的長 base64 仍會提示可能是 LINE 權杖', `const t = "${B64_BLOB}";`, 'line_bot_token_suspected', true);
+check('網址預設值不是備用密碼', `const baseURL = process.env.VITE_SEO_URL || 'https://example.com'`, 'env_fallback', false);
+check('名稱像密鑰的備用值仍會報', `const s = process.env.JWT_SECRET || 'hunter2-hardcoded'`, 'env_fallback', true);
+check('帶帳密的網址備用值仍會報', `const u = process.env.API_BASE || 'https://admin:hunter2@' + 'api.internal.test/v1'`, 'env_fallback', true);
+const SB_PUBLISHABLE = 'sb_publishable_' + 'Ab3dEf6hIj9kLm2nOp5qRs8t';
+check('.env 的 Supabase publishable 金鑰 → 歸為公開金鑰', `VITE_SUPABASE_ANON_KEY=${SB_PUBLISHABLE}`, 'supabase_anon', true);
+check('.env 的 Supabase publishable 金鑰 → 不當成 .env 密鑰外洩', `VITE_SUPABASE_ANON_KEY=${SB_PUBLISHABLE}`, 'env_file_secret', false);
+const SB_SECRET = 'sb_secret_' + 'Zx9Cv8Bn7Mq6Wr5Ty4Ui3Op2A';
+check('Supabase secret 金鑰 → 高風險（同 service_role）', `const admin = createClient(url, '${SB_SECRET}')`, 'supabase_service_role', true);
+check('.env 的 Supabase secret 金鑰 → 高風險', `SUPABASE_SERVICE_KEY=${SB_SECRET}`, 'supabase_service_role', true);
+check('.env 的 Supabase secret 金鑰 → 不重複報 .env 密鑰', `SUPABASE_SERVICE_KEY=${SB_SECRET}`, 'env_file_secret', false);
+check('.env 的管理者密碼仍報 .env 密鑰', `VITE_ADMIN_PASSWORD=Sup3rS3cretPw`, 'env_file_secret', true);
+check('.env 的 OpenAI 金鑰 → 只報明文金鑰', 'OPENAI_API_KEY=sk-proj-' + 'Xa7Qm2Lp9Rt4Vn8Kc3Zw6Hy1Bd5Fg0Js', 'plain_key', true);
+check('.env 的 OpenAI 金鑰 → 不重複報 .env 密鑰', 'OPENAI_API_KEY=sk-proj-' + 'Xa7Qm2Lp9Rt4Vn8Kc3Zw6Hy1Bd5Fg0Js', 'env_file_secret', false);
+
+// ── 檔案地圖(project-map)、檢查範圍、沒用到檔案的降級 ──
+const { scanFiles } = require('../modules/scan-orchestrator');
+const { findingRenderer } = require('../modules/finding-renderer');
+function checkMap(label, ok) {
+  if (!ok) failCount++;
+  console.log(`${ok ? '✅' : '❌'} [project-map] ${label}`);
+}
+const OLD_KEY = 'sk-proj-' + 'Xa7Qm2Lp9Rt4Vn8Kc3Zw6Hy1Bd5Fg0Js';
+const VITE_PROJECT = [
+  { filename: 'index.html', code: '<!DOCTYPE html><html><head></head><body><script type="module" src="/src/main.ts"></script></body></html>' },
+  { filename: 'src/main.ts', code: "import { createApp } from 'vue'\nimport App from './App.vue'\ncreateApp(App).mount('#app')" },
+  { filename: 'src/App.vue', code: "<script setup lang=\"ts\">\nimport Nav from '@/components/Nav.vue'\nconst Home = () => import('./views/Home.vue')\n</script>" },
+  { filename: 'src/components/Nav.vue', code: '<template><nav/></template>' },
+  { filename: 'src/views/Home.vue', code: '<template><div/></template>' },
+  { filename: 'src/components/Old.vue', code: '<script setup>\nconst x = eval(location.hash)\n</script>' },
+  { filename: 'src/old/key.js', code: `export const OPENAI_KEY = "${OLD_KEY}";` },
+  { filename: 'tmp_home.html', code: '<!DOCTYPE html><html><head></head><body></body></html>' },
+  { filename: 'vite.config.ts', code: "import path from 'node:path'\nexport default { resolve: { alias: { '@': path.resolve(__dirname, './src') } } }" }
+];
+const vr = scanFiles(VITE_PROJECT);
+const st = (r, p) => (r.projectMap.nodes.find(n => n.path === p) || {}).status;
+checkMap('入口追得到的檔案標為使用中(含 @ 別名、動態 import)', ['index.html', 'src/main.ts', 'src/App.vue', 'src/components/Nav.vue', 'src/views/Home.vue'].every(p => st(vr, p) === 'used'));
+checkMap('追不到的檔案標為疑似沒用到', st(vr, 'src/components/Old.vue') === 'unused' && st(vr, 'tmp_home.html') === 'unused');
+checkMap('建置設定檔不算沒用到', st(vr, 'vite.config.ts') === 'build');
+const evalF = vr.findings.find(f => f.kind === 'insecure_eval');
+checkMap('沒用到檔案裡的一般問題降為參考', !!evalF && evalF.tier === 3 && evalF.context === 'unused' && evalF.originalTier === 1);
+const keyF = vr.findings.find(f => f.kind === 'plain_key');
+checkMap('沒用到檔案裡的金鑰維持原層級', !!keyF && keyF.tier === 1 && keyF.context === 'unused-secret');
+const dyn = scanFiles(VITE_PROJECT.concat([{ filename: 'src/routes.ts', code: "export const pages = import.meta.glob('./views/*.vue')" }, { filename: 'src/main2.ts', code: "import './routes'" }]).map(f => f.filename === 'src/main.ts' ? { filename: f.filename, code: f.code + "\nimport './routes'" } : f));
+checkMap('有 import.meta.glob 時不確定 → 不降級', dyn.projectMap.certain === false && dyn.findings.find(f => f.kind === 'insecure_eval').tier === 1);
+const cov = { total: 12, skippedLimit: ['src/x.ts'], skippedLarge: [], failed: [], notChecked: { sql: 2 } };
+const withCov = scanFiles(VITE_PROJECT, { coverage: cov });
+checkMap('有檔案沒檢查到 → 不降級、提示沒檢查到的數量', withCov.projectMap.certain === false && withCov.findings.find(f => f.kind === 'insecure_eval').tier === 1 && withCov.notices.some(n => n.id === 'coverage' && n.level === 'warn' && n.text.includes('12 個程式碼檔')));
+checkMap('列出不檢查的檔案類型(.sql)', withCov.notices.some(n => n.id === 'not-checked' && n.text.includes('.sql 2 個')));
+const pasted = scanFiles([{ filename: null, code: 'const a = 1;' }, { filename: null, code: 'const b = 2;' }]);
+checkMap('貼上的多段程式碼(沒有 index.html)不出現檔案地圖', pasted.projectMap.analyzed === false && !pasted.notices.some(n => n.id === 'usage') && !/rs-map/.test(findingRenderer(pasted.findings, pasted.languageCaveat, pasted.notices, pasted.projectMap)));
+checkMap('畫面顯示檔案地圖與疑似沒用到的數量', /rs-tree/.test(findingRenderer(vr.findings, vr.languageCaveat, vr.notices, vr.projectMap)) && /3 個疑似沒在使用/.test(findingRenderer(vr.findings, vr.languageCaveat, vr.notices, vr.projectMap)));
+
 // 檔案情境(需要檔名,直接用 scanCode 檢查層級)
 // 看起來像真的金鑰:拆開組合,避免本檔案在「掃描本專案自己」時被當成外洩
 const REALISH_KEY = 'sk-proj-' + 'Xa7Qm2Lp9Rt4Vn8Kc3Zw6Hy1Bd5Fg0Js';

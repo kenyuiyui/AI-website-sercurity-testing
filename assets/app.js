@@ -28,7 +28,8 @@
   const COMPACT_THRESHOLD = 4;            // 多於這個檔案數時,檔案內容預設收合
   const TOOL_URL = 'https://kenyuiyui.github.io/AI-website-sercurity-testing/';
 
-  let lastScan = null;     // { findings, notices, astUsed, source } 供匯出報告使用
+  let lastScan = null;     // { findings, notices, astUsed, projectMap, source } 供匯出報告使用
+  let importCoverage = null; // GitHub 匯入時的檢查範圍(哪些檔案沒掃);只在 sourceLabel 仍是該次匯入時才使用
   let sourceLabel = null;  // 目前輸入的來源說明(GitHub 專案名、檔名…)
   let singleFilename = null; // 單檔模式下,內容來自哪個檔案(手動貼上時為 null)
 
@@ -250,6 +251,7 @@
     try {
       const r = await importFromGitHub(url, setStatus);
       sourceLabel = 'GitHub ' + r.label;
+      importCoverage = r.coverage;
       setMultiFileMode(true);
       replaceFileList(r.files);
       setStatus('已從 ' + r.label + ' 匯入 ' + r.files.length + ' 個檔案。' + (r.notes.length ? ' ' + r.notes.join(' ') : ''));
@@ -275,8 +277,8 @@
   }
 
   function finishScanUI(r, source, opts) {
-    lastScan = { findings: r.findings, notices: r.notices, astUsed: r.astUsed, analysis: r.analysis, language: r.language, source };
-    results.innerHTML = findingRenderer(r.findings, r.languageCaveat, r.notices);
+    lastScan = { findings: r.findings, notices: r.notices, astUsed: r.astUsed, analysis: r.analysis, language: r.language, projectMap: r.projectMap, source };
+    results.innerHTML = findingRenderer(r.findings, r.languageCaveat, r.notices, r.projectMap);
     scanBtn.disabled = false;
     if (!opts || !opts.keepStatus) setStatus('');
     const summary = results.querySelector('.results-summary');
@@ -298,7 +300,8 @@
       }
       startScanUI();
       window.setTimeout(() => {
-        finishScanUI(scanFiles(files), sourceLabel || (files.length + ' 個檔案'), opts);
+        const fromImport = sourceLabel && sourceLabel.indexOf('GitHub ') === 0;
+        finishScanUI(scanFiles(files, { coverage: fromImport ? importCoverage : null }), sourceLabel || (files.length + ' 個檔案'), opts);
       }, SCAN_DELAY_MS);
       return;
     }
@@ -400,7 +403,8 @@
       source: lastScan.source,
       mode: describeMode(lastScan),
       toolUrl: TOOL_URL,
-      version: appVersion()
+      version: appVersion(),
+      projectMap: lastScan.projectMap
     });
   }
 

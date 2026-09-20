@@ -43,7 +43,7 @@
 │   ├── github-import.js       # 從公開 GitHub 專案匯入檔案
 │   └── app.js                 # 畫面層(輸入、讀檔、結果互動、匯出報告)
 ├── vendor/                   # acorn / acorn-jsx 本地版本與第三方授權
-├── modules/                  # M1~M12 偵測模組 + scan-orchestrator(掃描流程唯一來源)
+├── modules/                  # M1~M13 偵測與分析模組 + scan-orchestrator(掃描流程唯一來源)
 ├── referencesingle/
 │   └── index.html            # 單檔版(由 scripts/build-single.js 產生，請勿手改)
 ├── scripts/                  # build-single(產生單檔版)、verify(一鍵驗證)與其子步驟
@@ -66,7 +66,7 @@
 
 單檔版是由拆分版產生的，**只改 `index.html`、`assets/`、`vendor/`、`modules/`**，改完執行 `npm run build:single`：更新檔案指紋與版本號，並重新產生 `referencesingle/index.html`。
 
-模組對照表：M1 key-detector（明文金鑰）／M2 jwt-analyzer（JWT/Supabase）／M3 hash-detector（弱雜湊）／M4 secret-heuristics（自訂密鑰啟發式）／M5 csp-detector（CSP 缺失）／M6 idor-detector（IDOR）／M7 language-detector／M8 finding-renderer（結果呈現、報告）／M9 sql-injection-detector／M10 insecure-deserialize-detector／M11 field-masking-consistency-detector（多檔案模式）／M12 rate-limit-coverage-detector；scan-orchestrator 負責依序呼叫並合併結果。
+模組對照表：M1 key-detector（明文金鑰）／M2 jwt-analyzer（JWT/Supabase）／M3 hash-detector（弱雜湊）／M4 secret-heuristics（自訂密鑰啟發式）／M5 csp-detector（CSP 缺失）／M6 idor-detector（IDOR）／M7 language-detector／M8 finding-renderer（結果呈現、報告）／M9 sql-injection-detector／M10 insecure-deserialize-detector／M11 field-masking-consistency-detector（多檔案模式）／M12 rate-limit-coverage-detector／M13 project-map（檔案使用地圖與檢查範圍，多檔案模式）；scan-orchestrator 負責依序呼叫並合併結果。
 
 ---
 
@@ -84,6 +84,7 @@
 - 不安全的反序列化／動態執行（eval／exec／pickle／yaml.load，含 Python `exec()` 格式化字串注入）
 - 疑似缺少擁有權驗證（IDOR），含 Express 路由 `app.get(path, (req, res) => {...})` 寫法
 - 多檔案模式：同一敏感欄位在不同檔案的遮罩不一致、路由缺少速率限制
+- 多檔案模式：列出檢查範圍（掃了幾個檔案、哪些沒掃到），並從 index.html 沿 import 追蹤，標出疑似沒在使用的檔案（這些檔案裡的發現降為「參考」，金鑰除外）
 
 ### 做不到 / 僅供保守提示
 
@@ -93,6 +94,7 @@
 - 疑似自訂密鑰、疑似內部端點 URL、環境變數明文 fallback——無固定格式，誤判率較高
 - 打包壓縮過的程式碼（例如「檢視網頁原始碼」取得的）：金鑰檢查仍有效，權限、SQL 這類邏輯檢查幾乎無法判斷
 - 私人 GitHub 專案無法直接匯入（請下載後用拖放或開啟檔案）；工具不會主動讀取你電腦裡的檔案
+- 資料庫規則（.sql）與部署設定（.yml／.toml）不在檢查範圍，報告只列出數量；「疑似沒在使用」是用 import 追蹤的推測，遇到動態載入、多頁面設定或框架檔案路由時不判斷
 - 後端是否真的驗證了前端送出的密鑰／權杖——這是後端邏輯，工具只看得到你貼的這份程式碼
 - 雲端 IAM 權限設定完全不在範圍內
 

@@ -9,6 +9,8 @@
  */
 
 const JWT_KEY_PATTERN = /\beyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/g;
+const SUPABASE_PUBLISHABLE_PATTERN = /\bsb_publishable_[A-Za-z0-9_-]{20,}/g;
+const SUPABASE_SECRET_PATTERN = /\bsb_secret_[A-Za-z0-9_-]{20,}/g; // 為什麼:新格式的後端金鑰(等同 service_role)不是 JWT,原本完全查不到。(背景見 docs/CHANGELOG.md)
 
 // ── 環境相容取得 maskMatch(定義於 M1 key-detector.js) ──
 // 瀏覽器: key-detector.js 以 <script src> 先載入後,maskMatch 已在全域(window)作用域可用。
@@ -115,6 +117,30 @@ function jwtAnalyzer(code) {
       }
     });
   }
+
+  // Supabase 新格式公開金鑰(sb_publishable_…)與 anon JWT 同性質:設計上可公開,重點在 RLS。
+  (code.match(SUPABASE_PUBLISHABLE_PATTERN) || []).forEach(key => {
+    findings.push({
+      tier: 2,
+      category: '建議人工複查',
+      name: 'Supabase publishable 金鑰（設計上可公開，請確認 RLS）',
+      kind: 'supabase_anon',
+      match: key,
+      evidence: maskMatch(key) + '　— Supabase 新格式的公開金鑰（等同 anon），屬設計上允許出現在前端的金鑰，但安全性完全仰賴後端 Row Level Security 規則是否正確設定，建議自行確認'
+    });
+  });
+
+  // Supabase 新格式後端金鑰(sb_secret_…)等同 service_role:繞過 RLS,絕不能出現在前端。
+  (code.match(SUPABASE_SECRET_PATTERN) || []).forEach(key => {
+    findings.push({
+      tier: 1,
+      category: '明文金鑰',
+      name: 'Supabase secret 金鑰（高風險）',
+      kind: 'supabase_service_role',
+      match: key,
+      evidence: maskMatch(key) + '　— Supabase 新格式的後端金鑰（等同 service_role），具備繞過 RLS 的最高權限，絕不應出現在前端程式碼'
+    });
+  });
 
   return findings;
 }

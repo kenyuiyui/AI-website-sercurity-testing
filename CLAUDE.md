@@ -29,6 +29,7 @@ assets/app.js                 畫面層:事件、讀檔、結果互動、匯出�
 vendor/                       acorn、acorn-jsx 本地打包版(瀏覽器全域 acorn / acornJsx),授權見 THIRD_PARTY_LICENSES.md
 modules/*.js                  偵測模組(瀏覽器全域腳本 + Node module.exports 雙用)
 modules/source-mask.js        分辨程式碼／字串／註解／正則;「執行程式碼」類規則只對真正的程式碼報警
+modules/project-map.js        多檔案專案的檢查範圍與檔案使用地圖:從 index.html 沿 import 追蹤,標 使用中／疑似沒用到／建置／測試;certain=false 時不降級
 modules/scan-orchestrator.js  掃描流程唯一來源:scanCode(code, {filename}) / scanFiles(files);另含檔案情境規則(測試檔、假金鑰、副檔名、去重複)
 modules/finding-renderer.js   結果 HTML(依問題類型分組)、白話標題(PLAIN_TITLES)、結論與步驟(buildVerdict)、報告(buildReportMarkdown)
 scripts/stamp-version.js      index.html 本地 CSS/JS 網址加內容指紋 ?v=…、寫入頁尾版本號(避免 GitHub Pages 快取造成新舊版混用)
@@ -62,7 +63,7 @@ docs/USER_TEST_KIT.md         真人測試任務腳本(擁有者執行,結果回
   visualData?: object,    // 選填:畫面示意用
   // 以下由 scan-orchestrator 補上
   line?, start?, end?, filename?,
-  context?: 'placeholder' | 'test' | 'test-real-secret',  // 依檔案情境調整過層級時的原因
+  context?: 'placeholder' | 'test' | 'test-real-secret' | 'unused' | 'unused-secret',  // 依檔案情境調整過層級時的原因
   originalTier?
 }
 ```

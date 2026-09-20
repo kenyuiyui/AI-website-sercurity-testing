@@ -11,7 +11,7 @@
 // Node 環境:把各模組的匯出掛到 globalThis,讓下方以「全域名稱」呼叫的寫法與瀏覽器完全一致。
 if (typeof module !== 'undefined' && module.exports && typeof keyDetector === 'undefined') {
   [
-    'source-mask', 'key-detector', 'jwt-analyzer', 'hash-detector', 'secret-heuristics', 'csp-detector',
+    'source-mask', 'key-detector', 'jwt-analyzer', 'hash-detector', 'secret-heuristics', 'csp-detector', 'project-map',
     'idor-detector', 'language-detector', 'finding-renderer', 'sql-injection-detector',
     'insecure-deserialize-detector', 'rate-limit-coverage-detector', 'field-masking-consistency-detector'
   ].forEach(name => Object.assign(globalThis, require('./' + name)));
@@ -169,6 +169,43 @@ function applyFileContext(findings, filename) {
   });
 }
 
+/**
+ * 依「網站入口有沒有用到這個檔案」調整(見 project-map.js):
+ * - 疑似沒用到的檔案裡的發現 → 參考(建議刪檔);金鑰類維持原層級,因為公開專案裡沒在用的金鑰照樣外洩
+ * - 追不確定時(certain = false)完全不調整
+ */
+function applyUsageContext(findings, projectMap) {
+  if (!projectMap || !projectMap.analyzed || !projectMap.certain) return findings;
+  const unused = new Set(projectMap.nodes.filter(n => n.status === 'unused').map(n => n.path));
+  return findings.map(f => {
+    if (!unused.has(f.filename) || f.context || f.tier === 3) return f;
+    if (SECRET_KINDS.has(f.kind)) return Object.assign({}, f, { context: 'unused-secret' });
+    return Object.assign({}, f, { tier: 3, originalTier: f.tier, context: 'unused' });
+  });
+}
+
+/** 檢查範圍的提示:有沒檢查到的檔案 → warn;不檢查的檔案類型、無法判斷使用狀態的原因 → info */
+function buildCoverageNotices(projectMap, scanned) {
+  const notices = [];
+  const cov = projectMap.coverage;
+  if (cov) {
+    const reasons = [];
+    if (cov.skippedLimit.length) reasons.push(`${cov.skippedLimit.length} 個超過一次檢查的檔案數上限`);
+    if (cov.skippedLarge.length) reasons.push(`${cov.skippedLarge.length} 個超過 300KB`);
+    if (cov.failed.length) reasons.push(`${cov.failed.length} 個下載失敗`);
+    if (reasons.length) {
+      notices.push({ id: 'coverage', level: 'warn', text: `這次沒有檢查全部檔案：專案有 ${cov.total} 個程式碼檔，實際檢查了 ${scanned} 個，其餘 ${cov.total - scanned} 個沒檢查到（${reasons.join('、')}）。想檢查其他檔案，可改貼子資料夾的網址。` });
+    }
+    const types = Object.keys(cov.notChecked || {});
+    if (types.length) {
+      notices.push({ id: 'not-checked', level: 'info', text: `本工具不檢查資料庫規則與部署設定檔（${types.map(t => `.${t} ${cov.notChecked[t]} 個`).join('、')}）。其中的權限設定（例如 Supabase 的 RLS 規則就寫在 .sql 檔）請自行確認。` });
+    }
+  }
+  // 貼上的幾段程式碼(沒有真實專案結構)不需要「找不到入口」的提示;GitHub 匯入或有入口時才說明
+  if (projectMap.note && (cov || projectMap.analyzed)) notices.push({ id: 'usage', level: 'info', text: projectMap.note });
+  return notices;
+}
+
 /** 有檔名時,副檔名優先於內容猜測:.js 檔不檢查網頁 CSP、不提示 Python 特徵 */
 function applyFilenameRules(findings, notices, filename, language) {
   if (!filename) return { findings, notices };
@@ -217,11 +254,13 @@ function scanCode(code, opts) {
 }
 
 /**
- * 多檔案掃描:逐檔案跑 scanCode,多於一個檔案時標上 filename,再跑跨檔案模組 M11。
+ * 多檔案掃描:逐檔案跑 scanCode,多於一個檔案時標上 filename,再跑跨檔案模組 M11,
+ * 最後建立檔案地圖(M13):哪些檔案有在使用、檢查範圍。
  * @param {Array<{filename: string|null, code: string}>} files
- * @returns {{findings: Array, notices: Array, languageCaveat: string|null, astUsed: boolean, analysis: {full: number, simple: number, other: number}}}
+ * @param {{coverage?: object|null}} [opts] - coverage:GitHub 匯入時的檢查範圍(assets/github-import.js)
+ * @returns {{findings: Array, notices: Array, languageCaveat: string|null, astUsed: boolean, analysis: {full: number, simple: number, other: number}, projectMap: object|null}}
  */
-function scanFiles(files) {
+function scanFiles(files, opts) {
   files = (files || []).map((f, idx) => ({ filename: f.filename || ('檔案' + (idx + 1)), code: f.code || '' }));
   const isMultiFile = files.length > 1;
   let findings = [];
@@ -245,9 +284,16 @@ function scanFiles(files) {
       return { filename: f.filename, code: blankNonCode(f.code, buildCodeMask(f.code, { language })) };
     });
   findings = findings.concat(fieldMaskingConsistencyDetector(m11Files));
-  return { findings, notices, languageCaveat: joinNotices(notices), astUsed: analysis.simple === 0 && analysis.full > 0, analysis };
+
+  let projectMap = null;
+  if (isMultiFile) {
+    projectMap = buildProjectMap(files, opts && opts.coverage, isTestLikePath);
+    findings = applyUsageContext(findings, projectMap);
+    notices.unshift(...buildCoverageNotices(projectMap, files.length));
+  }
+  return { findings, notices, languageCaveat: joinNotices(notices), astUsed: analysis.simple === 0 && analysis.full > 0, analysis, projectMap };
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { scanCode, scanFiles, attachLocations, buildNotices, looksMinified, applyFileContext, isTestLikePath, looksLikePlaceholderSecret, getSingleFileDetectors, IDOR_AST_DEGRADED_NOTICE, MINIFIED_NOTICE };
+  module.exports = { scanCode, scanFiles, applyUsageContext, attachLocations, buildNotices, looksMinified, applyFileContext, isTestLikePath, looksLikePlaceholderSecret, getSingleFileDetectors, IDOR_AST_DEGRADED_NOTICE, MINIFIED_NOTICE };
 }

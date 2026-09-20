@@ -3,6 +3,19 @@
 程式碼裡只留一行「為什麼」;完整背景(發現經過、當初的錯誤寫法、驗證方式)集中在這裡。
 新增紀錄時:程式碼旁寫一行 `為什麼:…(背景見 docs/CHANGELOG.md)`,細節寫在本檔對應模組底下。
 
+## 2026-09 第五輪：檢查範圍、檔案使用地圖、三個誤報
+
+起因：用 GitHub 匯入 Vue + Vite + Supabase 專案（104 個程式碼檔）。使用者問三件事：怎麼知道整個網站都檢查到了（含放著沒用的程式）、沒有輸入欄位的網站需不需要 CSP、報告太雜亂。逐筆比對後，需要處理的 5 筆 CSP 有 4 筆是舊版才有的（.vue／.ts 被要求 CSP，目前版本已排除），實際只剩 index.html 一筆。
+
+- **檢查範圍**：`GH_MAX_FILES` 由 60 提高到 150（60 個上限曾讓 104 個檔案漏掃 44 個，含後台頁面）。`selectGitHubFiles` 回傳 `coverage`（符合條件的總數、被上限擠掉的、超過 300KB 的、下載失敗的、不檢查的 .sql／.yml／.toml／.conf 數量），`scanFiles` 把它寫進結果最上方的提示與報告的「檢查範圍」。資料庫規則（.sql）與部署設定（.yml）不在檢查範圍，報告會直接說要自己看。
+- **檔案使用地圖**（新增 `modules/project-map.js`，M13）：從 index.html 沿 import 追蹤，把每個檔案標成 使用中／疑似沒用到／建置設定／測試，畫面與報告以資料夾樹呈現，每個檔案旁註記待處理項數。只用 regex 追 import，追不到動態載入，所以一律稱「疑似」；缺檔、動態載入（`import.meta.glob`、`import(變數)`）、多頁面設定、Next.js／Nuxt 等檔案路由時 `certain = false`，完全不降級。
+- **沒用到的檔案降級**：`applyUsageContext` 只在 `analyzed && certain` 時把疑似沒用到的檔案裡的發現降為「參考」（context `unused`）。金鑰類維持原層級（context `unused-secret`）：沒在使用的檔案，金鑰仍然在公開的 repo 裡。
+- **誤報一**：base64 圖片（`data:image/…;base64,…`）裡剛好符合 LINE 權杖格式 → `isInsideBase64DataUri` 跳過。
+- **誤報二**：`import.meta.env.VITE_SITE_URL || 'https://…'` 這類「網址備用值」被當成寫死的金鑰 → 變數名稱不含 secret／token／key／password／credential／auth 且值是純網址時略過。
+- **誤報三**：Supabase 新格式 `sb_publishable_…` 沒被辨識，`.env` 那行被當成一般 env 明文。現在歸為 `supabase_anon`（請確認 RLS），`.env` 格式掃描略過已被 M1／M2 命中的值。同輪追加：`sb_secret_…`（新格式的後端金鑰，等同 service_role）不是 JWT 所以原本查不到，現在歸為 `supabase_service_role`（需要處理），`.env` 裡也只報這一筆。
+- **報告依問題類型合併**：本機版本本來就依 kind 分組（第三輪），使用者看到的重複是部署上的舊版。此輪沒有改動分組邏輯。
+- **驗證**：目標專案全部 104 檔 → 使用中 83、疑似沒用到 15、建置 5、測試 1；需要處理 5 → 1。新增回歸檢查（regex 與 AST 兩種模式）與 verify 的 GitHub 篩選覆蓋率斷言。
+
 ## 2026-09 第四輪：瀏覽器快取造成新舊版混用
 
 起因：更新網站後，同一個網址、同一份專案，一個瀏覽器得到舊版結果（113 筆、舊格式），另一個瀏覽器得到新版結果（15 筆參考）。GitHub Pages 無法設定快取標頭，瀏覽器沿用了舊的 JS，甚至可能新舊檔案混用。
