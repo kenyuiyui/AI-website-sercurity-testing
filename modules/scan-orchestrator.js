@@ -290,6 +290,19 @@ function applyNoBackendContext(findings, hasBackend) {
   });
 }
 
+/**
+ * 專案裡只要有一處「整站生效」的 CSP(伺服器標頭／helmet／設定檔),其他網頁就不必各自再寫一份,
+ * 所以把那些網頁的「完全沒有 CSP」降為參考。<meta> 寫的只管自己那一頁,不算數。
+ * 為什麼:整個專案丟進來時,每個 .html 都跳「需要處理」會把真正要處理的事淹掉。(背景見 docs/CHANGELOG.md)
+ */
+function applySiteWideCspContext(findings, files) {
+  if (!files.some(f => cspSiteWide(f.code))) return findings;
+  return findings.map(f => {
+    if (f.kind !== 'no_csp_html' || f.context || f.tier === 3) return f;
+    return Object.assign({}, f, { tier: 3, originalTier: f.tier, context: 'site-csp' });
+  });
+}
+
 /** 有檔名時,副檔名優先於內容猜測:.js 檔不檢查網頁 CSP、不提示 Python 特徵 */
 function applyFilenameRules(findings, notices, filename, language) {
   if (!filename) return { findings, notices };
@@ -373,6 +386,7 @@ function scanFiles(files, opts) {
   if (isMultiFile) {
     findings = applyOldVersionContext(findings, files);
     findings = applyNoBackendContext(findings, projectHasBackend(files));
+    findings = applySiteWideCspContext(findings, files);
     projectMap = buildProjectMap(files, opts && opts.coverage, isTestLikePath);
     findings = applyUsageContext(findings, projectMap);
     notices.unshift(...buildCoverageNotices(projectMap, files.length));
@@ -381,5 +395,5 @@ function scanFiles(files, opts) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { scanCode, scanFiles, projectHasBackend, applyNoBackendContext, applyOldVersionContext, applyUsageContext, attachLocations, buildNotices, looksMinified, applyFileContext, isTestLikePath, looksLikePlaceholderSecret, getSingleFileDetectors, IDOR_AST_DEGRADED_NOTICE, MINIFIED_NOTICE };
+  module.exports = { scanCode, scanFiles, projectHasBackend, applyNoBackendContext, applySiteWideCspContext, applyOldVersionContext, applyUsageContext, attachLocations, buildNotices, looksMinified, applyFileContext, isTestLikePath, looksLikePlaceholderSecret, getSingleFileDetectors, IDOR_AST_DEGRADED_NOTICE, MINIFIED_NOTICE };
 }

@@ -113,13 +113,49 @@ const FINDING_GUIDE = {
       '完成後請告訴我：這組密鑰是否需要重新產生，以及 .gitignore 現在有沒有正確排除這類檔案。'
   },
   csp_weak: {
-    plain: '這個頁面有設定「內容安全政策（CSP）」，但裡面開了後門。最常見的是 unsafe-inline，它允許直接寫在網頁標籤裡的程式碼執行，而那正是 XSS 攻擊最常用的方式。等於門鎖裝了，但鑰匙插在門上。',
+    plain: '這個頁面有設定「內容安全政策（CSP）」——瀏覽器的一道額外防線——但裡面有放寬的地方，讓它擋不住最常見的攻擊。例如放寬了「允許直接寫在網頁標籤裡的程式碼執行」（設定裡寫成 unsafe-inline），那正是把別人的程式碼塞進你網頁的攻擊最常用的方式；「*」或「https:」這類寫法等於允許任何網站的程式碼；一次性通行碼（nonce，本來每次開啟網頁都該重新產生）如果寫死成固定值，攻擊者照樣能拿來用。等於門鎖裝了，但鑰匙插在門上。',
     handoff:
-      '我的網頁有設定 Content Security Policy，但 script-src 裡含有 unsafe-inline（或 unsafe-eval、萬用字元），這讓 CSP 幾乎擋不住 XSS。請幫我：\n' +
+      '我的網頁有設定 Content Security Policy，但被檢查出有放寬的地方（可能是 unsafe-inline、unsafe-eval、萬用字元「*」、整個協定「https:」／「data:」、http:// 來源、寫死的 nonce，或是完全沒有 script-src／default-src）。請幫我：\n' +
       '1. 找出頁面裡所有 onclick=、onchange= 這類寫在 HTML 標籤上的事件屬性，以及行內的 script 區塊，改成用 addEventListener 綁定、程式碼放進獨立的 .js 檔。\n' +
-      '2. 全部改完後，把 CSP 的 script-src 改成只允許 self，移除 unsafe-inline 與 unsafe-eval。\n' +
-      '3. 如果有非留不可的行內腳本，改用 nonce 或 sha256 雜湊單獨放行那一段，而不是整個開放。\n' +
+      '2. 全部改完後，把 CSP 的 script-src 改成只允許 self（以及真的需要的具體網域），移除 unsafe-inline、unsafe-eval、萬用字元與整個協定的寫法。\n' +
+      '3. 如果有非留不可的行內腳本，改用 nonce 或 sha256 雜湊單獨放行那一段，而不是整個開放；nonce 必須在伺服器端每次請求重新產生，不能寫死在檔案裡。\n' +
       '完成後請告訴我：現在的 CSP 內容是什麼，以及還有沒有行內程式碼。'
+  },
+  csp_allowlist_bypass: {
+    plain: '這道防線的「允許清單」放行了一些「別人也能放程式碼」的網站，例如任何人都能上傳檔案的公共檔案空間（CDN），或整個 github.io、vercel.app 這類人人都能架站的平台。攻擊者不必入侵你的網站，只要把惡意程式碼放到那些地方，再讓你的頁面去載入，就能整個繞過這道防線。工具內建的清單只列常見的例子，沒被列出的網站不代表安全。',
+    handoff:
+      '我的網頁 CSP 的 script-src 放行了「別人也能放程式碼」的網域（公共 CDN、共用主機的萬用網域，或有 JSONP 端點的網域），攻擊者可能借它們繞過 CSP。請幫我：\n' +
+      '1. 列出頁面實際用到哪些外部腳本，逐一判斷能不能改成下載到自己的網站、用 \'self\' 載入。\n' +
+      '2. 一定要用外部 CDN 的，改用 nonce 或 sha256 雜湊搭配 \'strict-dynamic\' 放行，不要把整個 CDN 網域列進白名單；至少限制到具體的套件版本路徑，並在 script 標籤加上 integrity（SRI）。\n' +
+      '3. 移除「*.」開頭、涵蓋整個平台的萬用網域。\n' +
+      '完成後請告訴我：每個外部腳本最後怎麼處理，以及 CSP 現在的 script-src 內容。'
+  },
+  csp_missing_directive: {
+    plain: '這道防線裡有些項目沒寫，瀏覽器就不會限制那一塊。最常漏的兩個是：object-src（管 <object>、<embed> 這類外掛內容能載入什麼）和 base-uri（管 <base> 標籤，這個標籤會決定網頁去哪裡找程式檔）。後者在用一次性通行碼（nonce）時特別重要：攻擊者只要塞進一個 <base> 標籤，就能把網頁抓程式檔的位置換成他的伺服器。這兩項各補一個 \'none\'（代表全部不允許）就能堵上，通常不影響網站功能。',
+    handoff:
+      '我的網頁 CSP 缺少 object-src 或 base-uri 指令。請幫我：\n' +
+      '1. 在 CSP 加上 object-src \'none\'（網站沒有用 <object>、<embed> 外掛內容的話）。\n' +
+      '2. 加上 base-uri \'none\'；如果網站確實有用 <base> 標籤，改成 base-uri \'self\'。\n' +
+      '3. 設定完成後提醒我實際打開頁面，看瀏覽器開發者工具的 Console 有沒有 CSP 相關的錯誤。\n' +
+      '完成後請告訴我：現在的 CSP 完整內容。'
+  },
+  csp_syntax: {
+    plain: '這道防線寫錯的地方，瀏覽器不會跳出錯誤，只會默默略過那一行。常見的有：項目名稱拼錯字、少了分號、把 \'self\' 的單引號漏掉（瀏覽器會把它當成一個叫 self 的網站）、雜湊值或一次性通行碼（nonce）的格式不對、同一個項目寫了兩次（只有第一次算數）。結果是你以為擋住的東西其實沒擋。如果層級只是「參考」，代表問題比較輕：用到已經淘汰的寫法，或是留著開發時自己電腦上的測試網址（localhost 或一組 IP 位址）。',
+    handoff:
+      '我的網頁 CSP 被檢查出寫法有誤（指令拼錯、漏分號、關鍵字沒加單引號、nonce／雜湊格式不對、指令重複，或用了已淘汰的指令）。請幫我：\n' +
+      '1. 把 CSP 逐個指令拆開列出來，核對每個指令名稱有沒有拼對、每個指令之間有沒有用分號隔開。\n' +
+      '2. 檢查 \'self\'、\'none\'、\'unsafe-inline\'、\'strict-dynamic\' 這類關鍵字是不是都有加單引號，nonce 與 sha256 值的格式是否正確。\n' +
+      '3. 刪掉已淘汰的指令與開發用的 localhost 來源。\n' +
+      '完成後請告訴我：修正前後的 CSP 差異，以及每個修改的原因。'
+  },
+  csp_not_enforced: {
+    plain: '這道防線設了，但在某些情況下不會生效。一，寫在網頁裡的 <meta> 標籤有幾個項目瀏覽器會直接忽略（frame-ancestors、report-uri、sandbox）——想防止你的頁面被別人的網站嵌進去騙人點擊，就一定要改成由伺服器隨網頁一起送出（技術上叫 HTTP 標頭）。二，防線的標籤如果寫在程式碼後面，前面那些程式碼不受管。三，如果設成「只回報、不阻擋」模式（Report-Only），它目前什麼都不會擋，適合上線前試跑，但不是真正的防護。',
+    handoff:
+      '我的網頁 CSP 被檢查出有一部分沒有生效（<meta> 不支援的指令、CSP 標籤放在腳本後面，或是 Report-Only 模式）。請幫我：\n' +
+      '1. 把 CSP 的 <meta> 標籤移到 <head> 裡所有 <script> 與 <link> 之前。\n' +
+      '2. frame-ancestors、report-uri、sandbox 這幾個指令改成透過 HTTP 標頭設定（例如託管平台的 headers 設定檔，或 Web 伺服器設定），meta 裡的這幾個可以刪掉。\n' +
+      '3. 如果目前是 Report-Only 模式：先確認回報沒有誤擋正常功能，之後改成正式的 Content-Security-Policy。\n' +
+      '完成後請告訴我：哪些設定改放到 HTTP 標頭、要在哪個檔案或平台後台設定。'
   },
   xss_from_url: {
     plain: '這裡把網址或輸入框裡的內容，直接當成 HTML 放進頁面。只要有人做一個帶特殊內容的連結傳給你的使用者，點開就會在他們的瀏覽器上執行攻擊者寫的程式碼。這類問題叫 XSS，是網頁最常見的攻擊方式，而且一個連結就能發動。',
@@ -579,11 +615,15 @@ const PLAIN_TITLES = {
   endpoint_url: { title: '內部服務網址（Webhook 等）直接寫在程式碼裡', action: '確認這個網址有驗證機制，必要時重新產生網址' },
   env_fallback: { title: '讀取環境變數時帶了一組明文備用值', action: '移除明文備用值，缺少設定時讓程式直接報錯' },
   env_file_secret: { title: '.env 設定檔裡有疑似真實的密鑰', action: '確認 .env 沒有上傳到 GitHub；已上傳就更換密鑰' },
-  no_csp_html: { title: '網頁沒有設定額外的安全防線（CSP）', action: '為網頁加上 Content Security Policy' },
+  no_csp_html: { title: '網頁沒有設定額外的安全防線（CSP）', action: '為網頁加上一段安全防線設定（技術名稱 Content Security Policy）' },
   xss_from_url: { title: '網址裡的內容會被當成程式執行（XSS）', action: '改用 textContent，或先做 HTML 跳脫再放進頁面' },
   html_from_data: { title: '資料被直接組成網頁內容，可能被插入惡意程式碼', action: '只顯示文字就改用 textContent，需要 HTML 就先跳脫' },
-  csp_weak: { title: 'CSP 有開後門（unsafe-inline），防護力打折', action: '把行內的 onclick 與 script 改成獨立檔案，再移除 unsafe-inline' },
-  no_csp_config: { title: '框架設定檔裡沒看到安全防線設定（CSP）', action: '確認是否在其他設定檔或部署平台設定了 CSP' },
+  csp_weak: { title: '安全防線（CSP）留了後門，防護力打折', action: '把寫在網頁標籤上的程式碼搬進獨立的 .js 檔，再把防線裡的放寬設定拿掉' },
+  csp_allowlist_bypass: { title: '安全防線（CSP）放行了別人也能放程式碼的網站', action: '不要整個網域放行；把需要的檔案改放到自己的網站載入' },
+  csp_missing_directive: { title: '安全防線（CSP）少寫了關鍵的限制項目', action: "在設定最後補上這兩段：object-src 'none'; base-uri 'none'" },
+  csp_syntax: { title: '安全防線（CSP）有寫錯的地方，瀏覽器會默默略過', action: '逐項核對指令名稱、分號與單引號有沒有寫對' },
+  csp_not_enforced: { title: '安全防線（CSP）設了，但有一部分沒生效', action: '把防線的標籤移到所有程式碼之前；要防止被別的網站嵌入，得改由伺服器送出' },
+  no_csp_config: { title: '框架設定檔裡沒看到安全防線設定（CSP）', action: '確認是不是設定在別的檔案或部署平台的後台了' },
   possible_idor: { title: '登入的人可能看得到或改得到別人的資料', action: '查詢資料前，比對這筆資料的擁有者是不是目前登入的人' },
   possible_sql_injection: { title: '資料庫查詢可能被使用者輸入竄改（SQL Injection）', action: '改用參數化查詢（? 佔位符或 ORM 方法）' },
   insecure_eval: { title: '程式會把文字當成程式碼執行（eval）', action: '移除 eval，改用 JSON.parse 或明確的邏輯' },
@@ -641,7 +681,8 @@ const CONTEXT_NOTES = {
   'old-version': '這個資料夾看起來是舊版本，通常已經沒在維護，所以列為參考。但舊版放著一樣會被打開，如果確定不再需要，建議整個資料夾刪掉，或改成轉址到最新版。',
   'old-version-secret': '這是舊版本資料夾，但金鑰放在公開專案裡照樣會外洩，請照常處理。',
   'no-backend': '這個專案看起來沒有後端（沒有伺服器程式、沒有資料庫、也沒有對外 API 呼叫），資料都存在使用者自己的瀏覽器裡，沒有「別人的資料」會被看到，所以列為參考。',
-  'unused-secret': '這個檔案看起來沒有在使用，但金鑰放在公開專案裡照樣會外洩，請照常處理。'
+  'unused-secret': '這個檔案看起來沒有在使用，但金鑰放在公開專案裡照樣會外洩，請照常處理。',
+  'site-csp': '這個專案已經有一處「整站生效」的安全防線設定（寫在伺服器設定或框架設定檔裡，每一頁都會套用），所以這些網頁不必各自再寫一份，列為參考。'
 };
 
 /**
@@ -683,7 +724,8 @@ function countPhrase(stat, unit) {
 const REF_REASONS = {
   test: '測試或範例檔', placeholder: '假金鑰', unused: '沒在使用的檔案',
   'old-version': '舊版本資料夾', 'no-backend': '這個專案沒有後端',
-  'test-real-secret': '測試檔裡的金鑰', 'unused-secret': '沒在使用的檔案裡的金鑰', 'old-version-secret': '舊版本裡的金鑰'
+  'test-real-secret': '測試檔裡的金鑰', 'unused-secret': '沒在使用的檔案裡的金鑰', 'old-version-secret': '舊版本裡的金鑰',
+  'site-csp': '整站已經有一份安全防線設定'
 };
 
 function refReasons(groups) {

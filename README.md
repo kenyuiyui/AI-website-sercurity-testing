@@ -66,7 +66,7 @@
 
 單檔版是由拆分版產生的，**只改 `index.html`、`assets/`、`vendor/`、`modules/`**，改完執行 `npm run build:single`：更新檔案指紋與版本號，並重新產生 `referencesingle/index.html`。
 
-模組對照表：M1 key-detector（明文金鑰）／M2 jwt-analyzer（JWT/Supabase）／M3 hash-detector（弱雜湊）／M4 secret-heuristics（自訂密鑰啟發式）／M5 csp-detector（CSP 缺失）／M6 idor-detector（IDOR）／M7 language-detector／M8 finding-renderer（結果呈現、報告）／M9 sql-injection-detector／M10 insecure-deserialize-detector／M11 field-masking-consistency-detector（多檔案模式）／M12 rate-limit-coverage-detector／M13 project-map（檔案地圖、引用關係與檢查範圍，多檔案模式）／M14 xss-detector（資料被直接組成 HTML）；scan-orchestrator 負責依序呼叫並合併結果。
+模組對照表：M1 key-detector（明文金鑰）／M2 jwt-analyzer（JWT/Supabase）／M3 hash-detector（弱雜湊）／M4 secret-heuristics（自訂密鑰啟發式）／M5 csp-detector（CSP 缺失與內容品質）／M6 idor-detector（IDOR）／M7 language-detector／M8 finding-renderer（結果呈現、報告）／M9 sql-injection-detector／M10 insecure-deserialize-detector／M11 field-masking-consistency-detector（多檔案模式）／M12 rate-limit-coverage-detector／M13 project-map（檔案地圖、引用關係與檢查範圍，多檔案模式）／M14 xss-detector（資料被直接組成 HTML）；scan-orchestrator 負責依序呼叫並合併結果。
 
 ---
 
@@ -77,7 +77,9 @@
 ### 查得到
 
 - 已知格式的明文 API 金鑰（OpenAI／Anthropic／Gemini／Line／AWS），並依上下文分辨 Firebase 設定這類「本來就可公開」的值
-- HTML／框架設定檔是否有 CSP，以及 CSP 內容是否被 `unsafe-inline`／`unsafe-eval`／`*` 放寬到形同虛設
+- HTML／框架設定檔是否有 CSP，以及設得緊不緊：`unsafe-inline`／`unsafe-eval`／整個協定（`https:`、`data:`）／`*`／http 來源／寫死的 nonce、沒有 `script-src`；白名單放了別人也能放程式碼的網域（公共 CDN、`*.github.io` 這類人人可架站的平台、JSONP／AngularJS 託管網域）；缺 `object-src`、用 nonce 卻沒管 `base-uri`。判斷依現代瀏覽器的語意：有 nonce／雜湊時 `'unsafe-inline'` 會被忽略、有 `'strict-dynamic'` 時白名單會被忽略，這些常見的相容寫法不會被冤枉
+- CSP 寫了但沒生效：指令拼錯（並提示「是不是想寫 …」）、漏分號、`'self'` 漏了單引號、nonce／雜湊格式不對、指令重複（只有第一個算）、已淘汰的指令、`<meta>` 不支援的指令（`frame-ancestors`、`report-uri`、`sandbox`）、CSP 標籤放在腳本後面、只回報不阻擋（Report-Only）。可讀 `<meta>`、HTTP 標頭設定（JSON、nginx、Apache、`_headers`）、存進變數的 CSP 字串，以及 Express `helmet` 設定（含 `contentSecurityPolicy: false`）
+- 多檔案掃描時，若專案裡有一處「整站生效」的 CSP（伺服器標頭／框架設定檔／`helmet`），其他沒寫 CSP 的網頁會自動降為「參考」；`<meta>` 只管自己那一頁，不會連帶降級
 - 密碼是否用 MD5／SHA1 這類弱雜湊（含 Python `hashlib.new('md5')` 再 `.update(password)` 的兩段式寫法）
 - Supabase／JWT 金鑰，區分 `anon`（可公開）與 `service_role`（絕不可公開）
 - SQL Injection（字串拼接、模板插值、f-string、Python `%` 格式化）
@@ -96,6 +98,7 @@
 - IDOR——只是模式比對，主要針對 JS／Express，AST 解析失敗時降級為涵蓋率較低的正則版
 - 疑似自訂密鑰、疑似內部端點 URL、環境變數明文 fallback——無固定格式，誤判率較高
 - 打包壓縮過的程式碼（例如「檢視網頁原始碼」取得的）：金鑰檢查仍有效，權限、SQL 這類邏輯檢查幾乎無法判斷
+- CSP 只看你貼上的文字：CDN／反向代理層另外加上的 HTTP 標頭看不到；「可被借用的網域」清單只收常見例子（比 Google CSP Evaluator 的清單少得多），沒列到不代表安全；多份 CSP 疊加後的實際效果、執行時才組出來的 CSP 不判斷。想再確認可以把 CSP 字串貼到 Google 的 CSP Evaluator 交叉比對
 - 私人 GitHub 專案無法直接匯入（請下載後用拖放或開啟檔案）；工具不會主動讀取你電腦裡的檔案
 - 資料庫規則（.sql）與部署設定（.yml／.toml）不在檢查範圍，報告只列出數量；「疑似沒用到」是用 import／require／字串路徑追蹤的推測，遇到動態載入、多頁面設定或框架檔案路由時不判斷
 - 後端是否真的驗證了前端送出的密鑰／權杖——這是後端邏輯，工具只看得到你貼的這份程式碼
@@ -111,7 +114,7 @@
 |---|---|---|
 | A01 – Broken Access Control | ✅ 完整 | M6 idor-detector |
 | A05 – Injection | ✅ 完整 | M9 sql-injection-detector、M10 insecure-deserialize-detector、M14 xss-detector |
-| A02 – Security Misconfiguration | 🟡 部分（CSP 缺失與過度放寬） | M5 csp-detector |
+| A02 – Security Misconfiguration | 🟡 部分（僅 CSP：缺失、放寬、可被借用的白名單、寫錯或沒生效） | M5 csp-detector |
 | A04 – Cryptographic Failures | 🟡 部分（僅弱雜湊） | M3 hash-detector |
 | A07 – Authentication Failures | 🟡 部分（僅 JWT／Supabase 角色判斷） | M2 jwt-analyzer |
 
@@ -154,7 +157,7 @@
 
 大機率是，但仍需人工核對：
 - 看到 tier 1「明文金鑰」且不是 Firebase／Supabase `anon` 這類「設計上就該公開」的類型，通常代表真的外洩，建議透過負責任揭露管道通知該網站維護者，而不是自行使用或散布。
-- CSP 缺失提示只代表**這段 HTML 原始碼裡沒看到 CSP meta 標籤**，不代表該網站真的沒有 CSP——許多正式站台會在 CDN／反向代理層級（如 Cloudflare）用 HTTP header 設定 CSP，工具看不到伺服器回應的 header，只能看到你貼上的原始碼文字。
+- CSP 缺失提示只代表**這段 HTML 原始碼裡沒看到 CSP meta 標籤**，不代表該網站真的沒有 CSP——許多正式站台會在 CDN／反向代理層級（如 Cloudflare）用 HTTP header 設定 CSP，工具看不到伺服器回應的 header，只能看到你貼上的原始碼文字。多檔案掃描時，若同一批檔案裡找得到整站生效的設定，這類提示會自動降為「參考」。
 
 ### 工具說「疑似 Line Bot Access Token」，但我不確定是不是真的
 

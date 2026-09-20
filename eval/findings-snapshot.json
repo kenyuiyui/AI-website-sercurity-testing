@@ -117,8 +117,21 @@
    "route_missing_rate_limit@2:5",
    "route_missing_rate_limit@2:8"
   ],
+  "reference_cases/pattern-csp-allowlist-bypass.txt": [
+   "csp_allowlist_bypass@2:5"
+  ],
+  "reference_cases/pattern-csp-meta-limits.txt": [
+   "csp_not_enforced@2:6"
+  ],
+  "reference_cases/pattern-csp-missing-directives.txt": [
+   "csp_missing_directive@2:4"
+  ],
+  "reference_cases/pattern-csp-strict-nonce-safe.txt": [],
+  "reference_cases/pattern-csp-syntax-typo.txt": [
+   "csp_syntax@2:5"
+  ],
   "reference_cases/pattern-csp-unsafe-inline.txt": [
-   "csp_weak@2:-"
+   "csp_weak@2:5"
   ],
   "reference_cases/pattern-xss-escaped-safe.txt": [],
   "reference_cases/pattern-xss-innerhtml-unescaped.txt": [
@@ -310,8 +323,21 @@
    "route_missing_rate_limit@2:5",
    "route_missing_rate_limit@2:8"
   ],
+  "reference_cases/pattern-csp-allowlist-bypass.txt": [
+   "csp_allowlist_bypass@2:5"
+  ],
+  "reference_cases/pattern-csp-meta-limits.txt": [
+   "csp_not_enforced@2:6"
+  ],
+  "reference_cases/pattern-csp-missing-directives.txt": [
+   "csp_missing_directive@2:4"
+  ],
+  "reference_cases/pattern-csp-strict-nonce-safe.txt": [],
+  "reference_cases/pattern-csp-syntax-typo.txt": [
+   "csp_syntax@2:5"
+  ],
   "reference_cases/pattern-csp-unsafe-inline.txt": [
-   "csp_weak@2:-"
+   "csp_weak@2:5"
   ],
   "reference_cases/pattern-xss-escaped-safe.txt": [],
   "reference_cases/pattern-xss-innerhtml-unescaped.txt": [

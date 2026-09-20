@@ -94,7 +94,7 @@
     <footer>
       <p>本工具只做靜態比對：不執行、不上傳、不儲存你貼上的內容。適合上線前快速自我檢查，不能取代正式的資安審查或滲透測試。</p>
       <p>「需要處理」是高信心度的結果；「請你確認」代表看起來可疑，需要你對照程式判斷。</p>
-      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">d6cbb681</span></p>
+      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">b2e6b18d</span></p>
     </footer>
   </div>
 
@@ -113,12 +113,14 @@
             <li>已知格式的明文 API 金鑰（OpenAI／Anthropic／Gemini／AWS／LINE），並分辨 Firebase 設定這類「本來就可公開」的值</li>
             <li>Supabase／JWT 金鑰，區分 anon（可公開）與 service_role（絕不可公開）</li>
             <li>密碼用 MD5／SHA1 這類容易被破解的方式儲存</li>
-            <li>網頁或框架設定檔是否設定 Content Security Policy，以及這個 CSP 是不是被放寬到幾乎沒有防護力</li>
+            <li>網頁有沒有設「安全防線」（CSP，瀏覽器的額外一道鎖），以及鎖得緊不緊：有沒有放行寫在標籤上的程式碼、把文字當程式執行、整個協定或萬用字元、寫死的一次性通行碼；允許清單裡有沒有「別人也能放程式碼」的網站（公共檔案空間、人人可架站的平台）；有沒有漏掉 object-src、base-uri 這兩項</li>
+            <li>安全防線寫了卻沒生效的情況：項目名稱拼錯、漏分號、'self' 的單引號漏掉、標籤放在程式碼後面、用 &lt;meta&gt; 寫了它不支援的項目、只回報不阻擋。設定寫在網頁標籤、伺服器設定檔（JSON、nginx、Apache、_headers）或 helmet 套件裡都讀得到</li>
             <li>SQL Injection（字串拼接、模板插值、f-string、Python <code>%</code> 格式化）</li>
             <li>把文字當程式執行（eval、exec、pickle、yaml.load）</li>
             <li>網址或輸入框的內容被直接當成網頁內容顯示（XSS），以及課程名稱、留言這類文字沒有跳脫就組成 HTML</li>
             <li>疑似缺少擁有權檢查（登入的人看得到別人的資料），含 Express 路由寫法；純前端、沒有後端的專案會自動降為「參考」</li>
             <li>多檔案：同一敏感欄位在不同檔案的遮罩不一致、路由缺少流量限制</li>
+            <li>多檔案：專案裡只要有一處「整站生效」的安全防線設定（伺服器或框架設定檔），其他網頁的「沒有設防線」就會降為「參考」，不會每頁重複提醒</li>
             <li>多檔案：列出檢查範圍（掃了幾個、哪些沒掃到）、每個檔案的角色，以及「網頁用到哪些檔案」的引用關係樹；疑似沒用到的檔案裡，發現降為「參考」（金鑰除外）</li>
           </ul>
         </div>
@@ -133,6 +135,7 @@
             <li>疑似自訂密鑰、內部網址、環境變數明文備用值 — 沒有固定格式，誤判率較高</li>
             <li>後端、資料庫權限規則（RLS／Security Rules）與雲端 IAM 設定；資料庫檔（.sql）與部署設定（.yml）不在檢查範圍，請自行檢視</li>
             <li>「疑似沒用到」只是沿著程式引用推測，遇到動態載入或多頁面設定時不判斷</li>
+            <li>安全防線只看你貼上的文字：代理層或託管平台另外加上的設定看不到；「別人也能放程式碼」的網站清單只收常見例子，沒列到不代表安全；多份設定疊加後的實際效果、程式執行時才組出來的設定都不判斷。想再確認，可以把設定內容貼到 Google 的 CSP Evaluator 交叉比對</li>
             <li>私人 GitHub 專案（請下載後用拖放或開啟檔案）</li>
           </ul>
         </div>
@@ -209,17 +212,17 @@
 <script src="modules/jwt-analyzer.js?v=8c8a0407"></script>
 <script src="modules/hash-detector.js?v=9bb3cca5"></script>
 <script src="modules/secret-heuristics.js?v=070d28ad"></script>
-<script src="modules/csp-detector.js?v=50015a14"></script>
+<script src="modules/csp-detector.js?v=cbfcc28b"></script>
 <script src="modules/idor-detector.js?v=1c247da4"></script>
 <script src="modules/language-detector.js?v=d31fbb9c"></script>
-<script src="modules/finding-renderer.js?v=1c6f6a84"></script>
+<script src="modules/finding-renderer.js?v=f1084480"></script>
 <script src="modules/sql-injection-detector.js?v=c29967dc"></script>
 <script src="modules/insecure-deserialize-detector.js?v=5d6fe669"></script>
 <script src="modules/rate-limit-coverage-detector.js?v=cc28e18f"></script>
 <script src="modules/field-masking-consistency-detector.js?v=6ad6c847"></script>
 <script src="modules/xss-detector.js?v=ff071480"></script>
 <script src="modules/project-map.js?v=24f29fb9"></script>
-<script src="modules/scan-orchestrator.js?v=bbc59ea7"></script>
+<script src="modules/scan-orchestrator.js?v=4d9f7344"></script>
 <script src="assets/github-import.js?v=990f34c6"></script>
 <script src="assets/app.js?v=27ab4f60"></script>
 </body>

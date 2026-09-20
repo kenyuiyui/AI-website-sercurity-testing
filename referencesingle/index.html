@@ -8,7 +8,7 @@
   唯一例外:使用者按下「從 GitHub 匯入」時,讀取 api.github.com 與 raw.githubusercontent.com 上的公開檔案(只讀取,不送出程式碼)。
   單檔版由 scripts/build-single.js 改寫這一行(行內 script/style 改用 sha256 雜湊、字型改用 data:)。
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tQN3P01k+9fYTJxjz1bz9sk4ixh28eNMwMOygJKvYHA=' 'sha256-r2Ulx/KLJ3bwPptcn/Gxn23scblhvMWjB2MSqkYA4GY=' 'sha256-k4Dsl4phnEVoWRV6BGYpsCAjEiqhiFqyyqFmNTpECOY=' 'sha256-AvGuu4qO0PTKlZOxSFM5OZdwoGBGMcuTTMqsy4/n/zE=' 'sha256-Kz1bcHKV44I2OKFIEpq+iclqwXOorzYOHcgUVYXJdaw=' 'sha256-s6wK40PdWN1WO56UYib9d+evKEx9zrGhFp1jXa+P+bU=' 'sha256-w9tDV4ToqGvFljYpLINp/oeLBzxAX1ZCL21aTbIMXcE=' 'sha256-8ZqKMlOH5MjSWLMiy13BEO4qPrHonb2ogwoH+rmKY2s=' 'sha256-dJag6CzpPEQgZWU1O+LyofbUR9zU/RFSlosjlVvJgqY=' 'sha256-VF7EbVkdcEb/5TRO0cqx51QYwoWGkFPl+O/f3MwcOBM=' 'sha256-KjZdCklqc4O8cs2Pg0FS+9aTNC9SOrRlh8G0HRjF29I=' 'sha256-LcZWF0O4w0uncH/nUDsSgFAW6hQ16blGQsJSvyXcuLw=' 'sha256-0pOxSQ9PNKtU4R7szM6TT7hYjIr5M9Q6ebZB4CGAZFI=' 'sha256-PIv8TVCXCC8t+Pdd/bp7vMH3ycEqSmtgj05fwYo+5wE=' 'sha256-oMcRnEhoBVhFfAKGp7IKU0F/2a9JOXV4OXT2OQi84xY=' 'sha256-YPKriWmcdloU/53/GV6xGDoRNk6O25Fe/3mCwh3Ku+0=' 'sha256-MkhJSNhhn6SqYzLWDW+T8J4PNIbQLFBBKzie516HbkQ=' 'sha256-cmLyYxrHv9dqB9fvRph7+9gAY7NMsMz99f7Q0K37ioo=' 'sha256-etIXWe4Dij/o++qELwMLDHsclqQHBsAKJRiNQTGfG1c=' 'sha256-xZQkkSa264miFJm8yfibQKGc3PVNTz40HvWCUjoTA/0=' 'sha256-Wyyh4pGZCu33knKPa4k+JP95Q4DQlB07lPvliCyAa5o='; style-src 'sha256-yVZD3pDEYI+5GpYuMKxafiMqHiUD1ZRJ4fxaLl7b0Yw='; font-src data:; img-src data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tQN3P01k+9fYTJxjz1bz9sk4ixh28eNMwMOygJKvYHA=' 'sha256-r2Ulx/KLJ3bwPptcn/Gxn23scblhvMWjB2MSqkYA4GY=' 'sha256-k4Dsl4phnEVoWRV6BGYpsCAjEiqhiFqyyqFmNTpECOY=' 'sha256-AvGuu4qO0PTKlZOxSFM5OZdwoGBGMcuTTMqsy4/n/zE=' 'sha256-Kz1bcHKV44I2OKFIEpq+iclqwXOorzYOHcgUVYXJdaw=' 'sha256-s6wK40PdWN1WO56UYib9d+evKEx9zrGhFp1jXa+P+bU=' 'sha256-w9tDV4ToqGvFljYpLINp/oeLBzxAX1ZCL21aTbIMXcE=' 'sha256-8ZqKMlOH5MjSWLMiy13BEO4qPrHonb2ogwoH+rmKY2s=' 'sha256-VZp1cQkMn5vAgipZgGuOssEGS5fdf/+Kna6RLVPTD2o=' 'sha256-VF7EbVkdcEb/5TRO0cqx51QYwoWGkFPl+O/f3MwcOBM=' 'sha256-KjZdCklqc4O8cs2Pg0FS+9aTNC9SOrRlh8G0HRjF29I=' 'sha256-nT4uWDvxIao1wumfkyd+jiE5hRAmSEYDZDLjL8kG37w=' 'sha256-0pOxSQ9PNKtU4R7szM6TT7hYjIr5M9Q6ebZB4CGAZFI=' 'sha256-PIv8TVCXCC8t+Pdd/bp7vMH3ycEqSmtgj05fwYo+5wE=' 'sha256-oMcRnEhoBVhFfAKGp7IKU0F/2a9JOXV4OXT2OQi84xY=' 'sha256-YPKriWmcdloU/53/GV6xGDoRNk6O25Fe/3mCwh3Ku+0=' 'sha256-MkhJSNhhn6SqYzLWDW+T8J4PNIbQLFBBKzie516HbkQ=' 'sha256-cmLyYxrHv9dqB9fvRph7+9gAY7NMsMz99f7Q0K37ioo=' 'sha256-bXPxT5AsUti/gASwZ+XMpnyKzyiC3pQrjpZ0en2IYv0=' 'sha256-xZQkkSa264miFJm8yfibQKGc3PVNTz40HvWCUjoTA/0=' 'sha256-Wyyh4pGZCu33knKPa4k+JP95Q4DQlB07lPvliCyAa5o='; style-src 'sha256-yVZD3pDEYI+5GpYuMKxafiMqHiUD1ZRJ4fxaLl7b0Yw='; font-src data:; img-src data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>未發現 ≠ 安全 — AI 產出程式碼資安檢查器</title>
@@ -1424,7 +1424,7 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
     <footer>
       <p>本工具只做靜態比對：不執行、不上傳、不儲存你貼上的內容。適合上線前快速自我檢查，不能取代正式的資安審查或滲透測試。</p>
       <p>「需要處理」是高信心度的結果；「請你確認」代表看起來可疑，需要你對照程式判斷。</p>
-      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">d6cbb681</span></p>
+      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">b2e6b18d</span></p>
     </footer>
   </div>
 
@@ -1443,12 +1443,14 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
             <li>已知格式的明文 API 金鑰（OpenAI／Anthropic／Gemini／AWS／LINE），並分辨 Firebase 設定這類「本來就可公開」的值</li>
             <li>Supabase／JWT 金鑰，區分 anon（可公開）與 service_role（絕不可公開）</li>
             <li>密碼用 MD5／SHA1 這類容易被破解的方式儲存</li>
-            <li>網頁或框架設定檔是否設定 Content Security Policy，以及這個 CSP 是不是被放寬到幾乎沒有防護力</li>
+            <li>網頁有沒有設「安全防線」（CSP，瀏覽器的額外一道鎖），以及鎖得緊不緊：有沒有放行寫在標籤上的程式碼、把文字當程式執行、整個協定或萬用字元、寫死的一次性通行碼；允許清單裡有沒有「別人也能放程式碼」的網站（公共檔案空間、人人可架站的平台）；有沒有漏掉 object-src、base-uri 這兩項</li>
+            <li>安全防線寫了卻沒生效的情況：項目名稱拼錯、漏分號、'self' 的單引號漏掉、標籤放在程式碼後面、用 &lt;meta&gt; 寫了它不支援的項目、只回報不阻擋。設定寫在網頁標籤、伺服器設定檔（JSON、nginx、Apache、_headers）或 helmet 套件裡都讀得到</li>
             <li>SQL Injection（字串拼接、模板插值、f-string、Python <code>%</code> 格式化）</li>
             <li>把文字當程式執行（eval、exec、pickle、yaml.load）</li>
             <li>網址或輸入框的內容被直接當成網頁內容顯示（XSS），以及課程名稱、留言這類文字沒有跳脫就組成 HTML</li>
             <li>疑似缺少擁有權檢查（登入的人看得到別人的資料），含 Express 路由寫法；純前端、沒有後端的專案會自動降為「參考」</li>
             <li>多檔案：同一敏感欄位在不同檔案的遮罩不一致、路由缺少流量限制</li>
+            <li>多檔案：專案裡只要有一處「整站生效」的安全防線設定（伺服器或框架設定檔），其他網頁的「沒有設防線」就會降為「參考」，不會每頁重複提醒</li>
             <li>多檔案：列出檢查範圍（掃了幾個、哪些沒掃到）、每個檔案的角色，以及「網頁用到哪些檔案」的引用關係樹；疑似沒用到的檔案裡，發現降為「參考」（金鑰除外）</li>
           </ul>
         </div>
@@ -1463,6 +1465,7 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
             <li>疑似自訂密鑰、內部網址、環境變數明文備用值 — 沒有固定格式，誤判率較高</li>
             <li>後端、資料庫權限規則（RLS／Security Rules）與雲端 IAM 設定；資料庫檔（.sql）與部署設定（.yml）不在檢查範圍，請自行檢視</li>
             <li>「疑似沒用到」只是沿著程式引用推測，遇到動態載入或多頁面設定時不判斷</li>
+            <li>安全防線只看你貼上的文字：代理層或託管平台另外加上的設定看不到；「別人也能放程式碼」的網站清單只收常見例子，沒列到不代表安全；多份設定疊加後的實際效果、程式執行時才組出來的設定都不判斷。想再確認，可以把設定內容貼到 Google 的 CSP Evaluator 交叉比對</li>
             <li>私人 GitHub 專案（請下載後用拖放或開啟檔案）</li>
           </ul>
         </div>
@@ -2377,32 +2380,369 @@ if (typeof module !== 'undefined' && module.exports) {
 /**
  * M5 — csp-detector
  *
- * 職責:判斷 Content Security Policy 有沒有設定、設定得夠不夠緊,區分 HTML 情境與框架設定檔情境
+ * 職責:判斷 Content Security Policy(CSP)有沒有設定、設定得夠不夠緊、寫法有沒有錯,區分 HTML 情境與框架設定檔情境
  * 輸入: code (string)
  * 輸出: Finding[]
  *
  * 這是純函式,不依賴任何其他模組,可完全獨立開發與測試。
  * 重點:避免對框架化專案(Next.js/Nuxt)的系統性誤判,見規格文件說明。
  *
- * 為什麼:有 CSP 但寫了 'unsafe-inline' 等於幾乎沒有防線,只看「有沒有設定」會給出假的安心。(背景見 docs/CHANGELOG.md)
+ * 流程:取出 CSP → 拆成「指令 → 來源清單」→ 逐項檢查 → 同一份 CSP 的同類問題合併成一筆。
+ * 檢查面向(對照公開的 CSP 評估工具的視野,但規則與說明是自己寫的,清單也刻意精簡):
+ *   csp_weak              放行行內程式碼／eval／整個協定／萬用字元／http／寫死的 nonce,或完全沒管腳本
+ *   csp_allowlist_bypass  白名單放了「借得到別人程式碼」的網域(公共 CDN、共用主機的萬用網域、JSONP 端點)
+ *   csp_missing_directive 缺 object-src;用 nonce／雜湊卻沒管 base-uri
+ *   csp_syntax            指令拼錯、漏分號、關鍵字沒加引號、nonce／雜湊格式不對、指令重複、已淘汰的寫法
+ *   csp_not_enforced      設了但沒生效:<meta> 不支援的指令、放在腳本後面、Report-Only
+ * 現代瀏覽器的語意要照著判:有 nonce／雜湊時 'unsafe-inline' 會被忽略,有 'strict-dynamic' 時白名單與協定會被忽略,
+ * 所以那幾種寫法(常見的相容寫法)不能報,否則會冤枉寫得好的 CSP。
+ *
+ * 為什麼:有 CSP 但寫了 'unsafe-inline' 等於幾乎沒有防線,只看「有沒有設定」會給出假的安心;
+ *        而 CSP 一旦寫錯字或放行了共用網域,瀏覽器不會報錯,只會默默失效。(背景見 docs/CHANGELOG.md)
  */
 
-// 取出 CSP 的內容:<meta ... content="…"> 或設定檔裡 "Content-Security-Policy": "…"。
-// 用反向參照鎖定同一種引號,因為 CSP 內容本身就含有單引號('self'、'unsafe-inline')。
-const CSP_VALUE_RE = /content-security-policy[\s\S]{0,120}?(["'])((?:(?!\1)[\s\S]){10,}?)\1/i;
-// 放寬到形同虛設的寫法(只看 script 相關指令)
-const CSP_WEAKNESSES = [
-  { re: /'unsafe-inline'/i, label: "'unsafe-inline'（允許直接寫在網頁裡的程式碼執行）" },
-  { re: /'unsafe-eval'/i, label: "'unsafe-eval'（允許把文字當程式執行）" },
-  { re: /(^|\s)\*(\s|$)/, label: '* 萬用字元（等於允許任何網站的程式碼）' }
-];
+// ── 規格資料 ──
+const CSP_FETCH = ['default-src', 'script-src', 'script-src-elem', 'script-src-attr', 'style-src', 'style-src-elem', 'style-src-attr',
+  'img-src', 'font-src', 'connect-src', 'media-src', 'object-src', 'frame-src', 'child-src', 'worker-src', 'manifest-src'];
+const CSP_SOURCE_LISTS = new Set(CSP_FETCH.concat(['base-uri', 'form-action', 'frame-ancestors']));
+const CSP_DIRECTIVES = new Set(CSP_SOURCE_LISTS);
+['sandbox', 'report-uri', 'report-to', 'upgrade-insecure-requests', 'require-trusted-types-for', 'trusted-types'].forEach(d => CSP_DIRECTIVES.add(d));
+const CSP_DEPRECATED = new Set(['reflected-xss', 'referrer', 'disown-opener', 'prefetch-src', 'block-all-mixed-content', 'plugin-types', 'require-sri-for', 'navigate-to']);
+const CSP_KEYWORDS = ['self', 'none', 'unsafe-inline', 'unsafe-eval', 'unsafe-hashes', 'strict-dynamic', 'report-sample', 'wasm-unsafe-eval', 'inline-speculation-rules', 'trusted-types-eval'];
+// <meta> 方式送出的 CSP,瀏覽器會直接忽略這幾個指令(規格明訂,只能用 HTTP 標頭)
+const CSP_META_IGNORED = { 'frame-ancestors': '防止被別人的網頁嵌入', 'report-uri': '違規回報', 'report-to': '違規回報', sandbox: 'sandbox 限制' };
+const CSP_PLACEHOLDER = '\u0001'; // ${…}、{{…}}、<%…%> 這類「執行時才填進去」的值(常見於 nonce)
 
-/** 只看 script 相關的指令:style-src 的 'unsafe-inline' 風險低很多,不在這裡報 */
-function cspScriptPart(csp) {
-  const m = /script-src([^;]*)/i.exec(csp);
-  if (m) return m[1];
-  const d = /default-src([^;]*)/i.exec(csp);
-  return d ? d[1] : '';
+// 白名單裡「借得到別人程式碼」的網域。只列常見的,一定不完整——沒列到不代表安全。
+const CSP_BYPASS_HOSTS = {
+  'ajax.googleapis.com': '託管 AngularJS 等函式庫，攻擊者能借它們執行自己的程式碼',
+  'cdnjs.cloudflare.com': '託管 AngularJS 等舊函式庫，攻擊者能借它們執行自己的程式碼',
+  'code.angularjs.org': '專門提供 AngularJS，攻擊者能借它執行自己的程式碼',
+  'accounts.google.com': '有可被利用的 JSONP 端點，攻擊者能借它執行自己的程式碼',
+  'www.google.com': '有可被利用的 JSONP 端點，攻擊者能借它執行自己的程式碼',
+  'www.googleapis.com': '有可被利用的 JSONP 端點，攻擊者能借它執行自己的程式碼',
+  'cdn.jsdelivr.net': '任何人都能把檔案發佈到這個 CDN，攻擊者可以載入自己的程式碼',
+  'unpkg.com': '任何人都能把檔案發佈到這個 CDN，攻擊者可以載入自己的程式碼',
+  'esm.sh': '任何人都能把檔案發佈到這個 CDN，攻擊者可以載入自己的程式碼',
+  'cdn.skypack.dev': '任何人都能把檔案發佈到這個 CDN，攻擊者可以載入自己的程式碼',
+  'raw.githack.com': '能直接載入任何 GitHub 儲存庫的檔案，攻擊者可以載入自己的程式碼',
+  'rawcdn.githack.com': '能直接載入任何 GitHub 儲存庫的檔案，攻擊者可以載入自己的程式碼',
+  'storage.googleapis.com': '整個雲端儲存都放行，任何人都能建立儲存桶放自己的程式碼',
+  's3.amazonaws.com': '整個雲端儲存都放行，任何人都能建立儲存桶放自己的程式碼'
+};
+// 「*.這些網域」代表放行任何人在該平台架的網站
+const CSP_SHARED_HOSTING = ['github.io', 'vercel.app', 'netlify.app', 'pages.dev', 'workers.dev', 'herokuapp.com', 'appspot.com', 'web.app',
+  'firebaseapp.com', 'azurewebsites.net', 'cloudfront.net', 'amazonaws.com', 'blob.core.windows.net', 'glitch.me', 'repl.co', 'onrender.com',
+  'fly.dev', 'surge.sh', 'ngrok.io', 'ngrok-free.app', 'r2.dev'];
+
+// ── 小工具 ──
+function cspAdd(arr, s) { if (arr.indexOf(s) < 0) arr.push(s); }
+
+/** 編輯距離(只用來在打錯字時提示「是不是想寫 xxx」) */
+function cspDist(a, b) {
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    for (let j = 1; j <= b.length; j++) cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    prev = cur;
+  }
+  return prev[b.length];
+}
+function cspClosest(word, list) {
+  let best = '';
+  let bd = 3;
+  list.forEach(c => { const d = cspDist(word, c); if (d < bd) { bd = d; best = c; } });
+  return best;
+}
+
+/** 來源 → 主機名稱(去掉協定、埠號、路徑) */
+function cspHost(tok) {
+  return tok.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/[\/?#].*$/, '').replace(/:(\d+|\*)$/, '').toLowerCase();
+}
+
+// ── 1. 取出 CSP ──
+// 每筆:{ text, source: 'meta'|'header'|'string'|'helmet', reportOnly, index, defaultsFilled? }
+
+function cspNormalize(raw) {
+  return raw.replace(/\$\{[^}]*\}|\{\{[^}]*\}\}|<%[\s\S]*?%>|%[A-Za-z_]+%|__[A-Za-z_]+__/g, CSP_PLACEHOLDER)
+    .replace(/\\[nrt]/g, ' ').replace(/\\(.)/g, '$1').replace(/\s+/g, ' ').trim();
+}
+
+/** 這段文字像不像 CSP:至少有 min 個「以已知指令開頭」的片段 */
+function cspLooksLikePolicy(text, min) {
+  const n = text.split(';').filter(p => {
+    const name = p.trim().split(/\s+/)[0].toLowerCase();
+    return CSP_DIRECTIVES.has(name) || CSP_DEPRECATED.has(name);
+  }).length;
+  return n >= min;
+}
+
+/** helmet 的 directives 物件:{ scriptSrc: ["'self'"], ... } → 一般 CSP 文字 */
+function cspHelmetPolicies(code) {
+  const out = [];
+  const re = /\bdirectives\s*:\s*\{/g;
+  let m;
+  while ((m = re.exec(code))) {
+    let depth = 1;
+    let i = re.lastIndex;
+    const limit = Math.min(code.length, i + 6000); // 設定物件不會太長;有上限才不會被一堆沒閉合的括號拖慢
+    while (i < limit && depth > 0) { const c = code[i++]; if (c === '{') depth++; else if (c === '}') depth--; }
+    const block = code.slice(re.lastIndex, i - 1);
+    re.lastIndex = Math.max(re.lastIndex, i);
+    if (depth > 0) continue;
+    const parts = [];
+    const entry = /(["']?)([A-Za-z][\w-]*)\1\s*:\s*(\[[\s\S]*?\]|"[^"]*"|'[^']*'|`[^`]*`|true|false|null)/g;
+    let e;
+    while ((e = entry.exec(block))) {
+      const name = e[2].replace(/[A-Z]/g, c => '-' + c.toLowerCase());
+      const toks = [];
+      const str = /(["'`])((?:\\.|(?!\1)[^\\])*)\1/g;
+      let s;
+      while ((s = str.exec(e[3]))) toks.push(s[2]);
+      parts.push(name + ' ' + toks.join(' '));
+    }
+    if (!parts.length) continue;
+    const around = code.slice(Math.max(0, m.index - 200), i + 200);
+    out.push({ text: cspNormalize(parts.join('; ')), source: 'helmet', reportOnly: /reportOnly\s*:\s*true/.test(around), index: m.index, defaultsFilled: !/useDefaults\s*:\s*false/.test(around) });
+  }
+  return out;
+}
+
+function cspExtract(code, looksLikeHtml) {
+  const policies = [];
+  const push = p => { if (p.text && !policies.some(q => q.text === p.text)) policies.push(p); }; // 同一段文字只算一次,以先找到的為準(有標頭名稱的比純字串可靠)
+  // HTML 註解裡的範例不算(用字串拼接寫,避免單檔版內嵌時被誤判成 HTML 註解開頭)
+  const html = code.replace(new RegExp('<' + '!--[\\s\\S]*?-->', 'g'), m => ' '.repeat(m.length));
+
+  // <meta http-equiv="Content-Security-Policy" content="…">(屬性順序、引號種類、JSX 的 httpEquiv 都可)
+  const tagRe = /<meta\b[^>]{0,3000}>/gi; // 長度上限:避免沒有結尾 > 的超長輸入讓比對變成平方時間
+  let t;
+  while ((t = tagRe.exec(html))) {
+    const eq = /http-?equiv\s*=\s*["']?\s*content-security-policy(-report-only)?/i.exec(t[0]);
+    if (!eq) continue;
+    const c = /\bcontent\s*=\s*(?:"([^"]*)"|'([^']*)')/i.exec(t[0]);
+    const text = c ? cspNormalize(c[1] !== undefined ? c[1] : c[2]) : '';
+    // 至少要像「指令 + 值」;說明文字裡寫的 content="…" 之類不算(拼錯的指令仍會被抓到)
+    if (/[a-z][a-z-]+ \S/i.test(text)) push({ text, source: 'meta', reportOnly: !!eq[1], index: t.index });
+  }
+
+  // 標頭名稱後面接字串:JSON、setHeader('…', '…')、{ key: '…', value: '…' }、nginx add_header、Apache Header set
+  const strRe = /content-security-policy(-report-only)?["'`]?\s*[:=,)]?\s*(?:value\s*:\s*)?(["'`])((?:\\[\s\S]|(?!\2)[^\\])*)\2/gi;
+  let s;
+  while ((s = strRe.exec(html))) {
+    const text = cspNormalize(s[3]);
+    if (cspLooksLikePolicy(text, 1)) push({ text, source: 'header', reportOnly: !!s[1], index: s.index });
+  }
+
+  // 沒有引號的原始標頭:Content-Security-Policy: default-src 'self'(_headers 檔、貼上的 HTTP 回應)
+  const rawRe = /^[ \t]*content-security-policy(-report-only)?[ \t]*:[ \t]*([^"'`\r\n][^\r\n]*)$/gim;
+  let r;
+  while ((r = rawRe.exec(html))) {
+    const text = cspNormalize(r[2]);
+    if (cspLooksLikePolicy(text, 1)) push({ text, source: 'header', reportOnly: !!r[1], index: r.index });
+  }
+
+  if (!looksLikeHtml) {
+    // 先存進變數再交給標頭的寫法(Next.js 文件範例):字串本身長得像 CSP 就算,但要求至少兩個已知指令,避免說明文字誤中
+    const freeRe = /(["'`])((?:\\[\s\S]|(?!\1)[^\\]){20,}?)\1/g;
+    let f;
+    while ((f = freeRe.exec(code))) {
+      if (!/-src\b|frame-ancestors|base-uri|form-action/.test(f[2])) continue;
+      const text = cspNormalize(f[2]);
+      if (cspLooksLikePolicy(text, 2)) push({ text, source: 'string', reportOnly: false, index: f.index });
+    }
+    cspHelmetPolicies(code).forEach(push);
+  }
+  return { policies, helmetOff: /contentSecurityPolicy\s*:\s*false/.exec(code) };
+}
+
+// ── 2. 解析 ──
+function cspParse(text) {
+  const d = Object.create(null);
+  const order = [];
+  const dup = [];
+  text.split(';').forEach(part => {
+    const toks = part.trim().split(' ').filter(Boolean);
+    if (!toks.length) return;
+    const name = toks[0].toLowerCase();
+    if (name in d) { cspAdd(dup, name); return; }
+    d[name] = toks.slice(1);
+    order.push(name);
+  });
+  return { d, order, dup };
+}
+
+// ── 3. 檢查 ──
+function cspCheckSyntax(p, out) {
+  p.dup.forEach(n => cspAdd(out.syntax, `「${n}」寫了不只一次，瀏覽器只採用第一次，後面的會被忽略`));
+  p.order.forEach(name => {
+    const vals = p.d[name];
+    const known = CSP_DIRECTIVES.has(name) || CSP_DEPRECATED.has(name);
+    if (!known) {
+      const bare = name.replace(/:$/, '');
+      const sug = cspClosest(bare, Array.from(CSP_DIRECTIVES));
+      cspAdd(out.syntax, name.slice(-1) === ':'
+        ? `「${name}」後面多了冒號，設定項目名稱後面不用冒號`
+        : `「${name}」不是有效的設定項目名稱${sug ? `（是不是想寫 ${sug}？）` : ''}，瀏覽器會直接忽略它`);
+      return;
+    }
+    if (CSP_DEPRECATED.has(name)) cspAdd(out.notes, `「${name}」是已經淘汰的寫法，新版瀏覽器不再支援，可以刪掉`);
+    if (!CSP_SOURCE_LISTS.has(name)) return;
+    vals.forEach(tok => {
+      const low = tok.toLowerCase();
+      if (CSP_DIRECTIVES.has(low) && !/^'/.test(tok)) {
+        cspAdd(out.syntax, `「${name}」後面的「${tok}」看起來是下一個設定項目，中間漏了分號（;）`);
+      } else if (/^'[^']*'$/.test(tok)) {
+        const inner = tok.slice(1, -1);
+        const il = inner.toLowerCase();
+        if (CSP_KEYWORDS.indexOf(il) >= 0) return;
+        let m;
+        if (il.indexOf('nonce-') === 0) {
+          if (!/^nonce-[A-Za-z0-9+/_=\u0001-]+$/.test(inner)) cspAdd(out.syntax, `nonce「${tok}」含有不合法的字元或是空的（只能用英數字與 + / = 這幾種字元）`);
+        } else if ((m = /^sha(256|384|512)-(.*)$/i.exec(inner))) {
+          const v = m[2].replace(/=+$/, '');
+          if (v.indexOf(CSP_PLACEHOLDER) < 0 && (!/^[A-Za-z0-9+/_-]+$/.test(v) || v.length !== { 256: 43, 384: 64, 512: 86 }[m[1]])) {
+            cspAdd(out.syntax, `雜湊「${tok.slice(0, 24)}…」的長度或字元不對（sha${m[1]} 的 base64 應為 ${{ 256: 43, 384: 64, 512: 86 }[m[1]]} 字元），瀏覽器會忽略它`);
+          }
+        } else {
+          const sug = cspClosest(il, CSP_KEYWORDS);
+          cspAdd(out.syntax, `「${tok}」不是有效的關鍵字${sug ? `（是不是想寫 '${sug}'？）` : ''}，瀏覽器會忽略它`);
+        }
+      } else if (/^'|'$/.test(tok)) {
+        cspAdd(out.syntax, `「${tok}」的單引號沒有成對`);
+      } else if (CSP_KEYWORDS.indexOf(low) >= 0) {
+        cspAdd(out.syntax, `「${tok}」沒有加單引號，要寫成 '${low}'；沒加的話瀏覽器會把它當成一個叫「${low}」的網站`);
+      }
+    });
+  });
+}
+
+/** 一份「腳本來源清單」(script-src、沒寫時退而求其次的 default-src、script-src-elem/attr)的檢查 */
+function cspCheckScriptList(name, vals, out) {
+  const low = vals.map(v => v.toLowerCase());
+  const hasNonce = low.some(v => v.indexOf("'nonce-") === 0);
+  const hasHash = low.some(v => /^'sha(256|384|512)-/.test(v));
+  const strictDyn = low.indexOf("'strict-dynamic'") >= 0;
+  const strictLike = hasNonce || hasHash;
+  // 有 nonce／雜湊時,現代瀏覽器會忽略 'unsafe-inline'(常見的向下相容寫法),不算放寬;但行內事件屬性(script-src-attr)不適用
+  if (low.indexOf("'unsafe-inline'") >= 0 && (name === 'script-src-attr' || !strictLike)) cspAdd(out.weak, "'unsafe-inline'（允許直接寫在網頁裡的程式碼執行）");
+  if (low.indexOf("'unsafe-eval'") >= 0) cspAdd(out.weak, "'unsafe-eval'（允許把文字當程式執行）");
+  if (low.indexOf("'unsafe-hashes'") >= 0) cspAdd(out.weak, "'unsafe-hashes'（連寫在標籤上的 onclick 之類事件也能用雜湊放行，範圍比一般雜湊大）");
+  if (strictDyn && !strictLike) cspAdd(out.syntax, "'strict-dynamic' 沒有搭配 nonce 或雜湊：瀏覽器會忽略白名單，網頁自己的腳本可能整個被擋");
+  vals.forEach(tok => {
+    if (/^'nonce-/i.test(tok) && /'$/.test(tok)) {
+      const v = tok.slice(7, -1);
+      // 名字就寫著 NONCE／PLACEHOLDER 的是「之後會被換掉」的佔位字,不算寫死
+      if (v.indexOf(CSP_PLACEHOLDER) < 0 && !/nonce|placeholder|random|generate|replace|xxx/i.test(v)) {
+        cspAdd(out.weak, `nonce 是寫死的固定值${v.length < 8 ? '，而且太短' : ''}（nonce 必須每次載入都重新產生，固定值寫在網頁裡等於公開，攻擊者可以直接沿用）`);
+      }
+    }
+  });
+  if (strictDyn) return { strictLike, strictDyn }; // 'strict-dynamic' 下白名單、協定、萬用字元都會被瀏覽器忽略,不必再看
+  const http = [];
+  vals.forEach(tok => {
+    const t = tok.toLowerCase();
+    if (t.charAt(0) === "'") return;
+    if (t === '*') { cspAdd(out.weak, '* 萬用字元（等於允許任何網站的程式碼）'); return; }
+    if (/^(https?|data):$/.test(t)) { cspAdd(out.weak, `${t} 整個協定（${t === 'data:' ? '攻擊者能把程式碼直接塞成 data: 網址' : '任何 ' + t.replace(':', '') + ' 網站的程式碼都能載入'}，幾乎等於沒限制）`); return; }
+    if (/^[a-z][a-z0-9+.-]*:$/.test(t)) return;
+    const host = cspHost(t);
+    if (host === '*' || /^\*\.[a-z]+$/.test(host)) { cspAdd(out.weak, `${tok} 這類頂層網域萬用字元（幾乎等於沒限制）`); return; }
+    if (/^http:\/\//.test(t) && !/^(localhost|127\.0\.0\.1|\[::1\])$/.test(host) && !/^[\d.]+$/.test(host)) http.push(host);
+    if (CSP_BYPASS_HOSTS[host]) {
+      cspAdd(out.bypass, `${host}（${CSP_BYPASS_HOSTS[host]}）`);
+    } else if (host.slice(0, 2) === '*.') {
+      const rest = host.slice(2);
+      const hit = CSP_SHARED_HOSTING.filter(s => rest === s || rest.slice(-s.length - 1) === '.' + s)[0];
+      if (hit) cspAdd(out.bypass, `${host}（整個 ${hit} 都放行，任何人都能在這個平台架站放自己的程式碼）`);
+    }
+  });
+  if (http.length) cspAdd(out.weak, `http:// 來源（傳輸過程可被竄改，攻擊者能把程式碼換掉）：${http.join('、')}`);
+  return { strictLike, strictDyn };
+}
+
+function cspEvaluate(p) {
+  const out = { weak: [], bypass: [], missing: [], syntax: [], notes: [], notEnforced: [] };
+  const d = p.d;
+  cspCheckSyntax(p, out);
+
+  const fetchNames = p.order.filter(n => CSP_FETCH.indexOf(n) >= 0);
+  // 只有 frame-ancestors／upgrade-insecure-requests 這類「不管來源」的 CSP,不用求它管腳本
+  const complete = fetchNames.length > 0 && !p.defaultsFilled;
+
+  // 腳本
+  const lists = [];
+  if (d['script-src']) lists.push(['script-src', d['script-src']]);
+  else if (d['default-src']) lists.push(['default-src', d['default-src']]);
+  ['script-src-elem', 'script-src-attr'].forEach(n => { if (d[n]) lists.push([n, d[n]]); });
+  let needBase = false;
+  lists.forEach(l => {
+    const r = cspCheckScriptList(l[0], l[1], out);
+    if (r.strictLike && (r.strictDyn || l[1].some(v => /^'nonce-/i.test(v)))) needBase = true;
+  });
+  if (complete && !lists.length) cspAdd(out.weak, '完全沒寫 script-src 或 default-src（等於沒有限制程式碼可以從哪裡來）');
+
+  // object-src:沒寫時看 default-src
+  const obj = d['object-src'] || d['default-src'];
+  if (complete && !obj) cspAdd(out.missing, "object-src（沒有限制 <object>／<embed> 能載入什麼；建議寫 object-src 'none'）");
+  // base-uri:用了 nonce 卻不管 <base>,攻擊者塞一個 <base> 就能改掉相對路徑腳本的載入位置
+  if (needBase && !d['base-uri'] && !p.defaultsFilled) cspAdd(out.missing, "base-uri（用了 nonce 卻沒限制 <base> 標籤，攻擊者可以改掉相對路徑腳本的載入位置；建議寫 base-uri 'none'）");
+  [['object-src', obj], ['base-uri', d['base-uri']]].forEach(x => {
+    if (x[1] && x[1].some(v => /^(\*|https?:|data:)$/i.test(v))) cspAdd(out.weak, `${x[0]} 允許任何來源（${x[1].filter(v => /^(\*|https?:|data:)$/i.test(v)).join(' ')}）`);
+  });
+
+  // 開發時留下的來源(任何指令)
+  const dev = [];
+  p.order.forEach(n => (d[n] || []).forEach(v => {
+    const h = cspHost(v);
+    if (v.charAt(0) !== "'" && !/^[a-z][a-z0-9+.-]*:$/i.test(v) && (h === 'localhost' || /^\d{1,3}(\.\d{1,3}){3}$/.test(h))) cspAdd(dev, v);
+  }));
+  if (dev.length) cspAdd(out.notes, `含有開發時自己電腦上的測試網址（${dev.join('、')}），上線前確認還需不需要`);
+
+  // <meta> 送出的 CSP 有些指令會被忽略
+  if (p.source === 'meta') {
+    Object.keys(CSP_META_IGNORED).forEach(n => {
+      if (d[n]) cspAdd(out.notEnforced, `這種寫法不支援 ${n}（${CSP_META_IGNORED[n]}），這個項目會被瀏覽器直接忽略，必須改由伺服器隨網頁送出（HTTP 標頭）`);
+    });
+  }
+  return out;
+}
+
+// ── 4. 組成 Finding ──
+const CSP_SOURCE_LABEL = { meta: '寫在網頁裡的 <meta> 標籤', header: '由伺服器送出的設定（HTTP 標頭）', string: '程式碼裡的設定字串', helmet: 'helmet 套件的設定' };
+// kind 寫成字面值,verify 才掃得到「每個 kind 都有說明文字」(FINDING_GUIDE／PLAIN_TITLES／VALID_KINDS)
+const CSP_KIND_META = {
+  csp_weak: { kind: 'csp_weak', name: 'Content-Security-Policy 含放寬設定', lead: '這道防線有放寬的地方：', tail: '。這些設定會讓防線擋不住最常見的攻擊——把別人的程式碼塞進你的網頁執行' },
+  csp_allowlist_bypass: { kind: 'csp_allowlist_bypass', name: 'script-src 白名單可被繞過', lead: '管「程式碼可以從哪裡來」的項目（script-src）放行了：', tail: '。攻擊者不必入侵你的網站，只要借用這些地方放程式碼就能繞過整道防線' },
+  csp_missing_directive: { kind: 'csp_missing_directive', name: 'CSP 缺少 object-src／base-uri', lead: '少寫了：', tail: '。沒寫的項目瀏覽器就不會限制，攻擊者可以從這個缺口下手' },
+  csp_syntax: { kind: 'csp_syntax', name: 'CSP 語法錯誤或已淘汰的指令', lead: '', tail: '。瀏覽器不會跳出錯誤，只會默默略過寫錯的部分，讓保護比你以為的少' },
+  csp_not_enforced: { kind: 'csp_not_enforced', name: 'CSP 未完全生效', lead: '', tail: '' }
+};
+
+function cspFinding(kind, tier, items, source, index) {
+  const m = CSP_KIND_META[kind];
+  return {
+    tier,
+    category: tier === 3 ? '資訊提示' : '建議人工複查',
+    name: m.name,
+    kind: m.kind,
+    evidence: `（${CSP_SOURCE_LABEL[source] || 'CSP'}）${m.lead}${items.join('；')}${m.tail}`.replace(/\u0001/g, '{動態值}'),
+    index
+  };
+}
+
+/**
+ * 這個檔案裡有沒有「整站都會生效」的 CSP?
+ * HTTP 標頭／helmet／設定檔字串是伺服器對每一頁都送出的,所以整站有效;
+ * <meta> 只寫在某一頁的 HTML 裡,管不到別頁,所以不算。
+ * 多檔案掃描時用這個判斷要不要對其他網頁重複提醒「沒有 CSP」(scan-orchestrator)。
+ * @param {string} code
+ * @returns {boolean}
+ */
+function cspSiteWide(code) {
+  code = code || '';
+  return cspExtract(code, /<html|<head|<!DOCTYPE/i.test(code))
+    .policies.some(p => !p.reportOnly && p.source !== 'meta');
 }
 
 /**
@@ -2414,21 +2754,47 @@ function cspDetector(code) {
 
   const looksLikeHtml = /<html|<head|<!DOCTYPE/i.test(code);
   const looksLikeFrameworkConfig = /\bNextConfig\b|defineNuxtConfig\s*\(|module\.exports\s*=\s*{[\s\S]*?headers\s*:|async\s+headers\s*\(\s*\)\s*{|"headers"\s*:\s*\[/i.test(code);
-  const hasCsp = /content-security-policy/i.test(code);
+  const found = cspExtract(code, looksLikeHtml);
+  const usesHelmet = /require\s*\(\s*['"]helmet['"]|from\s+['"]helmet['"]|\bhelmet\s*\(/.test(code);
+  const hasCsp = found.policies.length > 0 || !!found.helmetOff || usesHelmet || /content-security-policy/i.test(code);
 
-  if (hasCsp) {
-    const value = (CSP_VALUE_RE.exec(code) || [])[2] || '';
-    const scriptPart = cspScriptPart(value);
-    const weak = CSP_WEAKNESSES.filter(w => w.re.test(scriptPart)).map(w => w.label);
-    if (weak.length) {
-      findings.push({
-        tier: 2,
-        category: '建議人工複查',
-        name: 'CSP 有放寬設定，防護力打折',
-        kind: 'csp_weak',
-        evidence: 'CSP 的 script-src 含有 ' + weak.join('、') + '；這些設定會讓 CSP 擋不住最常見的 XSS 注入'
-      });
+  // <meta> 的 Report-Only 瀏覽器不支援;標頭的 Report-Only 只回報不阻擋。兩者都不算「有在擋」
+  const enforcing = found.policies.filter(p => !p.reportOnly);
+  const reportOnly = found.policies.filter(p => p.reportOnly);
+
+  enforcing.forEach(p => {
+    const parsed = cspParse(p.text);
+    parsed.defaultsFilled = !!p.defaultsFilled; // helmet 預設(useDefaults 不是 false)會補齊沒寫的指令
+    parsed.source = p.source;
+    const res = cspEvaluate(parsed);
+    if (p.source === 'meta') {
+      // 放在腳本後面:CSP 只管它後面才載入的內容
+      // 只數同一份 HTML 文件裡的(從最近一個 doctype／<html 算起),一個檔案裡有好幾份 HTML 字串時不能互相牽連
+      const upTo = code.slice(0, p.index);
+      const from = Math.max(upTo.toLowerCase().lastIndexOf('<!doctype'), upTo.toLowerCase().lastIndexOf('<html'), 0);
+      const before = (upTo.slice(from).match(/<script[\s>]/gi) || []).length;
+      if (before) cspAdd(res.notEnforced, `有 ${before} 段程式碼（<script>）寫在這個設定標籤前面；這道防線只管它後面才載入的內容，前面那些不受限制`);
     }
+    [['csp_weak', 'weak'], ['csp_allowlist_bypass', 'bypass'], ['csp_missing_directive', 'missing']].forEach(k => {
+      if (res[k[1]].length) findings.push(cspFinding(k[0], 2, res[k[1]], p.source, p.index));
+    });
+    if (res.syntax.length || res.notes.length) findings.push(cspFinding('csp_syntax', res.syntax.length ? 2 : 3, res.syntax.concat(res.notes), p.source, p.index));
+    if (res.notEnforced.length) findings.push(cspFinding('csp_not_enforced', 2, res.notEnforced, p.source, p.index));
+  });
+
+  if (found.helmetOff) {
+    findings.push({
+      tier: 2, category: '建議人工複查', name: CSP_KIND_META.csp_weak.name, kind: 'csp_weak', index: found.helmetOff.index,
+      evidence: 'helmet 套件的 contentSecurityPolicy 被設成 false（整道防線被關掉）' + CSP_KIND_META.csp_weak.tail
+    });
+  }
+
+  if (!enforcing.length && reportOnly.length) {
+    const p = reportOnly[0];
+    const meta = p.source === 'meta';
+    findings.push(cspFinding('csp_not_enforced', meta ? 2 : 3, [meta
+      ? '寫成 <meta http-equiv="Content-Security-Policy-Report-Only"> 瀏覽器並不支援，整條會被忽略（既不擋也不回報）；要用「只回報」模式必須改由伺服器送出（HTTP 標頭）'
+      : '這道防線目前是「只回報、不阻擋」模式（Report-Only），什麼都不會擋；試跑觀察完之後記得改成正式的 Content-Security-Policy'], p.source, p.index));
   }
 
   if (looksLikeHtml && !hasCsp) {
@@ -2437,7 +2803,7 @@ function cspDetector(code) {
       category: '基礎設定',
       name: '未偵測到 Content Security Policy',
       kind: 'no_csp_html',
-      evidence: '頁面中無 CSP meta 標籤；若此頁面屬於 Next.js／Nuxt 等框架專案，CSP 也可能設定在 next.config.js 的 headers() 或 vercel.json 中，建議一併確認'
+      evidence: '這個頁面裡找不到設定安全防線的 <meta> 標籤。如果這是 Next.js／Nuxt 這類框架做的網站，防線也可能寫在 next.config.js 的 headers() 或 vercel.json 裡，建議一併確認'
     });
   } else if (looksLikeFrameworkConfig && !hasCsp) {
     findings.push({
@@ -2445,7 +2811,7 @@ function cspDetector(code) {
       category: '建議人工複查',
       name: '框架設定檔中未偵測到 CSP 設定（疑似）',
       kind: 'no_csp_config',
-      evidence: '此設定檔看起來像 next.config／vercel.json 等框架設定檔，但未找到 Content-Security-Policy 字樣，建議確認是否有在其他設定檔或部署平台後台單獨設定'
+      evidence: '這份檔案看起來是 next.config／vercel.json 這類框架設定檔，但裡面沒有出現 Content-Security-Policy 字樣，建議確認是不是設定在別的檔案或部署平台的後台了'
     });
   }
 
@@ -2457,7 +2823,7 @@ function cspDetector(code) {
 // 瀏覽器環境: module 不存在 → 略過這段,函式/常數已是全域作用域下的宣告,
 //            可直接被 index.html 或其他 <script> 使用
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { cspDetector };
+  module.exports = { cspDetector, cspSiteWide };
 }
 </script>
 <script>
@@ -3064,13 +3430,49 @@ const FINDING_GUIDE = {
       '完成後請告訴我：這組密鑰是否需要重新產生，以及 .gitignore 現在有沒有正確排除這類檔案。'
   },
   csp_weak: {
-    plain: '這個頁面有設定「內容安全政策（CSP）」，但裡面開了後門。最常見的是 unsafe-inline，它允許直接寫在網頁標籤裡的程式碼執行，而那正是 XSS 攻擊最常用的方式。等於門鎖裝了，但鑰匙插在門上。',
+    plain: '這個頁面有設定「內容安全政策（CSP）」——瀏覽器的一道額外防線——但裡面有放寬的地方，讓它擋不住最常見的攻擊。例如放寬了「允許直接寫在網頁標籤裡的程式碼執行」（設定裡寫成 unsafe-inline），那正是把別人的程式碼塞進你網頁的攻擊最常用的方式；「*」或「https:」這類寫法等於允許任何網站的程式碼；一次性通行碼（nonce，本來每次開啟網頁都該重新產生）如果寫死成固定值，攻擊者照樣能拿來用。等於門鎖裝了，但鑰匙插在門上。',
     handoff:
-      '我的網頁有設定 Content Security Policy，但 script-src 裡含有 unsafe-inline（或 unsafe-eval、萬用字元），這讓 CSP 幾乎擋不住 XSS。請幫我：\n' +
+      '我的網頁有設定 Content Security Policy，但被檢查出有放寬的地方（可能是 unsafe-inline、unsafe-eval、萬用字元「*」、整個協定「https:」／「data:」、http:// 來源、寫死的 nonce，或是完全沒有 script-src／default-src）。請幫我：\n' +
       '1. 找出頁面裡所有 onclick=、onchange= 這類寫在 HTML 標籤上的事件屬性，以及行內的 script 區塊，改成用 addEventListener 綁定、程式碼放進獨立的 .js 檔。\n' +
-      '2. 全部改完後，把 CSP 的 script-src 改成只允許 self，移除 unsafe-inline 與 unsafe-eval。\n' +
-      '3. 如果有非留不可的行內腳本，改用 nonce 或 sha256 雜湊單獨放行那一段，而不是整個開放。\n' +
+      '2. 全部改完後，把 CSP 的 script-src 改成只允許 self（以及真的需要的具體網域），移除 unsafe-inline、unsafe-eval、萬用字元與整個協定的寫法。\n' +
+      '3. 如果有非留不可的行內腳本，改用 nonce 或 sha256 雜湊單獨放行那一段，而不是整個開放；nonce 必須在伺服器端每次請求重新產生，不能寫死在檔案裡。\n' +
       '完成後請告訴我：現在的 CSP 內容是什麼，以及還有沒有行內程式碼。'
+  },
+  csp_allowlist_bypass: {
+    plain: '這道防線的「允許清單」放行了一些「別人也能放程式碼」的網站，例如任何人都能上傳檔案的公共檔案空間（CDN），或整個 github.io、vercel.app 這類人人都能架站的平台。攻擊者不必入侵你的網站，只要把惡意程式碼放到那些地方，再讓你的頁面去載入，就能整個繞過這道防線。工具內建的清單只列常見的例子，沒被列出的網站不代表安全。',
+    handoff:
+      '我的網頁 CSP 的 script-src 放行了「別人也能放程式碼」的網域（公共 CDN、共用主機的萬用網域，或有 JSONP 端點的網域），攻擊者可能借它們繞過 CSP。請幫我：\n' +
+      '1. 列出頁面實際用到哪些外部腳本，逐一判斷能不能改成下載到自己的網站、用 \'self\' 載入。\n' +
+      '2. 一定要用外部 CDN 的，改用 nonce 或 sha256 雜湊搭配 \'strict-dynamic\' 放行，不要把整個 CDN 網域列進白名單；至少限制到具體的套件版本路徑，並在 script 標籤加上 integrity（SRI）。\n' +
+      '3. 移除「*.」開頭、涵蓋整個平台的萬用網域。\n' +
+      '完成後請告訴我：每個外部腳本最後怎麼處理，以及 CSP 現在的 script-src 內容。'
+  },
+  csp_missing_directive: {
+    plain: '這道防線裡有些項目沒寫，瀏覽器就不會限制那一塊。最常漏的兩個是：object-src（管 <object>、<embed> 這類外掛內容能載入什麼）和 base-uri（管 <base> 標籤，這個標籤會決定網頁去哪裡找程式檔）。後者在用一次性通行碼（nonce）時特別重要：攻擊者只要塞進一個 <base> 標籤，就能把網頁抓程式檔的位置換成他的伺服器。這兩項各補一個 \'none\'（代表全部不允許）就能堵上，通常不影響網站功能。',
+    handoff:
+      '我的網頁 CSP 缺少 object-src 或 base-uri 指令。請幫我：\n' +
+      '1. 在 CSP 加上 object-src \'none\'（網站沒有用 <object>、<embed> 外掛內容的話）。\n' +
+      '2. 加上 base-uri \'none\'；如果網站確實有用 <base> 標籤，改成 base-uri \'self\'。\n' +
+      '3. 設定完成後提醒我實際打開頁面，看瀏覽器開發者工具的 Console 有沒有 CSP 相關的錯誤。\n' +
+      '完成後請告訴我：現在的 CSP 完整內容。'
+  },
+  csp_syntax: {
+    plain: '這道防線寫錯的地方，瀏覽器不會跳出錯誤，只會默默略過那一行。常見的有：項目名稱拼錯字、少了分號、把 \'self\' 的單引號漏掉（瀏覽器會把它當成一個叫 self 的網站）、雜湊值或一次性通行碼（nonce）的格式不對、同一個項目寫了兩次（只有第一次算數）。結果是你以為擋住的東西其實沒擋。如果層級只是「參考」，代表問題比較輕：用到已經淘汰的寫法，或是留著開發時自己電腦上的測試網址（localhost 或一組 IP 位址）。',
+    handoff:
+      '我的網頁 CSP 被檢查出寫法有誤（指令拼錯、漏分號、關鍵字沒加單引號、nonce／雜湊格式不對、指令重複，或用了已淘汰的指令）。請幫我：\n' +
+      '1. 把 CSP 逐個指令拆開列出來，核對每個指令名稱有沒有拼對、每個指令之間有沒有用分號隔開。\n' +
+      '2. 檢查 \'self\'、\'none\'、\'unsafe-inline\'、\'strict-dynamic\' 這類關鍵字是不是都有加單引號，nonce 與 sha256 值的格式是否正確。\n' +
+      '3. 刪掉已淘汰的指令與開發用的 localhost 來源。\n' +
+      '完成後請告訴我：修正前後的 CSP 差異，以及每個修改的原因。'
+  },
+  csp_not_enforced: {
+    plain: '這道防線設了，但在某些情況下不會生效。一，寫在網頁裡的 <meta> 標籤有幾個項目瀏覽器會直接忽略（frame-ancestors、report-uri、sandbox）——想防止你的頁面被別人的網站嵌進去騙人點擊，就一定要改成由伺服器隨網頁一起送出（技術上叫 HTTP 標頭）。二，防線的標籤如果寫在程式碼後面，前面那些程式碼不受管。三，如果設成「只回報、不阻擋」模式（Report-Only），它目前什麼都不會擋，適合上線前試跑，但不是真正的防護。',
+    handoff:
+      '我的網頁 CSP 被檢查出有一部分沒有生效（<meta> 不支援的指令、CSP 標籤放在腳本後面，或是 Report-Only 模式）。請幫我：\n' +
+      '1. 把 CSP 的 <meta> 標籤移到 <head> 裡所有 <script> 與 <link> 之前。\n' +
+      '2. frame-ancestors、report-uri、sandbox 這幾個指令改成透過 HTTP 標頭設定（例如託管平台的 headers 設定檔，或 Web 伺服器設定），meta 裡的這幾個可以刪掉。\n' +
+      '3. 如果目前是 Report-Only 模式：先確認回報沒有誤擋正常功能，之後改成正式的 Content-Security-Policy。\n' +
+      '完成後請告訴我：哪些設定改放到 HTTP 標頭、要在哪個檔案或平台後台設定。'
   },
   xss_from_url: {
     plain: '這裡把網址或輸入框裡的內容，直接當成 HTML 放進頁面。只要有人做一個帶特殊內容的連結傳給你的使用者，點開就會在他們的瀏覽器上執行攻擊者寫的程式碼。這類問題叫 XSS，是網頁最常見的攻擊方式，而且一個連結就能發動。',
@@ -3530,11 +3932,15 @@ const PLAIN_TITLES = {
   endpoint_url: { title: '內部服務網址（Webhook 等）直接寫在程式碼裡', action: '確認這個網址有驗證機制，必要時重新產生網址' },
   env_fallback: { title: '讀取環境變數時帶了一組明文備用值', action: '移除明文備用值，缺少設定時讓程式直接報錯' },
   env_file_secret: { title: '.env 設定檔裡有疑似真實的密鑰', action: '確認 .env 沒有上傳到 GitHub；已上傳就更換密鑰' },
-  no_csp_html: { title: '網頁沒有設定額外的安全防線（CSP）', action: '為網頁加上 Content Security Policy' },
+  no_csp_html: { title: '網頁沒有設定額外的安全防線（CSP）', action: '為網頁加上一段安全防線設定（技術名稱 Content Security Policy）' },
   xss_from_url: { title: '網址裡的內容會被當成程式執行（XSS）', action: '改用 textContent，或先做 HTML 跳脫再放進頁面' },
   html_from_data: { title: '資料被直接組成網頁內容，可能被插入惡意程式碼', action: '只顯示文字就改用 textContent，需要 HTML 就先跳脫' },
-  csp_weak: { title: 'CSP 有開後門（unsafe-inline），防護力打折', action: '把行內的 onclick 與 script 改成獨立檔案，再移除 unsafe-inline' },
-  no_csp_config: { title: '框架設定檔裡沒看到安全防線設定（CSP）', action: '確認是否在其他設定檔或部署平台設定了 CSP' },
+  csp_weak: { title: '安全防線（CSP）留了後門，防護力打折', action: '把寫在網頁標籤上的程式碼搬進獨立的 .js 檔，再把防線裡的放寬設定拿掉' },
+  csp_allowlist_bypass: { title: '安全防線（CSP）放行了別人也能放程式碼的網站', action: '不要整個網域放行；把需要的檔案改放到自己的網站載入' },
+  csp_missing_directive: { title: '安全防線（CSP）少寫了關鍵的限制項目', action: "在設定最後補上這兩段：object-src 'none'; base-uri 'none'" },
+  csp_syntax: { title: '安全防線（CSP）有寫錯的地方，瀏覽器會默默略過', action: '逐項核對指令名稱、分號與單引號有沒有寫對' },
+  csp_not_enforced: { title: '安全防線（CSP）設了，但有一部分沒生效', action: '把防線的標籤移到所有程式碼之前；要防止被別的網站嵌入，得改由伺服器送出' },
+  no_csp_config: { title: '框架設定檔裡沒看到安全防線設定（CSP）', action: '確認是不是設定在別的檔案或部署平台的後台了' },
   possible_idor: { title: '登入的人可能看得到或改得到別人的資料', action: '查詢資料前，比對這筆資料的擁有者是不是目前登入的人' },
   possible_sql_injection: { title: '資料庫查詢可能被使用者輸入竄改（SQL Injection）', action: '改用參數化查詢（? 佔位符或 ORM 方法）' },
   insecure_eval: { title: '程式會把文字當成程式碼執行（eval）', action: '移除 eval，改用 JSON.parse 或明確的邏輯' },
@@ -3592,7 +3998,8 @@ const CONTEXT_NOTES = {
   'old-version': '這個資料夾看起來是舊版本，通常已經沒在維護，所以列為參考。但舊版放著一樣會被打開，如果確定不再需要，建議整個資料夾刪掉，或改成轉址到最新版。',
   'old-version-secret': '這是舊版本資料夾，但金鑰放在公開專案裡照樣會外洩，請照常處理。',
   'no-backend': '這個專案看起來沒有後端（沒有伺服器程式、沒有資料庫、也沒有對外 API 呼叫），資料都存在使用者自己的瀏覽器裡，沒有「別人的資料」會被看到，所以列為參考。',
-  'unused-secret': '這個檔案看起來沒有在使用，但金鑰放在公開專案裡照樣會外洩，請照常處理。'
+  'unused-secret': '這個檔案看起來沒有在使用，但金鑰放在公開專案裡照樣會外洩，請照常處理。',
+  'site-csp': '這個專案已經有一處「整站生效」的安全防線設定（寫在伺服器設定或框架設定檔裡，每一頁都會套用），所以這些網頁不必各自再寫一份，列為參考。'
 };
 
 /**
@@ -3634,7 +4041,8 @@ function countPhrase(stat, unit) {
 const REF_REASONS = {
   test: '測試或範例檔', placeholder: '假金鑰', unused: '沒在使用的檔案',
   'old-version': '舊版本資料夾', 'no-backend': '這個專案沒有後端',
-  'test-real-secret': '測試檔裡的金鑰', 'unused-secret': '沒在使用的檔案裡的金鑰', 'old-version-secret': '舊版本裡的金鑰'
+  'test-real-secret': '測試檔裡的金鑰', 'unused-secret': '沒在使用的檔案裡的金鑰', 'old-version-secret': '舊版本裡的金鑰',
+  'site-csp': '整站已經有一份安全防線設定'
 };
 
 function refReasons(groups) {
@@ -5334,6 +5742,19 @@ function applyNoBackendContext(findings, hasBackend) {
   });
 }
 
+/**
+ * 專案裡只要有一處「整站生效」的 CSP(伺服器標頭／helmet／設定檔),其他網頁就不必各自再寫一份,
+ * 所以把那些網頁的「完全沒有 CSP」降為參考。<meta> 寫的只管自己那一頁,不算數。
+ * 為什麼:整個專案丟進來時,每個 .html 都跳「需要處理」會把真正要處理的事淹掉。(背景見 docs/CHANGELOG.md)
+ */
+function applySiteWideCspContext(findings, files) {
+  if (!files.some(f => cspSiteWide(f.code))) return findings;
+  return findings.map(f => {
+    if (f.kind !== 'no_csp_html' || f.context || f.tier === 3) return f;
+    return Object.assign({}, f, { tier: 3, originalTier: f.tier, context: 'site-csp' });
+  });
+}
+
 /** 有檔名時,副檔名優先於內容猜測:.js 檔不檢查網頁 CSP、不提示 Python 特徵 */
 function applyFilenameRules(findings, notices, filename, language) {
   if (!filename) return { findings, notices };
@@ -5417,6 +5838,7 @@ function scanFiles(files, opts) {
   if (isMultiFile) {
     findings = applyOldVersionContext(findings, files);
     findings = applyNoBackendContext(findings, projectHasBackend(files));
+    findings = applySiteWideCspContext(findings, files);
     projectMap = buildProjectMap(files, opts && opts.coverage, isTestLikePath);
     findings = applyUsageContext(findings, projectMap);
     notices.unshift(...buildCoverageNotices(projectMap, files.length));
@@ -5425,7 +5847,7 @@ function scanFiles(files, opts) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { scanCode, scanFiles, projectHasBackend, applyNoBackendContext, applyOldVersionContext, applyUsageContext, attachLocations, buildNotices, looksMinified, applyFileContext, isTestLikePath, looksLikePlaceholderSecret, getSingleFileDetectors, IDOR_AST_DEGRADED_NOTICE, MINIFIED_NOTICE };
+  module.exports = { scanCode, scanFiles, projectHasBackend, applyNoBackendContext, applySiteWideCspContext, applyOldVersionContext, applyUsageContext, attachLocations, buildNotices, looksMinified, applyFileContext, isTestLikePath, looksLikePlaceholderSecret, getSingleFileDetectors, IDOR_AST_DEGRADED_NOTICE, MINIFIED_NOTICE };
 }
 </script>
 <script>

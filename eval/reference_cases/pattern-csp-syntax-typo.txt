@@ -1,0 +1,21 @@
+===SOURCE===
+非真實蒐集樣本。依「CSP 寫錯字,瀏覽器默默略過」這個問題模式改寫,不對應任何特定專案。
+兩個典型錯誤同時出現:'self' 漏了單引號(瀏覽器會當成一個叫 self 的網站)、指令名稱拼錯(scripts-src 不存在)。
+瀏覽器不會報錯,使用者以為有限制,實際上這兩行都沒有效果。
+
+===CATEGORY===
+CSP 指令拼錯、關鍵字漏單引號
+
+===EXPECTED===
+csp_syntax
+
+===CODE===
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src self; scripts-src 'self'; object-src 'none'">
+  <title>示範頁面</title>
+</head>
+<body></body>
+</html>

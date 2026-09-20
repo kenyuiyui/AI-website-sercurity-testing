@@ -153,6 +153,91 @@ check('嚴格的 CSP 不提醒', cspMeta("default-src 'none'; script-src 'self';
 check('只有 style-src 放寬不提醒', cspMeta("script-src 'self'; style-src 'self' 'unsafe-inline';"), 'csp_weak', false);
 check('有 CSP 就不再報「沒有 CSP」', cspMeta("script-src 'self' 'unsafe-inline';"), 'no_csp_html', false);
 
+// 第十四輪:CSP 內容品質。有 nonce／雜湊時 'unsafe-inline' 會被瀏覽器忽略、有 'strict-dynamic' 時白名單與協定會被忽略,
+// 這些常見的相容寫法不能被冤枉;反過來,瀏覽器默默略過的錯誤與可被借用的白名單要抓得到。
+const CSP_KINDS = ['csp_weak', 'csp_allowlist_bypass', 'csp_missing_directive', 'csp_syntax', 'csp_not_enforced'];
+function checkCspClean(label, code) {
+  const got = kinds(code).filter(k => CSP_KINDS.includes(k));
+  const ok = got.length === 0;
+  if (!ok) failCount++;
+  console.log(`${ok ? '✅' : '❌'} [CSP 應完全乾淨] ${label}${ok ? '' : ' → ' + got.join(', ')}`);
+}
+const NONCE_OK = "'nonce-${nonce}'";
+const STRICT = `script-src ${NONCE_OK} 'strict-dynamic'; object-src 'none'; base-uri 'none'`;
+// 放行了什麼(csp_weak)
+check('script-src 放行 data: 要提醒', cspMeta("script-src 'self' data:; object-src 'none'"), 'csp_weak', true);
+check('script-src 放行整個 https: 要提醒', cspMeta("script-src 'self' https:; object-src 'none'"), 'csp_weak', true);
+check('script-src 放行 http:// 來源要提醒', cspMeta("script-src 'self' http://cdn.example.com; object-src 'none'"), 'csp_weak', true);
+check('script-src 放行 *.com 這類頂層網域要提醒', cspMeta("script-src 'self' *.com; object-src 'none'"), 'csp_weak', true);
+check('http://localhost 不算「可被竄改」', cspMeta("script-src 'self' http://localhost:3000; object-src 'none'"), 'csp_weak', false);
+check('有 nonce 時 unsafe-inline 會被忽略,不報', cspMeta("script-src 'self' 'nonce-${nonce}' 'unsafe-inline'; object-src 'none'; base-uri 'none'"), 'csp_weak', false);
+check('有雜湊時 unsafe-inline 會被忽略,不報', cspMeta("script-src 'self' 'sha256-" + 'A'.repeat(43) + "=' 'unsafe-inline'; object-src 'none'"), 'csp_weak', false);
+check("有 strict-dynamic 時 https: 會被忽略,不報", cspMeta(`script-src ${NONCE_OK} 'strict-dynamic' https:; object-src 'none'; base-uri 'none'`), 'csp_weak', false);
+check('寫死的 nonce 要提醒', cspMeta("script-src 'nonce-abc123def456ghi'; object-src 'none'; base-uri 'none'"), 'csp_weak', true);
+check('執行時才填入的 nonce 不算寫死', cspMeta(STRICT), 'csp_weak', false);
+check('名字就叫 NONCE 的佔位字不算寫死', cspMeta("script-src 'nonce-__NONCE__'; object-src 'none'; base-uri 'none'"), 'csp_weak', false);
+check('有 style-src 卻完全沒管腳本要提醒', cspMeta("style-src 'self'; img-src 'self'"), 'csp_weak', true);
+check('只用 frame-ancestors 的 CSP 不用求它管腳本', "res.setHeader('Content-Security-Policy', \"frame-ancestors 'none'\");", 'csp_weak', false);
+check('object-src 放行 * 要提醒', cspMeta("default-src 'self'; object-src *"), 'csp_weak', true);
+check('default-src 放行 https: 連帶讓 object-src 沒管住,要提醒', cspMeta("default-src 'self' https:; script-src 'self'"), 'csp_weak', true);
+// 白名單放了可被借用的網域(csp_allowlist_bypass)
+check('放行 cdn.jsdelivr.net 要提醒', cspMeta("script-src 'self' https://cdn.jsdelivr.net; object-src 'none'"), 'csp_allowlist_bypass', true);
+check('放行 ajax.googleapis.com 要提醒', cspMeta("script-src 'self' https://ajax.googleapis.com; object-src 'none'"), 'csp_allowlist_bypass', true);
+check('放行 *.github.io 要提醒', cspMeta("script-src 'self' https://*.github.io; object-src 'none'"), 'csp_allowlist_bypass', true);
+check('放行自己的 github.io 網址不報', cspMeta("script-src 'self' https://someone.github.io; object-src 'none'"), 'csp_allowlist_bypass', false);
+check('自己的網域不報', cspMeta("script-src 'self' https://static.example.com; object-src 'none'"), 'csp_allowlist_bypass', false);
+check('公共 CDN 只出現在 img-src 不報', cspMeta("script-src 'self'; img-src https://cdn.jsdelivr.net; object-src 'none'"), 'csp_allowlist_bypass', false);
+check("有 strict-dynamic 時白名單會被忽略,不報", cspMeta(`script-src ${NONCE_OK} 'strict-dynamic' https://cdn.jsdelivr.net; object-src 'none'; base-uri 'none'`), 'csp_allowlist_bypass', false);
+// 缺指令(csp_missing_directive)
+check('沒有 object-src 也沒有 default-src 要提醒', cspMeta("script-src 'self'"), 'csp_missing_directive', true);
+check('有 default-src 就涵蓋 object-src,不報', cspMeta("default-src 'self'; script-src 'self'"), 'csp_missing_directive', false);
+check('有 object-src none 不報', cspMeta("script-src 'self'; object-src 'none'"), 'csp_missing_directive', false);
+check('用 nonce 卻沒 base-uri 要提醒', cspMeta(`script-src ${NONCE_OK} 'strict-dynamic'; object-src 'none'`), 'csp_missing_directive', true);
+check('用 nonce 且有 base-uri 不報', cspMeta(STRICT), 'csp_missing_directive', false);
+check('只用雜湊(沒有 strict-dynamic)不需要 base-uri', cspMeta("script-src 'sha256-" + 'A'.repeat(43) + "='; object-src 'none'"), 'csp_missing_directive', false);
+// 寫法錯誤(csp_syntax)
+check('指令拼錯要提醒', cspMeta("default-src 'self'; scripts-src 'self'"), 'csp_syntax', true);
+check('漏分號要提醒', cspMeta("script-src 'self' object-src 'none'"), 'csp_syntax', true);
+check("'self' 漏單引號要提醒", cspMeta("default-src self"), 'csp_syntax', true);
+check('關鍵字打錯要提醒', cspMeta("default-src 'self'; script-src 'unsafe-inlines'"), 'csp_syntax', true);
+check('指令重複要提醒', cspMeta("default-src 'self'; default-src 'none'"), 'csp_syntax', true);
+check('雜湊長度不對要提醒', cspMeta("default-src 'none'; script-src 'sha256-abc'"), 'csp_syntax', true);
+check('指令後面多冒號要提醒', cspMeta("default-src 'self'; script-src: 'self'"), 'csp_syntax', true);
+check("strict-dynamic 沒有 nonce／雜湊要提醒", cspMeta("default-src 'none'; script-src 'self' 'strict-dynamic'"), 'csp_syntax', true);
+check('已淘汰的指令列為提示', cspMeta("default-src 'self'; reflected-xss block"), 'csp_syntax', true);
+check('寫得正確的 CSP 不報語法問題', cspMeta("default-src 'none'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src https://api.example.com; base-uri 'none'; form-action 'none'; object-src 'none'"), 'csp_syntax', false);
+// 設了但沒生效(csp_not_enforced)
+check('meta 裡的 frame-ancestors 會被忽略,要提醒', cspMeta("default-src 'self'; frame-ancestors 'none'"), 'csp_not_enforced', true);
+check('標頭裡的 frame-ancestors 是正常寫法,不報', "res.setHeader('Content-Security-Policy', \"default-src 'self'; frame-ancestors 'none'\");", 'csp_not_enforced', false);
+check('CSP 標籤放在腳本後面要提醒', '<!DOCTYPE html><html><head><script src="a.js"></script><meta http-equiv="Content-Security-Policy" content="default-src \'self\'"></head></html>', 'csp_not_enforced', true);
+check('CSP 標籤放在腳本前面不報', '<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src \'self\'"><script src="a.js"></script></head></html>', 'csp_not_enforced', false);
+check('只有 Report-Only 標頭要提示', "res.setHeader('Content-Security-Policy-Report-Only', \"default-src 'self'; script-src 'self'\");", 'csp_not_enforced', true);
+check('meta 的 Report-Only 瀏覽器不支援,要提醒', '<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy-Report-Only" content="default-src \'self\'"></head></html>', 'csp_not_enforced', true);
+check('正式 CSP 之外另有 Report-Only 試營運,不報', "res.setHeader('Content-Security-Policy', \"default-src 'self'\");\nres.setHeader('Content-Security-Policy-Report-Only', \"default-src 'none'\");", 'csp_not_enforced', false);
+check('有 CSP 就算 Report-Only 也不再報「沒有 CSP」', '<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy-Report-Only" content="default-src \'self\'"></head></html>', 'no_csp_html', false);
+// 各種送出方式都要讀得到
+const WEAK = "script-src 'self' 'unsafe-inline'; object-src 'none'";
+check('讀得到 setHeader(單引號名稱、雙引號值)', `res.setHeader('Content-Security-Policy', "${WEAK}");`, 'csp_weak', true);
+check('讀得到 JSON 標頭設定', `{"headers":[{"key":"Content-Security-Policy","value":"${WEAK}"}]}`, 'csp_weak', true);
+check('讀得到 nginx add_header', `add_header Content-Security-Policy "${WEAK}" always;`, 'csp_weak', true);
+check('讀得到 Apache Header set', `Header always set Content-Security-Policy "${WEAK}"`, 'csp_weak', true);
+check('讀得到沒有引號的原始標頭(_headers 檔)', `/*\n  Content-Security-Policy: ${WEAK}\n`, 'csp_weak', true);
+check('讀得到屬性順序相反的 meta', `<!DOCTYPE html><html><head><meta content="${WEAK}" http-equiv="Content-Security-Policy"></head></html>`, 'csp_weak', true);
+check('讀得到 JSX 的 httpEquiv', `<meta httpEquiv="Content-Security-Policy" content="${WEAK}" />`, 'csp_weak', true);
+check('讀得到先存進變數的 CSP 字串', "const csp = `default-src 'self'; script-src 'self' 'unsafe-inline'; object-src 'none'`;\nheaders: [{ key: 'Content-Security-Policy', value: csp }]", 'csp_weak', true);
+check('HTML 註解裡的範例 CSP 不算', `<!DOCTYPE html><html><head><!-- <meta http-equiv="Content-Security-Policy" content="${WEAK}"> --><meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'"></head></html>`, 'csp_weak', false);
+check('說明文字裡的一句話不會被當成 CSP', "const tip = 'script-src 是控制腳本來源的指令，不要寫 unsafe-inline';", 'csp_weak', false);
+// Express helmet
+check("helmet 的 contentSecurityPolicy: false 要提醒", 'app.use(helmet({ contentSecurityPolicy: false }));', 'csp_weak', true);
+check("helmet 的 scriptSrc 放行 unsafe-inline 要提醒", `app.use(helmet.contentSecurityPolicy({ directives: { scriptSrc: ["'self'", "'unsafe-inline'"] } }));`, 'csp_weak', true);
+check('helmet 預設會補齊沒寫的指令,不報缺少', `app.use(helmet.contentSecurityPolicy({ directives: { scriptSrc: ["'self'"] } }));`, 'csp_missing_directive', false);
+check('helmet useDefaults: false 時沒寫 object-src 要提醒', `app.use(helmet.contentSecurityPolicy({ useDefaults: false, directives: { scriptSrc: ["'self'"] } }));`, 'csp_missing_directive', true);
+// 寫得好的 CSP 一律乾淨
+checkCspClean('本站自己的 CSP', cspMeta("default-src 'none'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self' data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'"));
+checkCspClean('nonce + strict-dynamic 的向下相容寫法', cspMeta(`script-src ${NONCE_OK} 'strict-dynamic' https: 'unsafe-inline'; object-src 'none'; base-uri 'none'`));
+checkCspClean('Next.js 風格:樣板字串 + nonce', "const cspHeader = `\n  default-src 'self';\n  script-src 'self' 'nonce-${nonce}' 'strict-dynamic';\n  style-src 'self' 'unsafe-inline';\n  object-src 'none';\n  base-uri 'self';\n  frame-ancestors 'none';\n  upgrade-insecure-requests;\n`;\nheaders: [{ key: 'Content-Security-Policy', value: cspHeader.replace(/\\s{2,}/g, ' ').trim() }]");
+checkCspClean('上線後只加一條 frame-ancestors 防嵌入', "add_header Content-Security-Policy \"frame-ancestors 'self'\" always;");
+
 // ── 檔案地圖(project-map)、檢查範圍、沒用到檔案的降級 ──
 const { scanFiles } = require('../modules/scan-orchestrator');
 const { findingRenderer } = require('../modules/finding-renderer');
@@ -342,6 +427,56 @@ checkTier('.html 檔仍檢查 CSP', '<!DOCTYPE html><html><head></head><body></b
   const ok = f.length === 1;
   if (!ok) failCount++;
   console.log(`${ok ? '✅' : '❌'} [去重複] 同一行同一種問題只回報一次(實際 ${f.length} 筆)`);
+}
+
+// ── 第十五輪:整站生效的 CSP,其他網頁不重複報「完全沒有 CSP」 ──
+console.log();
+console.log('── 第十五輪:多檔案的 CSP 情境 ──');
+{
+  const PAGE = '<!DOCTYPE html><html><head><title>t</title></head><body><p>hi</p></body></html>';
+  const cspNoHtml = f => scanFiles(f).findings.filter(x => x.kind === 'no_csp_html');
+  const check = (label, files, want) => {
+    const got = cspNoHtml(files).map(x => x.tier + (x.context ? '/' + x.context : '')).sort();
+    const ok = JSON.stringify(got) === JSON.stringify(want);
+    if (!ok) failCount++;
+    console.log(`${ok ? '✅' : '❌'} ${label}(實際 ${JSON.stringify(got)})`);
+  };
+  const header = "module.exports={async headers(){return [{source:'/(.*)',headers:[{key:'Content-Security-Policy',value:\"default-src 'self'\"}]}]}}";
+
+  check('[整站CSP] 沒有任何 CSP → 兩頁都是「需要處理」', [
+    { filename: 'a.html', code: PAGE }, { filename: 'b.html', code: PAGE }
+  ], ['1', '1']);
+
+  check('[整站CSP] 框架設定檔有標頭 CSP → 兩頁都降為「參考」', [
+    { filename: 'a.html', code: PAGE }, { filename: 'b.html', code: PAGE }, { filename: 'next.config.js', code: header }
+  ], ['3/site-csp', '3/site-csp']);
+
+  check('[整站CSP] nginx 設定檔也算整站生效', [
+    { filename: 'a.html', code: PAGE }, { filename: 'nginx.conf', code: 'add_header Content-Security-Policy "default-src \'self\'";' }
+  ], ['3/site-csp']);
+
+  check('[整站CSP] helmet 設定也算整站生效', [
+    { filename: 'a.html', code: PAGE },
+    { filename: 'server.js', code: "app.use(helmet({ contentSecurityPolicy: { directives: { defaultSrc: [\"'self'\"], scriptSrc: [\"'self'\"] } } }))" }
+  ], ['3/site-csp']);
+
+  check('[整站CSP] 別頁的 <meta> 只管自己那頁,不連帶降級', [
+    { filename: 'a.html', code: PAGE },
+    { filename: 'b.html', code: '<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src \'self\'; object-src \'none\'; base-uri \'none\'"></head></html>' }
+  ], ['1']);
+
+  check('[整站CSP] 只回報不阻擋的標頭不算有防線', [
+    { filename: 'a.html', code: PAGE },
+    { filename: 'server.js', code: "res.setHeader('Content-Security-Policy-Report-Only', \"default-src 'self'\")" }
+  ], ['1']);
+
+  {
+    // 單檔案貼上時不套用(沒有別的檔案可以佐證)
+    const one = scanCode(PAGE, { filename: 'a.html' }).findings.filter(x => x.kind === 'no_csp_html');
+    const ok = one.length === 1 && one[0].tier === 1 && !one[0].context;
+    if (!ok) failCount++;
+    console.log(`${ok ? '✅' : '❌'} [整站CSP] 單獨貼一頁 HTML 時仍是「需要處理」`);
+  }
 }
 
 // reference_cases/ 全部應命中 EXPECTED

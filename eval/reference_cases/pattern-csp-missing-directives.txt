@@ -1,0 +1,20 @@
+===SOURCE===
+非真實蒐集樣本。依「用了 nonce 的 CSP 沒有限制 base-uri 與 object-src」這個問題模式改寫,不對應任何特定專案。
+script-src 寫得很嚴格(nonce + strict-dynamic),但漏了 base-uri:攻擊者只要能塞進一個 <base> 標籤,
+就能改掉相對路徑腳本的載入位置,nonce 也擋不住。object-src 也沒寫,沒有 default-src 可以退而求其次。
+
+===CATEGORY===
+nonce 型 CSP 缺 base-uri 與 object-src
+
+===EXPECTED===
+csp_missing_directive
+
+===CODE===
+app.use((req, res, next) => {
+  res.locals.nonce = crypto.randomBytes(16).toString('base64');
+  res.setHeader(
+    'Content-Security-Policy',
+    `script-src 'nonce-${res.locals.nonce}' 'strict-dynamic'; style-src 'self'`
+  );
+  next();
+});

@@ -59,6 +59,11 @@
 **CSP**
 - `no_csp_html` — HTML 頁面缺少 CSP
 - `no_csp_config` — 框架設定檔缺少 CSP
+- `csp_weak` — CSP 放寬到幾乎沒防護（unsafe-inline／unsafe-eval／整個協定／萬用字元／寫死的 nonce／沒管腳本）
+- `csp_allowlist_bypass` — script-src 白名單放了可被借用的網域（公共 CDN、共用主機萬用網域、JSONP 端點）
+- `csp_missing_directive` — 缺 object-src，或用 nonce 卻沒管 base-uri
+- `csp_syntax` — 指令拼錯、漏分號、關鍵字沒加引號、雜湊／nonce 格式不對、已淘汰指令
+- `csp_not_enforced` — 設了但沒生效（meta 不支援的指令、放在腳本後面、Report-Only）
 
 **存取控制**
 - `possible_idor` — 疑似缺少擁有權驗證

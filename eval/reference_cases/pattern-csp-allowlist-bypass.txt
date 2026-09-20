@@ -1,0 +1,29 @@
+===SOURCE===
+非真實蒐集樣本。依「CSP 白名單放行了別人也能放程式碼的網域」這個問題模式改寫,不對應任何特定專案。
+這個組合很常見:為了讓頁面能載入公共 CDN 上的函式庫,把整個 CDN 網域與整個 *.github.io 都列進 script-src。
+結果攻擊者不需要入侵網站,只要把程式碼發佈到 CDN 或自己的 github.io,再讓頁面載入,就能繞過 CSP。
+
+===CATEGORY===
+script-src 白名單含公共 CDN 與共用主機萬用網域
+
+===EXPECTED===
+csp_allowlist_bypass
+
+===CODE===
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' https://cdn.jsdelivr.net https://*.github.io;
+    object-src 'none';
+    base-uri 'none';
+  ">
+  <title>示範頁面</title>
+</head>
+<body>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

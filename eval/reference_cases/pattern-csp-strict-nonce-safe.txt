@@ -1,0 +1,26 @@
+===SOURCE===
+非真實蒐集樣本。與 pattern-csp-missing-directives.txt 相同的需求(每次請求產生 nonce),
+但 object-src、base-uri 都有寫,nonce 也是執行時才產生。另外 style-src 用了 'unsafe-inline'(風險低,不報)。
+用來確認規則不會對「寫得好的嚴格 CSP」誤報。
+
+===CATEGORY===
+寫得好的 nonce 型 CSP(不應命中)
+
+===EXPECTED===
+NONE
+
+===CODE===
+app.use((req, res, next) => {
+  res.locals.nonce = crypto.randomBytes(16).toString('base64');
+  const csp = `
+    default-src 'self';
+    script-src 'self' 'nonce-${res.locals.nonce}' 'strict-dynamic' https: 'unsafe-inline';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data:;
+    object-src 'none';
+    base-uri 'none';
+    frame-ancestors 'none';
+  `;
+  res.setHeader('Content-Security-Policy', csp.replace(/\s{2,}/g, ' ').trim());
+  next();
+});

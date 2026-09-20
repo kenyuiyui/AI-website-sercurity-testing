@@ -44,6 +44,11 @@
 | `pattern-xss-url-parameter.txt` | 網址參數直接回顯（典型反射型 XSS） | ✅ 命中 `xss_from_url`（URL 來源追兩層後才抓到） |
 | `pattern-xss-escaped-safe.txt` | 同樣的渲染需求但有正確跳脫（負向案例） | ✅ 正確放行 |
 | `pattern-csp-unsafe-inline.txt` | 有 CSP 但 `script-src` 含 `unsafe-inline` | ✅ 命中 `csp_weak` |
+| `pattern-csp-allowlist-bypass.txt` | 白名單放行公共 CDN 與 `*.github.io`（問題模式改寫，不對應特定專案） | ✅ 命中 `csp_allowlist_bypass` |
+| `pattern-csp-missing-directives.txt` | nonce 型 CSP 沒寫 `base-uri`、`object-src` | ✅ 命中 `csp_missing_directive` |
+| `pattern-csp-syntax-typo.txt` | 指令拼錯、`'self'` 漏單引號 | ✅ 命中 `csp_syntax` |
+| `pattern-csp-meta-limits.txt` | meta 型 CSP 寫了 `frame-ancestors`、且放在腳本後面 | ✅ 命中 `csp_not_enforced` |
+| `pattern-csp-strict-nonce-safe.txt` | 寫得好的 nonce＋strict-dynamic CSP（負向案例） | ✅ 正確放行 |
 
 ## 這批案例發現的規則漏判（2026-09）
 

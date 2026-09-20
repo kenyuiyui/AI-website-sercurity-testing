@@ -77,7 +77,7 @@ docs/USER_TEST_KIT.md         真人測試任務腳本(擁有者執行,結果回
   visualData?: object,    // 選填:畫面示意用
   // 以下由 scan-orchestrator 補上
   line?, start?, end?, filename?,
-  context?: 'placeholder' | 'test' | 'test-real-secret' | 'unused' | 'unused-secret' | 'old-version' | 'old-version-secret' | 'no-backend',  // 依檔案情境調整過層級時的原因
+  context?: 'placeholder' | 'test' | 'test-real-secret' | 'unused' | 'unused-secret' | 'old-version' | 'old-version-secret' | 'no-backend' | 'site-csp',  // 依檔案情境調整過層級時的原因
   originalTier?
 }
 ```

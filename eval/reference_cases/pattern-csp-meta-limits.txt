@@ -1,0 +1,22 @@
+===SOURCE===
+非真實蒐集樣本。依「用 <meta> 設定 CSP,卻寫了 meta 不支援的指令」這個問題模式改寫,不對應任何特定專案。
+frame-ancestors 只能用 HTTP 標頭,寫在 <meta> 裡瀏覽器會直接忽略,頁面照樣能被別人的網頁嵌入(點擊劫持)。
+另外這個 CSP 標籤放在一支腳本後面,前面那支腳本不受它限制。
+
+===CATEGORY===
+meta 型 CSP 的 frame-ancestors 被忽略、CSP 標籤放在腳本之後
+
+===EXPECTED===
+csp_not_enforced
+
+===CODE===
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <script src="analytics.js"></script>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; frame-ancestors 'none'">
+  <title>示範頁面</title>
+</head>
+<body></body>
+</html>

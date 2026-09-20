@@ -14,6 +14,7 @@ const VALID_KINDS = new Set([
   'supabase_service_role', 'supabase_anon', 'jwt_unknown_role', 'csp_weak', 'xss_from_url', 'html_from_data',
   'weak_hash',
   'no_csp_html', 'no_csp_config',
+  'csp_allowlist_bypass', 'csp_missing_directive', 'csp_syntax', 'csp_not_enforced',
   'possible_idor',
   'possible_sql_injection', 'insecure_eval', 'insecure_exec',
   'insecure_function_constructor', 'insecure_pickle', 'insecure_yaml_load',
