@@ -31,7 +31,7 @@ function getSingleFileDetectors() {
     { id: 'M2', run: code => jwtAnalyzer(code) },
     { id: 'M3', run: (code, ctx) => hashDetector(code, ctx) },
     { id: 'M4', run: (code, ctx) => secretHeuristics(code, ctx.byId.M1.concat(ctx.byId.M2)) },
-    { id: 'M5', run: code => cspDetector(code) },
+    { id: 'M5', run: (code, ctx) => cspDetector(code, ctx) },
     // 為什麼:正則版 IDOR 只看真正的程式碼,否則字串裡的範例程式碼(單檔版網頁內嵌的示範字串)會誤報。(背景見 docs/CHANGELOG.md)
     { id: 'M6', run: (code, ctx) => { const r = idorDetectorWithMeta(code, blankNonCode(code, ctx.mask)); ctx.astUsed = r.astUsed; return r.findings; } },
     { id: 'M9', run: code => sqlInjectionDetector(code) },
@@ -114,6 +114,10 @@ const TEST_NAME_RE = /(^|[._-])(tests?|specs?|smoke|regression|fixtures?|samples
 // 金鑰類 kind:在測試檔裡若「看起來是真的」仍維持原層級(公開 repo 的測試檔外洩一樣是外洩)
 const SECRET_KINDS = new Set(['plain_key', 'supabase_service_role', 'supabase_anon', 'jwt_unknown_role', 'line_bot_token_suspected', 'firebase_config_exposed', 'endpoint_url', 'env_file_secret']);
 const FRAMEWORK_CONFIG_RE = /(^|\/)((next|nuxt|vite|astro|svelte|remix)\.config\.[cm]?[jt]s|(vercel|netlify|firebase)\.json|netlify\.toml)$/i;
+// 說明文件:裡面的 CSP 是在「描述」政策,不是政策本身(程式碼圍籬裡的範例最常見),
+// 既不該對它報寫法問題,也不該拿它當成「這個專案有設定 CSP」的證據。
+const DOC_EXT_RE = /\.(md|markdown|mdx|txt|rst|adoc|asciidoc|org)$/i;
+const CSP_KINDS = new Set(['no_csp_html', 'no_csp_config', 'csp_weak', 'csp_allowlist_bypass', 'csp_missing_directive', 'csp_syntax', 'csp_not_enforced']);
 
 function isTestLikePath(filename) {
   if (!filename) return false;
@@ -296,7 +300,10 @@ function applyNoBackendContext(findings, hasBackend) {
  * 為什麼:整個專案丟進來時,每個 .html 都跳「需要處理」會把真正要處理的事淹掉。(背景見 docs/CHANGELOG.md)
  */
 function applySiteWideCspContext(findings, files) {
-  if (!files.some(f => cspSiteWide(f.code))) return findings;
+  // 語言以副檔名為準:建置腳本(.py／.rb)裡常出現 <head>、<meta> 字樣,靠內容猜會被誤判成網頁
+  const siteWide = files.some(f => !DOC_EXT_RE.test(f.filename || '')
+    && cspSiteWide(f.code, languageFromFilename(f.filename) || guessMaskLanguage(f.code || '')));
+  if (!siteWide) return findings;
   return findings.map(f => {
     if (f.kind !== 'no_csp_html' || f.context || f.tier === 3) return f;
     return Object.assign({}, f, { tier: 3, originalTier: f.tier, context: 'site-csp' });
@@ -308,7 +315,9 @@ function applyFilenameRules(findings, notices, filename, language) {
   if (!filename) return { findings, notices };
   const ext = (String(filename).toLowerCase().match(/\.([a-z0-9]+)$/) || [])[1] || '';
   const isConfig = FRAMEWORK_CONFIG_RE.test(filename);
+  const isDoc = DOC_EXT_RE.test(filename);
   findings = findings.filter(f => {
+    if (isDoc && CSP_KINDS.has(f.kind)) return false;
     if (f.kind === 'no_csp_html') return language === 'html' || ['php', 'erb', 'hbs', 'ejs', 'njk'].indexOf(ext) >= 0;
     if (f.kind === 'no_csp_config') return isConfig;
     return true;

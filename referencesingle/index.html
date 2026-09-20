@@ -8,7 +8,7 @@
   唯一例外:使用者按下「從 GitHub 匯入」時,讀取 api.github.com 與 raw.githubusercontent.com 上的公開檔案(只讀取,不送出程式碼)。
   單檔版由 scripts/build-single.js 改寫這一行(行內 script/style 改用 sha256 雜湊、字型改用 data:)。
 -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tQN3P01k+9fYTJxjz1bz9sk4ixh28eNMwMOygJKvYHA=' 'sha256-r2Ulx/KLJ3bwPptcn/Gxn23scblhvMWjB2MSqkYA4GY=' 'sha256-k4Dsl4phnEVoWRV6BGYpsCAjEiqhiFqyyqFmNTpECOY=' 'sha256-AvGuu4qO0PTKlZOxSFM5OZdwoGBGMcuTTMqsy4/n/zE=' 'sha256-Kz1bcHKV44I2OKFIEpq+iclqwXOorzYOHcgUVYXJdaw=' 'sha256-s6wK40PdWN1WO56UYib9d+evKEx9zrGhFp1jXa+P+bU=' 'sha256-w9tDV4ToqGvFljYpLINp/oeLBzxAX1ZCL21aTbIMXcE=' 'sha256-8ZqKMlOH5MjSWLMiy13BEO4qPrHonb2ogwoH+rmKY2s=' 'sha256-J/SPqHhofqv2ORlDJaGQfn9tioZ+MBhmJXdOmtN2xM8=' 'sha256-VF7EbVkdcEb/5TRO0cqx51QYwoWGkFPl+O/f3MwcOBM=' 'sha256-KjZdCklqc4O8cs2Pg0FS+9aTNC9SOrRlh8G0HRjF29I=' 'sha256-nT4uWDvxIao1wumfkyd+jiE5hRAmSEYDZDLjL8kG37w=' 'sha256-0pOxSQ9PNKtU4R7szM6TT7hYjIr5M9Q6ebZB4CGAZFI=' 'sha256-PIv8TVCXCC8t+Pdd/bp7vMH3ycEqSmtgj05fwYo+5wE=' 'sha256-oMcRnEhoBVhFfAKGp7IKU0F/2a9JOXV4OXT2OQi84xY=' 'sha256-YPKriWmcdloU/53/GV6xGDoRNk6O25Fe/3mCwh3Ku+0=' 'sha256-MkhJSNhhn6SqYzLWDW+T8J4PNIbQLFBBKzie516HbkQ=' 'sha256-cmLyYxrHv9dqB9fvRph7+9gAY7NMsMz99f7Q0K37ioo=' 'sha256-bXPxT5AsUti/gASwZ+XMpnyKzyiC3pQrjpZ0en2IYv0=' 'sha256-xZQkkSa264miFJm8yfibQKGc3PVNTz40HvWCUjoTA/0=' 'sha256-Wyyh4pGZCu33knKPa4k+JP95Q4DQlB07lPvliCyAa5o='; style-src 'sha256-yVZD3pDEYI+5GpYuMKxafiMqHiUD1ZRJ4fxaLl7b0Yw='; font-src data:; img-src data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-tQN3P01k+9fYTJxjz1bz9sk4ixh28eNMwMOygJKvYHA=' 'sha256-r2Ulx/KLJ3bwPptcn/Gxn23scblhvMWjB2MSqkYA4GY=' 'sha256-k4Dsl4phnEVoWRV6BGYpsCAjEiqhiFqyyqFmNTpECOY=' 'sha256-AvGuu4qO0PTKlZOxSFM5OZdwoGBGMcuTTMqsy4/n/zE=' 'sha256-Kz1bcHKV44I2OKFIEpq+iclqwXOorzYOHcgUVYXJdaw=' 'sha256-s6wK40PdWN1WO56UYib9d+evKEx9zrGhFp1jXa+P+bU=' 'sha256-w9tDV4ToqGvFljYpLINp/oeLBzxAX1ZCL21aTbIMXcE=' 'sha256-8ZqKMlOH5MjSWLMiy13BEO4qPrHonb2ogwoH+rmKY2s=' 'sha256-/+q+XzUADDSWcOikwnrUuZJ5xNBdOyBN2oW+NepbBMg=' 'sha256-VF7EbVkdcEb/5TRO0cqx51QYwoWGkFPl+O/f3MwcOBM=' 'sha256-KjZdCklqc4O8cs2Pg0FS+9aTNC9SOrRlh8G0HRjF29I=' 'sha256-vzGOcf2uKjE+3NQZnSqPwxVDUOKOzIGHIbF8f77q7vQ=' 'sha256-0pOxSQ9PNKtU4R7szM6TT7hYjIr5M9Q6ebZB4CGAZFI=' 'sha256-PIv8TVCXCC8t+Pdd/bp7vMH3ycEqSmtgj05fwYo+5wE=' 'sha256-oMcRnEhoBVhFfAKGp7IKU0F/2a9JOXV4OXT2OQi84xY=' 'sha256-YPKriWmcdloU/53/GV6xGDoRNk6O25Fe/3mCwh3Ku+0=' 'sha256-MkhJSNhhn6SqYzLWDW+T8J4PNIbQLFBBKzie516HbkQ=' 'sha256-cmLyYxrHv9dqB9fvRph7+9gAY7NMsMz99f7Q0K37ioo=' 'sha256-FoGJnnTfAMIiDP73uX3+tWy4vE2VmfdwxckcPeeRreU=' 'sha256-xZQkkSa264miFJm8yfibQKGc3PVNTz40HvWCUjoTA/0=' 'sha256-Wyyh4pGZCu33knKPa4k+JP95Q4DQlB07lPvliCyAa5o='; style-src 'sha256-yVZD3pDEYI+5GpYuMKxafiMqHiUD1ZRJ4fxaLl7b0Yw='; font-src data:; img-src data:; connect-src https://api.github.com https://raw.githubusercontent.com; base-uri 'none'; form-action 'none'; object-src 'none'">
 <meta name="referrer" content="no-referrer">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>未發現 ≠ 安全 — AI 產出程式碼資安檢查器</title>
@@ -1424,7 +1424,7 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
     <footer>
       <p>本工具只做靜態比對：不執行、不上傳、不儲存你貼上的內容。適合上線前快速自我檢查，不能取代正式的資安審查或滲透測試。</p>
       <p>「需要處理」是高信心度的結果；「請你確認」代表看起來可疑，需要你對照程式判斷。</p>
-      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">18671150</span></p>
+      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">385250a9</span></p>
     </footer>
   </div>
 
@@ -1450,7 +1450,7 @@ section.privacy h2 { font-size: 16px; margin: 0 0 0.6rem; color: var(--green-tex
             <li>網址或輸入框的內容被直接當成網頁內容顯示（XSS），以及課程名稱、留言這類文字沒有跳脫就組成 HTML</li>
             <li>疑似缺少擁有權檢查（登入的人看得到別人的資料），含 Express 路由寫法；純前端、沒有後端的專案會自動降為「參考」</li>
             <li>多檔案：同一敏感欄位在不同檔案的遮罩不一致、路由缺少流量限制</li>
-            <li>多檔案：專案裡只要有一處「整站生效」的安全防線設定（伺服器或框架設定檔），其他網頁的「沒有設防線」就會降為「參考」，不會每頁重複提醒</li>
+            <li>多檔案：專案裡只要有一處「整站生效」的安全防線設定（伺服器、框架設定檔，或建置時統一注入的腳本），其他網頁的「沒有設防線」就會降為「參考」，不會每頁重複提醒</li>
             <li>多檔案：列出檢查範圍（掃了幾個、哪些沒掃到）、每個檔案的角色，以及「網頁用到哪些檔案」的引用關係樹；疑似沒用到的檔案裡，發現降為「參考」（金鑰除外）</li>
           </ul>
         </div>
@@ -2411,6 +2411,7 @@ const CSP_DEPRECATED = new Set(['reflected-xss', 'referrer', 'disown-opener', 'p
 const CSP_KEYWORDS = ['self', 'none', 'unsafe-inline', 'unsafe-eval', 'unsafe-hashes', 'strict-dynamic', 'report-sample', 'wasm-unsafe-eval', 'inline-speculation-rules', 'trusted-types-eval'];
 // <meta> 方式送出的 CSP,瀏覽器會直接忽略這幾個指令(規格明訂,只能用 HTTP 標頭)
 const CSP_META_IGNORED = { 'frame-ancestors': '防止被別人的網頁嵌入', 'report-uri': '違規回報', 'report-to': '違規回報', sandbox: 'sandbox 限制' };
+const CSP_NO_VALUE = ['upgrade-insecure-requests', 'block-all-mixed-content']; // 本來就沒有值的指令
 const CSP_PLACEHOLDER = '\u0001'; // ${…}、{{…}}、<%…%> 這類「執行時才填進去」的值(常見於 nonce)
 
 // 白名單裡「借得到別人程式碼」的網域。只列常見的,一定不完整——沒列到不代表安全。
@@ -2464,7 +2465,7 @@ function cspHost(tok) {
 // 每筆:{ text, source: 'meta'|'header'|'string'|'helmet', reportOnly, index, defaultsFilled? }
 
 function cspNormalize(raw) {
-  return raw.replace(/\$\{[^}]*\}|\{\{[^}]*\}\}|<%[\s\S]*?%>|%[A-Za-z_]+%|__[A-Za-z_]+__/g, CSP_PLACEHOLDER)
+  return raw.replace(/\$\{[^}]*\}|\{\{[^}]*\}\}|\{[A-Za-z_][\w.]*\}|<%[\s\S]*?%>|%[A-Za-z_]+%|__[A-Za-z_]+__/g, CSP_PLACEHOLDER)
     .replace(/\\[nrt]/g, ' ').replace(/\\(.)/g, '$1').replace(/\s+/g, ' ').trim();
 }
 
@@ -2550,6 +2551,27 @@ function cspExtract(code, looksLikeHtml) {
       if (!/-src\b|frame-ancestors|base-uri|form-action/.test(f[2])) continue;
       const text = cspNormalize(f[2]);
       if (cspLooksLikePolicy(text, 2)) push({ text, source: 'string', reportOnly: false, index: f.index });
+    }
+    // 「一條指令一個字串」的清單,最後再接起來:Python 的 list、JS 的陣列、Go 的 slice 都常這樣寫,
+    // 每個字串各自都不像一份完整的 CSP,所以上面的規則一個都抓不到。要求至少兩個字串以已知指令開頭。
+    const listRe = /\[([\s\S]{0,4000}?)\]/g;
+    let l;
+    while ((l = listRe.exec(code))) {
+      const itemRe = /(["'`])((?:\\.|(?!\1)[^\\])*)\1/g;
+      const dirs = [];
+      let d;
+      while ((d = itemRe.exec(l[1]))) {
+        const item = d[2].trim();
+        const parts = item.split(/\s+/);
+        const name = parts[0].toLowerCase();
+        // 要有值才算一條指令:程式碼裡的 ['object-src', x] 只是把指令名稱當字串用,不是政策
+        if (parts.length < 2 && CSP_NO_VALUE.indexOf(name) < 0) continue;
+        if (CSP_DIRECTIVES.has(name) || CSP_DEPRECATED.has(name)) dirs.push(item);
+      }
+      // 至少兩條,而且至少一條帶值:全是 upgrade-insecure-requests 這種沒有值的指令,多半是程式碼裡的名稱清單
+      if (dirs.length >= 2 && dirs.some(x => x.split(/\s+/).length >= 2)) {
+        push({ text: cspNormalize(dirs.join('; ')), source: 'string', reportOnly: false, index: l.index });
+      }
     }
     cspHelmetPolicies(code).forEach(push);
   }
@@ -2739,9 +2761,16 @@ function cspFinding(kind, tier, items, source, index) {
  * @param {string} code
  * @returns {boolean}
  */
-function cspSiteWide(code) {
+function cspIsHtml(code, language) {
+  // 為什麼:.py／.rb 這類檔案只要在字串或正則裡提到 <head>、<meta> 就會被內容猜測判成 HTML,
+  //       而「被當成 HTML」會關掉字串與 helmet 兩條取值路徑,建置時注入 CSP 的腳本就完全看不到。(背景見 docs/CHANGELOG.md)
+  if (language) return language === 'html';
+  return /<html|<head|<!DOCTYPE/i.test(code);
+}
+
+function cspSiteWide(code, language) {
   code = code || '';
-  return cspExtract(code, /<html|<head|<!DOCTYPE/i.test(code))
+  return cspExtract(code, cspIsHtml(code, language))
     .policies.some(p => !p.reportOnly && p.source !== 'meta');
 }
 
@@ -2749,10 +2778,10 @@ function cspSiteWide(code) {
  * @param {string} code
  * @returns {Array<{tier:number, category:string, name:string, kind:string, evidence:string}>}
  */
-function cspDetector(code) {
+function cspDetector(code, ctx) {
   const findings = [];
 
-  const looksLikeHtml = /<html|<head|<!DOCTYPE/i.test(code);
+  const looksLikeHtml = cspIsHtml(code, ctx && ctx.language);
   const looksLikeFrameworkConfig = /\bNextConfig\b|defineNuxtConfig\s*\(|module\.exports\s*=\s*{[\s\S]*?headers\s*:|async\s+headers\s*\(\s*\)\s*{|"headers"\s*:\s*\[/i.test(code);
   const found = cspExtract(code, looksLikeHtml);
   const usesHelmet = /require\s*\(\s*['"]helmet['"]|from\s+['"]helmet['"]|\bhelmet\s*\(/.test(code);
@@ -3999,7 +4028,7 @@ const CONTEXT_NOTES = {
   'old-version-secret': '這是舊版本資料夾，但金鑰放在公開專案裡照樣會外洩，請照常處理。',
   'no-backend': '這個專案看起來沒有後端（沒有伺服器程式、沒有資料庫、也沒有對外 API 呼叫），資料都存在使用者自己的瀏覽器裡，沒有「別人的資料」會被看到，所以列為參考。',
   'unused-secret': '這個檔案看起來沒有在使用，但金鑰放在公開專案裡照樣會外洩，請照常處理。',
-  'site-csp': '這個專案已經有一處「整站生效」的安全防線設定（寫在伺服器設定或框架設定檔裡，每一頁都會套用），所以這些網頁不必各自再寫一份，列為參考。'
+  'site-csp': '這個專案已經有一處「整站生效」的安全防線設定（寫在伺服器設定、框架設定檔，或建置時統一注入的腳本裡），每一頁都會套用，所以這些網頁的原始檔不必各自再寫一份，列為參考。'
 };
 
 /**
@@ -5483,7 +5512,7 @@ function getSingleFileDetectors() {
     { id: 'M2', run: code => jwtAnalyzer(code) },
     { id: 'M3', run: (code, ctx) => hashDetector(code, ctx) },
     { id: 'M4', run: (code, ctx) => secretHeuristics(code, ctx.byId.M1.concat(ctx.byId.M2)) },
-    { id: 'M5', run: code => cspDetector(code) },
+    { id: 'M5', run: (code, ctx) => cspDetector(code, ctx) },
     // 為什麼:正則版 IDOR 只看真正的程式碼,否則字串裡的範例程式碼(單檔版網頁內嵌的示範字串)會誤報。(背景見 docs/CHANGELOG.md)
     { id: 'M6', run: (code, ctx) => { const r = idorDetectorWithMeta(code, blankNonCode(code, ctx.mask)); ctx.astUsed = r.astUsed; return r.findings; } },
     { id: 'M9', run: code => sqlInjectionDetector(code) },
@@ -5566,6 +5595,10 @@ const TEST_NAME_RE = /(^|[._-])(tests?|specs?|smoke|regression|fixtures?|samples
 // 金鑰類 kind:在測試檔裡若「看起來是真的」仍維持原層級(公開 repo 的測試檔外洩一樣是外洩)
 const SECRET_KINDS = new Set(['plain_key', 'supabase_service_role', 'supabase_anon', 'jwt_unknown_role', 'line_bot_token_suspected', 'firebase_config_exposed', 'endpoint_url', 'env_file_secret']);
 const FRAMEWORK_CONFIG_RE = /(^|\/)((next|nuxt|vite|astro|svelte|remix)\.config\.[cm]?[jt]s|(vercel|netlify|firebase)\.json|netlify\.toml)$/i;
+// 說明文件:裡面的 CSP 是在「描述」政策,不是政策本身(程式碼圍籬裡的範例最常見),
+// 既不該對它報寫法問題,也不該拿它當成「這個專案有設定 CSP」的證據。
+const DOC_EXT_RE = /\.(md|markdown|mdx|txt|rst|adoc|asciidoc|org)$/i;
+const CSP_KINDS = new Set(['no_csp_html', 'no_csp_config', 'csp_weak', 'csp_allowlist_bypass', 'csp_missing_directive', 'csp_syntax', 'csp_not_enforced']);
 
 function isTestLikePath(filename) {
   if (!filename) return false;
@@ -5748,7 +5781,10 @@ function applyNoBackendContext(findings, hasBackend) {
  * 為什麼:整個專案丟進來時,每個 .html 都跳「需要處理」會把真正要處理的事淹掉。(背景見 docs/CHANGELOG.md)
  */
 function applySiteWideCspContext(findings, files) {
-  if (!files.some(f => cspSiteWide(f.code))) return findings;
+  // 語言以副檔名為準:建置腳本(.py／.rb)裡常出現 <head>、<meta> 字樣,靠內容猜會被誤判成網頁
+  const siteWide = files.some(f => !DOC_EXT_RE.test(f.filename || '')
+    && cspSiteWide(f.code, languageFromFilename(f.filename) || guessMaskLanguage(f.code || '')));
+  if (!siteWide) return findings;
   return findings.map(f => {
     if (f.kind !== 'no_csp_html' || f.context || f.tier === 3) return f;
     return Object.assign({}, f, { tier: 3, originalTier: f.tier, context: 'site-csp' });
@@ -5760,7 +5796,9 @@ function applyFilenameRules(findings, notices, filename, language) {
   if (!filename) return { findings, notices };
   const ext = (String(filename).toLowerCase().match(/\.([a-z0-9]+)$/) || [])[1] || '';
   const isConfig = FRAMEWORK_CONFIG_RE.test(filename);
+  const isDoc = DOC_EXT_RE.test(filename);
   findings = findings.filter(f => {
+    if (isDoc && CSP_KINDS.has(f.kind)) return false;
     if (f.kind === 'no_csp_html') return language === 'html' || ['php', 'erb', 'hbs', 'ejs', 'njk'].indexOf(ext) >= 0;
     if (f.kind === 'no_csp_config') return isConfig;
     return true;

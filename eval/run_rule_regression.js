@@ -479,6 +479,71 @@ console.log('── 第十五輪:多檔案的 CSP 情境 ──');
   }
 }
 
+// ── 第十六輪:取 CSP 不能只認 JS 的寫法,也不能靠內容猜語言 ──
+console.log();
+console.log('── 第十六輪:CSP 取值的涵蓋範圍 ──');
+{
+  const { cspSiteWide } = require('../modules/csp-detector');
+  const sw = (label, code, language, want) => {
+    const got = cspSiteWide(code, language);
+    const ok = got === want;
+    if (!ok) failCount++;
+    console.log(`${ok ? '✅' : '❌'} ${label}(實際 ${got})`);
+  };
+
+  // 一條指令一個字串的清單,最後 join 起來 — Python、JS、Go 都常這樣寫
+  sw('[取值] Python 清單 join 的政策算整站生效',
+    'DIRECTIVES = [\n  "default-src \'none\'",\n  "script-src \'self\'",\n  "object-src \'none\'",\n]\npolicy = "; ".join(DIRECTIVES)', 'python', true);
+  sw('[取值] JS 陣列 join 的政策算整站生效',
+    'const d = ["default-src \'none\'", "script-src \'self\'"];\nres.setHeader("X", d.join("; "));', 'js', true);
+  sw('[取值] 一般字串陣列不會被誤認成 CSP',
+    'const cols = ["name", "email", "created-at", "updated-at"];', 'js', false);
+  sw('[取值] 只有一條指令的清單不算(避免誤判)',
+    'const d = ["default-src \'none\'", "cache-control: no-store"];', 'js', false);
+
+  // 語言以副檔名為準:建置腳本裡提到 <head>、<meta> 不代表它是網頁
+  sw('[取值] 建置腳本提到 <head> 仍讀得到裡面的政策',
+    'HEAD_RE = re.compile(r"<head\\b[^>]*>")\nPOLICY = "default-src \'none\'; script-src \'self\'; object-src \'none\'"', 'python', true);
+  sw('[取值] 網頁自己的 <meta> 不算整站生效',
+    '<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src \'self\'; object-src \'none\'"></head></html>', 'html', false);
+
+  // 說明文件裡的 CSP 是在描述政策,不是政策本身
+  {
+    const md = '# 安全設定\n\n每一頁都會套用等同下面的政策:\n\n```text\ndefault-src \'none\';\nscript-src \'self\';\n```\n';
+    const one = scanCode(md, { filename: 'docs/security.md' }).findings.filter(f => /csp/.test(f.kind));
+    const ok = one.length === 0;
+    if (!ok) failCount++;
+    console.log(`${ok ? '✅' : '❌'} [取值] 說明文件裡的 CSP 範例不產生任何 CSP 發現(實際 ${JSON.stringify(one.map(f => f.kind))})`);
+  }
+
+  // 多檔案:建置時注入 CSP 的腳本,應該讓其他網頁降為參考
+  {
+    const PAGE = '<!DOCTYPE html><html><head><title>t</title></head><body></body></html>';
+    const build = 'DIRECTIVES = [\n  "default-src \'none\'",\n  "script-src \'self\'",\n]\n\ndef inject(text):\n    meta = \'<meta http-equiv="Content-Security-Policy" content="%s">\' % "; ".join(DIRECTIVES)\n    return text.replace("<head>", "<head>" + meta)';
+    const got = scanFiles([
+      { filename: 'index.html', code: PAGE },
+      { filename: 'about.html', code: PAGE },
+      { filename: 'scripts/apply_policy.py', code: build }
+    ]).findings.filter(f => f.kind === 'no_csp_html').map(f => f.tier + (f.context ? '/' + f.context : '')).sort();
+    const ok = JSON.stringify(got) === JSON.stringify(['3/site-csp', '3/site-csp']);
+    if (!ok) failCount++;
+    console.log(`${ok ? '✅' : '❌'} [取值] 建置腳本注入的 CSP 讓各網頁降為參考(實際 ${JSON.stringify(got)})`);
+  }
+
+  // 說明文件不能當成「這個專案有 CSP」的證據
+  {
+    const PAGE = '<!DOCTYPE html><html><head><title>t</title></head><body></body></html>';
+    const doc = '# 說明\n\n未來想設定的政策:\n\n```text\ndefault-src \'none\'; script-src \'self\';\n```\n';
+    const got = scanFiles([
+      { filename: 'index.html', code: PAGE },
+      { filename: 'docs/plan.md', code: doc }
+    ]).findings.filter(f => f.kind === 'no_csp_html').map(f => f.tier + (f.context ? '/' + f.context : ''));
+    const ok = JSON.stringify(got) === JSON.stringify(['1']);
+    if (!ok) failCount++;
+    console.log(`${ok ? '✅' : '❌'} [取值] 說明文件裡的政策不算數,網頁仍是「需要處理」(實際 ${JSON.stringify(got)})`);
+  }
+}
+
 // reference_cases/ 全部應命中 EXPECTED
 console.log();
 const refDir = path.join(__dirname, 'reference_cases');

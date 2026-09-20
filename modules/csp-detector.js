@@ -32,6 +32,7 @@ const CSP_DEPRECATED = new Set(['reflected-xss', 'referrer', 'disown-opener', 'p
 const CSP_KEYWORDS = ['self', 'none', 'unsafe-inline', 'unsafe-eval', 'unsafe-hashes', 'strict-dynamic', 'report-sample', 'wasm-unsafe-eval', 'inline-speculation-rules', 'trusted-types-eval'];
 // <meta> 方式送出的 CSP,瀏覽器會直接忽略這幾個指令(規格明訂,只能用 HTTP 標頭)
 const CSP_META_IGNORED = { 'frame-ancestors': '防止被別人的網頁嵌入', 'report-uri': '違規回報', 'report-to': '違規回報', sandbox: 'sandbox 限制' };
+const CSP_NO_VALUE = ['upgrade-insecure-requests', 'block-all-mixed-content']; // 本來就沒有值的指令
 const CSP_PLACEHOLDER = '\u0001'; // ${…}、{{…}}、<%…%> 這類「執行時才填進去」的值(常見於 nonce)
 
 // 白名單裡「借得到別人程式碼」的網域。只列常見的,一定不完整——沒列到不代表安全。
@@ -85,7 +86,7 @@ function cspHost(tok) {
 // 每筆:{ text, source: 'meta'|'header'|'string'|'helmet', reportOnly, index, defaultsFilled? }
 
 function cspNormalize(raw) {
-  return raw.replace(/\$\{[^}]*\}|\{\{[^}]*\}\}|<%[\s\S]*?%>|%[A-Za-z_]+%|__[A-Za-z_]+__/g, CSP_PLACEHOLDER)
+  return raw.replace(/\$\{[^}]*\}|\{\{[^}]*\}\}|\{[A-Za-z_][\w.]*\}|<%[\s\S]*?%>|%[A-Za-z_]+%|__[A-Za-z_]+__/g, CSP_PLACEHOLDER)
     .replace(/\\[nrt]/g, ' ').replace(/\\(.)/g, '$1').replace(/\s+/g, ' ').trim();
 }
 
@@ -171,6 +172,27 @@ function cspExtract(code, looksLikeHtml) {
       if (!/-src\b|frame-ancestors|base-uri|form-action/.test(f[2])) continue;
       const text = cspNormalize(f[2]);
       if (cspLooksLikePolicy(text, 2)) push({ text, source: 'string', reportOnly: false, index: f.index });
+    }
+    // 「一條指令一個字串」的清單,最後再接起來:Python 的 list、JS 的陣列、Go 的 slice 都常這樣寫,
+    // 每個字串各自都不像一份完整的 CSP,所以上面的規則一個都抓不到。要求至少兩個字串以已知指令開頭。
+    const listRe = /\[([\s\S]{0,4000}?)\]/g;
+    let l;
+    while ((l = listRe.exec(code))) {
+      const itemRe = /(["'`])((?:\\.|(?!\1)[^\\])*)\1/g;
+      const dirs = [];
+      let d;
+      while ((d = itemRe.exec(l[1]))) {
+        const item = d[2].trim();
+        const parts = item.split(/\s+/);
+        const name = parts[0].toLowerCase();
+        // 要有值才算一條指令:程式碼裡的 ['object-src', x] 只是把指令名稱當字串用,不是政策
+        if (parts.length < 2 && CSP_NO_VALUE.indexOf(name) < 0) continue;
+        if (CSP_DIRECTIVES.has(name) || CSP_DEPRECATED.has(name)) dirs.push(item);
+      }
+      // 至少兩條,而且至少一條帶值:全是 upgrade-insecure-requests 這種沒有值的指令,多半是程式碼裡的名稱清單
+      if (dirs.length >= 2 && dirs.some(x => x.split(/\s+/).length >= 2)) {
+        push({ text: cspNormalize(dirs.join('; ')), source: 'string', reportOnly: false, index: l.index });
+      }
     }
     cspHelmetPolicies(code).forEach(push);
   }
@@ -360,9 +382,16 @@ function cspFinding(kind, tier, items, source, index) {
  * @param {string} code
  * @returns {boolean}
  */
-function cspSiteWide(code) {
+function cspIsHtml(code, language) {
+  // 為什麼:.py／.rb 這類檔案只要在字串或正則裡提到 <head>、<meta> 就會被內容猜測判成 HTML,
+  //       而「被當成 HTML」會關掉字串與 helmet 兩條取值路徑,建置時注入 CSP 的腳本就完全看不到。(背景見 docs/CHANGELOG.md)
+  if (language) return language === 'html';
+  return /<html|<head|<!DOCTYPE/i.test(code);
+}
+
+function cspSiteWide(code, language) {
   code = code || '';
-  return cspExtract(code, /<html|<head|<!DOCTYPE/i.test(code))
+  return cspExtract(code, cspIsHtml(code, language))
     .policies.some(p => !p.reportOnly && p.source !== 'meta');
 }
 
@@ -370,10 +399,10 @@ function cspSiteWide(code) {
  * @param {string} code
  * @returns {Array<{tier:number, category:string, name:string, kind:string, evidence:string}>}
  */
-function cspDetector(code) {
+function cspDetector(code, ctx) {
   const findings = [];
 
-  const looksLikeHtml = /<html|<head|<!DOCTYPE/i.test(code);
+  const looksLikeHtml = cspIsHtml(code, ctx && ctx.language);
   const looksLikeFrameworkConfig = /\bNextConfig\b|defineNuxtConfig\s*\(|module\.exports\s*=\s*{[\s\S]*?headers\s*:|async\s+headers\s*\(\s*\)\s*{|"headers"\s*:\s*\[/i.test(code);
   const found = cspExtract(code, looksLikeHtml);
   const usesHelmet = /require\s*\(\s*['"]helmet['"]|from\s+['"]helmet['"]|\bhelmet\s*\(/.test(code);

@@ -79,7 +79,7 @@
 - 已知格式的明文 API 金鑰（OpenAI／Anthropic／Gemini／Line／AWS），並依上下文分辨 Firebase 設定這類「本來就可公開」的值
 - HTML／框架設定檔是否有 CSP，以及設得緊不緊：`unsafe-inline`／`unsafe-eval`／整個協定（`https:`、`data:`）／`*`／http 來源／寫死的 nonce、沒有 `script-src`；白名單放了別人也能放程式碼的網域（公共 CDN、`*.github.io` 這類人人可架站的平台、JSONP／AngularJS 託管網域）；缺 `object-src`、用 nonce 卻沒管 `base-uri`。判斷依現代瀏覽器的語意：有 nonce／雜湊時 `'unsafe-inline'` 會被忽略、有 `'strict-dynamic'` 時白名單會被忽略，這些常見的相容寫法不會被冤枉
 - CSP 寫了但沒生效：指令拼錯（並提示「是不是想寫 …」）、漏分號、`'self'` 漏了單引號、nonce／雜湊格式不對、指令重複（只有第一個算）、已淘汰的指令、`<meta>` 不支援的指令（`frame-ancestors`、`report-uri`、`sandbox`）、CSP 標籤放在腳本後面、只回報不阻擋（Report-Only）。可讀 `<meta>`、HTTP 標頭設定（JSON、nginx、Apache、`_headers`）、存進變數的 CSP 字串，以及 Express `helmet` 設定（含 `contentSecurityPolicy: false`）
-- 多檔案掃描時，若專案裡有一處「整站生效」的 CSP（伺服器標頭／框架設定檔／`helmet`），其他沒寫 CSP 的網頁會自動降為「參考」；`<meta>` 只管自己那一頁，不會連帶降級
+- 多檔案掃描時，若專案裡有一處「整站生效」的 CSP（伺服器標頭／框架設定檔／`helmet`／建置時統一注入的腳本），其他沒寫 CSP 的網頁會自動降為「參考」；`<meta>` 只管自己那一頁，不會連帶降級。政策可以寫成一整條字串，也可以是「一條指令一個字串」的清單再 join（Python list、JS 陣列、Go slice 都讀得到）；說明文件（`.md`／`.txt`）裡的 CSP 視為在描述政策，不算數
 - 密碼是否用 MD5／SHA1 這類弱雜湊（含 Python `hashlib.new('md5')` 再 `.update(password)` 的兩段式寫法）
 - Supabase／JWT 金鑰，區分 `anon`（可公開）與 `service_role`（絕不可公開）
 - SQL Injection（字串拼接、模板插值、f-string、Python `%` 格式化）
