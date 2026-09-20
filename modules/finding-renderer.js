@@ -112,6 +112,35 @@ const FINDING_GUIDE = {
       '4. 幫我確認專案根目錄的 .gitignore 裡有沒有正確包含 .env 相關檔案，避免以後再次發生。\n' +
       '完成後請告訴我：這組密鑰是否需要重新產生，以及 .gitignore 現在有沒有正確排除這類檔案。'
   },
+  csp_weak: {
+    plain: '這個頁面有設定「內容安全政策（CSP）」，但裡面開了後門。最常見的是 unsafe-inline，它允許直接寫在網頁標籤裡的程式碼執行，而那正是 XSS 攻擊最常用的方式。等於門鎖裝了，但鑰匙插在門上。',
+    handoff:
+      '我的網頁有設定 Content Security Policy，但 script-src 裡含有 unsafe-inline（或 unsafe-eval、萬用字元），這讓 CSP 幾乎擋不住 XSS。請幫我：\n' +
+      '1. 找出頁面裡所有 onclick=、onchange= 這類寫在 HTML 標籤上的事件屬性，以及行內的 script 區塊，改成用 addEventListener 綁定、程式碼放進獨立的 .js 檔。\n' +
+      '2. 全部改完後，把 CSP 的 script-src 改成只允許 self，移除 unsafe-inline 與 unsafe-eval。\n' +
+      '3. 如果有非留不可的行內腳本，改用 nonce 或 sha256 雜湊單獨放行那一段，而不是整個開放。\n' +
+      '完成後請告訴我：現在的 CSP 內容是什麼，以及還有沒有行內程式碼。'
+  },
+  xss_from_url: {
+    plain: '這裡把網址或輸入框裡的內容，直接當成 HTML 放進頁面。只要有人做一個帶特殊內容的連結傳給你的使用者，點開就會在他們的瀏覽器上執行攻擊者寫的程式碼。這類問題叫 XSS，是網頁最常見的攻擊方式，而且一個連結就能發動。',
+    handoff:
+      '我的網頁把來自網址或輸入框的內容直接當成 HTML 插進頁面（innerHTML／document.write），這是 XSS 漏洞。請幫我：\n' +
+      '1. 找出所有把外部內容寫進 innerHTML、outerHTML、insertAdjacentHTML 或 document.write 的地方。\n' +
+      '2. 只是要顯示文字的，改用 textContent（它不會把內容當成 HTML 執行）。\n' +
+      '3. 真的需要產生 HTML 結構的，改成用 createElement 逐個建立元素，或先把內容做 HTML 跳脫再組合。\n' +
+      '4. 順便確認網頁的 CSP 有沒有設定，且沒有 unsafe-inline。\n' +
+      '完成後請告訴我：每一處改成什麼寫法，以及還有沒有地方是直接組 HTML 的。'
+  },
+  html_from_data: {
+    plain: '這裡把資料（例如課程名稱、留言、匯入的檔案內容）直接組成 HTML 放進頁面，沒有看到跳脫處理。如果這些資料有機會來自別人——別人傳的備份檔、共用的連結、後端回傳的內容——裡面藏的程式碼就會在使用者的瀏覽器執行。這是「疑似」，要看這份資料實際上是誰給的。',
+    handoff:
+      '我的網頁把資料直接組成 HTML 字串後塞進 innerHTML，沒有做跳脫。請幫我：\n' +
+      '1. 列出這些地方，並判斷插進去的值有沒有可能來自使用者或外部檔案。\n' +
+      '2. 只顯示文字的地方改用 textContent。\n' +
+      '3. 需要 HTML 結構的，寫一個 escapeHTML() 把 & < > " \' 轉成 HTML 實體，所有插進去的值都先經過它。\n' +
+      '4. 如果專案有匯入功能（讀取別人給的 JSON／CSV），在匯入時就把每個欄位做長度與型別檢查。\n' +
+      '完成後請告訴我：哪些地方改用 textContent、哪些地方套了跳脫。'
+  },
   no_csp_html: {
     plain: '這個頁面沒有設定「內容安全政策（CSP）」，這是瀏覽器提供的一道額外防線——如果頁面不小心被植入了惡意程式碼（例如透過某個有漏洞的第三方套件），CSP 能限制這段惡意程式碼能做的事；沒有這道防線，惡意程式碼能做的事就沒有額外限制。這不代表現在就有惡意程式碼，是「萬一發生時少一層保護」。',
     handoff:
@@ -551,6 +580,9 @@ const PLAIN_TITLES = {
   env_fallback: { title: '讀取環境變數時帶了一組明文備用值', action: '移除明文備用值，缺少設定時讓程式直接報錯' },
   env_file_secret: { title: '.env 設定檔裡有疑似真實的密鑰', action: '確認 .env 沒有上傳到 GitHub；已上傳就更換密鑰' },
   no_csp_html: { title: '網頁沒有設定額外的安全防線（CSP）', action: '為網頁加上 Content Security Policy' },
+  xss_from_url: { title: '網址裡的內容會被當成程式執行（XSS）', action: '改用 textContent，或先做 HTML 跳脫再放進頁面' },
+  html_from_data: { title: '資料被直接組成網頁內容，可能被插入惡意程式碼', action: '只顯示文字就改用 textContent，需要 HTML 就先跳脫' },
+  csp_weak: { title: 'CSP 有開後門（unsafe-inline），防護力打折', action: '把行內的 onclick 與 script 改成獨立檔案，再移除 unsafe-inline' },
   no_csp_config: { title: '框架設定檔裡沒看到安全防線設定（CSP）', action: '確認是否在其他設定檔或部署平台設定了 CSP' },
   possible_idor: { title: '登入的人可能看得到或改得到別人的資料', action: '查詢資料前，比對這筆資料的擁有者是不是目前登入的人' },
   possible_sql_injection: { title: '資料庫查詢可能被使用者輸入竄改（SQL Injection）', action: '改用參數化查詢（? 佔位符或 ORM 方法）' },
@@ -606,6 +638,9 @@ const CONTEXT_NOTES = {
   test: '位於測試或範例檔案，通常不會在正式網站執行，所以列為參考。',
   'test-real-secret': '位於測試檔，但看起來像真的金鑰——公開專案的測試檔外洩一樣是外洩，請照常處理。',
   unused: '這個檔案從網站入口追不到，看起來沒有在使用，所以列為參考。建議確認後直接刪除，避免舊程式碼留下風險。',
+  'old-version': '這個資料夾看起來是舊版本，通常已經沒在維護，所以列為參考。但舊版放著一樣會被打開，如果確定不再需要，建議整個資料夾刪掉，或改成轉址到最新版。',
+  'old-version-secret': '這是舊版本資料夾，但金鑰放在公開專案裡照樣會外洩，請照常處理。',
+  'no-backend': '這個專案看起來沒有後端（沒有伺服器程式、沒有資料庫、也沒有對外 API 呼叫），資料都存在使用者自己的瀏覽器裡，沒有「別人的資料」會被看到，所以列為參考。',
   'unused-secret': '這個檔案看起來沒有在使用，但金鑰放在公開專案裡照樣會外洩，請照常處理。'
 };
 
@@ -644,11 +679,28 @@ function countPhrase(stat, unit) {
  * 一句話結論 + 行動步驟(畫面與報告共用)
  * @returns {{headline: string, calm: string|null, steps: string[], partial?: boolean}}
  */
+// 「參考」可以略過的原因:結論那句話與參考區的摘要共用同一份文案
+const REF_REASONS = {
+  test: '測試或範例檔', placeholder: '假金鑰', unused: '沒在使用的檔案',
+  'old-version': '舊版本資料夾', 'no-backend': '這個專案沒有後端',
+  'test-real-secret': '測試檔裡的金鑰', 'unused-secret': '沒在使用的檔案裡的金鑰', 'old-version-secret': '舊版本裡的金鑰'
+};
+
+function refReasons(groups) {
+  return [...new Set(groups.filter(g => g.tier === 3).map(g => REF_REASONS[g.context]).filter(Boolean))];
+}
+
 function buildVerdict(findings, notices) {
   const groups = groupFindings(sortFindings(findings));
   const s = tierStats(groups);
   const hasLeak = findings.some(f => f.tier === 1 && LEAKED_KEY_KINDS.has(f.kind));
-  const refNote = s[3].items ? `另有 ${s[3].items} 項「參考」（測試檔、範例假金鑰等），可以略過。` : null;
+  const reasons = refReasons(groups);
+  // 原本是「需要處理」、因為情境被降級的項目要講清楚,否則「需要處理 0」會變成假的安心
+  const demoted = findings.filter(f => f.tier === 3 && f.originalTier === 1).length;
+  const demotedNote = demoted ? `其中 ${demoted} 項原本屬於「需要處理」，是依上述情境才降級的——如果那些檔案其實還在線上，請一併處理。` : null;
+  const refNote = s[3].items
+    ? `另有 ${s[3].items} 項「參考」（${reasons.length ? reasons.join('、') : '不需要立刻處理'}），可以略過。` + (demotedNote ? ' ' + demotedNote : '')
+    : null;
   // 入口主檔沒被檢查到:整份結果都不能當作「沒問題」,結論要先講這件事
   const entrySkipped = (notices || []).some(n => n.id === 'entry-skipped');
   const entryNote = entrySkipped ? '注意：這次沒有檢查到你的網站主檔（index.html），下面只是其餘檔案的結果。' : null;
@@ -836,7 +888,7 @@ function buildProjectMapHtml(map, findings) {
     : '';
   const noteHtml = map.note ? `<p class="rs-map-note">${escapeHtml(map.note)}</p>` : '';
   const graphHtml = (map.entries || []).length
-    ? `<p class="rs-map-sub">${escapeHtml('網頁用到哪些檔案（引用關係，從 ' + (map.primary || '入口') + ' 開始）')}</p>`
+    ? `<p class="rs-map-sub">${escapeHtml(map.primary ? '網頁用到哪些檔案（引用關係，從 ' + map.primary + ' 開始）' : '每個網頁各自用到哪些檔案（引用關係）')}</p>`
       + '<p class="rs-map-hint">由外往內一層一個顏色：最外層是網頁，往內是它用到的檔案。</p>'
       + buildProjectGraphHtml(map, findings)
     : '';
@@ -977,9 +1029,9 @@ function findingRenderer(findings, languageCaveat, notices, projectMap) {
     else html += buildGroupCardHtml(g, idx);
   });
   if (refCards.length) {
-    const ctx = new Set(groups.filter(g => g.tier === 3).map(g => g.context || ''));
-    const allTestLike = [...ctx].every(c => c === 'test' || c === 'placeholder' || c === 'unused');
-    const why = allTestLike ? '都在測試／範例檔，或是假金鑰' : '不需要立刻處理';
+    // 摘要直接寫出「為什麼可以略過」,不要只丟一句「參考」讓人自己猜
+    const refWhy = refReasons(groups);
+    const why = refWhy.length ? refWhy.join('、') : '不需要立刻處理';
     html += `<details class="rs-ref-group">
       <summary><b>參考 ${s[3].items} 項</b>：${why}，可以略過</summary>
       ${refCards.join('')}

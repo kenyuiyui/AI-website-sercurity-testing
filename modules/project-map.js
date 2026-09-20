@@ -113,19 +113,20 @@ function buildProjectMap(files, coverage, isTest) {
   map.entrySkipped = skippedPaths.filter(p => /(^|\/)index\.html?$/i.test(p));
 
   // 入口:所有網頁檔(放上線後每一頁都打得開);主要入口取最上層的 index.html
+  // 主要入口＝放在最上層的 index.html。像「一個 repo 放好幾版網站」那種 v1/ v2/ v3/ 各自一份網站的 repo,
+  // 沒有共同的最上層入口,硬選一個會把舊版本講成「主要入口」,所以這時每個網頁都是各自獨立的入口。
   const pages = files.map(f => f.filename).filter(p => PM_HTML_RE.test(p));
-  const indexes = pages.filter(p => /(^|\/)index\.html?$/i.test(p));
-  const primary = indexes.sort((a, b) => a.split('/').length - b.split('/').length)[0] || pages[0] || '';
-  const base = primary ? primary.slice(0, primary.lastIndexOf('/') + 1) : '';
+  const primary = pages.filter(p => /^index\.html?$/i.test(p))[0] || '';
   const aliases = pmAliases(files);
   map.entries = pages;
   map.primary = primary;
 
   let dynamic = false;
   /** 從 seeds 出發沿引用往下走;回傳走到的檔案集合,同時把引用關係記進 map.edges */
-  function walk(seeds, visited) {
+  function walk(seeds, visited, base) {
     const reached = new Set();
     const queue = [];
+    base = base || '';
     seeds.forEach(s => { if (!visited.has(s)) { reached.add(s); queue.push(s); } });
     while (queue.length) {
       const from = queue.shift();
@@ -154,17 +155,18 @@ function buildProjectMap(files, coverage, isTest) {
     return map;
   }
 
-  // 第一段:首頁 → 沿引用往下(其他網頁各自再走一次,它們自己的引用也算「有在使用」)
-  const fromPrimary = walk([primary], new Set());
+  // 第一段:每個網頁各自沿引用往下(網頁所在的資料夾就是它的根目錄,絕對路徑依此解析)
+  const dirOf = p => p.slice(0, p.lastIndexOf('/') + 1);
+  const fromPrimary = primary ? walk([primary], new Set(), dirOf(primary)) : new Set();
   const used = new Set(fromPrimary);
-  pages.forEach(p => { if (!used.has(p)) walk([p], used).forEach(x => used.add(x)); });
+  pages.forEach(p => { if (!used.has(p)) walk([p], used, dirOf(p)).forEach(x => used.add(x)); });
 
   // 第二段:建置腳本與測試檔是另一批起點,它們用到的檔案不是「沒用到」,而是工具用
   const toolCat = new Map();
   files.forEach(f => {
     if (used.has(f.filename)) return;
     const cat = isTest && isTest(f.filename) ? 'test' : PM_BUILD_RE.test(f.filename) ? 'build' : null;
-    if (cat) walk([f.filename], used).forEach(p => { if (!toolCat.has(p) || cat === 'test') toolCat.set(p, cat); });
+    if (cat) walk([f.filename], used, dirOf(f.filename)).forEach(p => { if (!toolCat.has(p) || cat === 'test') toolCat.set(p, cat); });
   });
 
   const multiPage = files.some(f => /(^|\/)vite\.config\.[cm]?[jt]s$/.test(f.filename) && /rollupOptions[\s\S]{0,300}input/.test(f.code));
@@ -182,7 +184,7 @@ function buildProjectMap(files, coverage, isTest) {
   files.forEach(f => {
     let status;
     if (fromPrimary.has(f.filename)) status = 'used';
-    else if (PM_HTML_RE.test(f.filename)) status = f.filename === primary ? 'used' : 'page';
+    else if (PM_HTML_RE.test(f.filename)) status = (!primary || f.filename === primary) ? 'used' : 'page';
     else if (used.has(f.filename)) status = 'used';
     else if (toolCat.has(f.filename)) status = toolCat.get(f.filename);
     else if (isTest && isTest(f.filename)) status = 'test';

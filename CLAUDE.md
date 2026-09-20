@@ -9,6 +9,19 @@
 - 寫回時保留 CRLF 換行（擁有者是 Windows 環境）。
 - 動手前先重新列出並讀取資料夾，不要依賴舊的副本。
 
+## 去識別化(不可退步)
+
+拿別人的專案實測是好事,但**寫進這個 repo 的任何東西都不可以指認出那個專案**:不寫 repo 名稱、
+帳號、網址、獨特的資料夾或檔名(`v3.2.n/` 這種特殊命名也算)。對方今天沒意見,不代表以後沒意見,
+而且我們寫的是「這個專案有什麼問題」,等於替別人公開了他沒同意公開的東西。
+
+- 改寫成技術情境:「一個純前端的課表規劃工具(沒有後端,資料存在瀏覽器)」「一個 repo 放了三個版本資料夾」。
+- 案例檔的 `===SOURCE===` 要寫「非真實蒐集樣本,依某某問題模式改寫,不對應任何特定專案」。
+- 例外只有一種:**已經正式公開揭露**的資安事件(有 CVE 或廠商公告),可以具名引用來源,
+  因為那本來就是公開資訊;個別使用者的專案不適用這條例外。
+- 變數、欄位、路徑一律改成通用名稱(`item.name`、`v1.0.0/`、`draft.html`)。
+- 這條規則同時適用於 `eval/cases/`、`eval/reference_cases/`、`docs/CHANGELOG.md`、程式碼註解與測試資料。
+
 ## 改東西前先知道
 
 - 行為快照（`eval/findings-snapshot.json`）記錄每個驗證樣本的掃描結果。規則改動是刻意的 → 檢查 verify 印出的差異合理後，`npm run verify -- --update`。**不要為了讓測試通過而更新快照。**
@@ -29,6 +42,7 @@ assets/app.js                 畫面層:事件、讀檔、結果互動、匯出�
 vendor/                       acorn、acorn-jsx 本地打包版(瀏覽器全域 acorn / acornJsx),授權見 THIRD_PARTY_LICENSES.md
 modules/*.js                  偵測模組(瀏覽器全域腳本 + Node module.exports 雙用)
 modules/source-mask.js        分辨程式碼／字串／註解／正則;「執行程式碼」類規則只對真正的程式碼報警
+modules/xss-detector.js       把資料直接組成 HTML(innerHTML/document.write)的寫法;只報「像是人打的文字」欄位,避免淹沒
 modules/project-map.js        多檔案專案的檢查範圍與檔案地圖:所有 .html 都是入口,沿 import/require/字串路徑追蹤(只看真正的程式碼),標 使用中／另一個網頁／工具設定／測試／疑似沒用到;certain=false 時不降級
 modules/scan-orchestrator.js  掃描流程唯一來源:scanCode(code, {filename}) / scanFiles(files);另含檔案情境規則(測試檔、假金鑰、副檔名、去重複)
 modules/finding-renderer.js   結果 HTML(依問題類型分組)、白話標題(PLAIN_TITLES)、結論與步驟(buildVerdict)、報告(buildReportMarkdown)
@@ -63,7 +77,7 @@ docs/USER_TEST_KIT.md         真人測試任務腳本(擁有者執行,結果回
   visualData?: object,    // 選填:畫面示意用
   // 以下由 scan-orchestrator 補上
   line?, start?, end?, filename?,
-  context?: 'placeholder' | 'test' | 'test-real-secret' | 'unused' | 'unused-secret',  // 依檔案情境調整過層級時的原因
+  context?: 'placeholder' | 'test' | 'test-real-secret' | 'unused' | 'unused-secret' | 'old-version' | 'old-version-secret' | 'no-backend',  // 依檔案情境調整過層級時的原因
   originalTier?
 }
 ```

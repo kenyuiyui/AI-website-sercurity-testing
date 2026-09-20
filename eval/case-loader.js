@@ -11,7 +11,7 @@ const path = require('path');
 const VALID_KINDS = new Set([
   'plain_key', 'firebase_config_exposed', 'line_bot_token_suspected',
   'custom_secret_var', 'endpoint_url', 'env_fallback', 'env_file_secret',
-  'supabase_service_role', 'supabase_anon', 'jwt_unknown_role',
+  'supabase_service_role', 'supabase_anon', 'jwt_unknown_role', 'csp_weak', 'xss_from_url', 'html_from_data',
   'weak_hash',
   'no_csp_html', 'no_csp_config',
   'possible_idor',

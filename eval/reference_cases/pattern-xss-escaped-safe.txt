@@ -1,0 +1,35 @@
+===SOURCE===
+非真實蒐集樣本。與 pattern-xss-innerhtml-unescaped.txt 相同的渲染需求,
+但每個插進 HTML 的值都先經過跳脫函式。用來確認規則不會對「已經處理好的寫法」誤報。
+
+===CATEGORY===
+同樣的渲染需求,但有正確跳脫(不應命中)
+
+===EXPECTED===
+NONE
+
+===CODE===
+function escapeHTML(str) {
+  if (str === null || str === undefined) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+const items = JSON.parse(localStorage.getItem('items') || '[]');
+
+function renderList() {
+  const box = document.getElementById('list');
+  box.innerHTML = '';
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.innerHTML = `
+      <div class="card-title">${escapeHTML(item.name)}</div>
+      <div class="card-sub">${escapeHTML(item.note)}</div>
+    `;
+    box.appendChild(card);
+  });
+}

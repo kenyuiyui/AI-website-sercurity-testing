@@ -1,0 +1,17 @@
+===SOURCE===
+非真實蒐集樣本。依「網址參數直接當成 HTML 顯示」這個問題模式改寫,不對應任何特定專案。
+這個模式常見於用 AI 產生的搜尋結果頁或分享頁:把網址上的關鍵字直接回顯在畫面上,
+只要一個帶特殊內容的連結就能在別人的瀏覽器上執行程式碼。
+
+===CATEGORY===
+網址參數直接回顯成 HTML(XSS)
+
+===EXPECTED===
+xss_from_url
+
+===CODE===
+const params = new URLSearchParams(location.search);
+const keyword = params.get('q') || '';
+
+document.getElementById('resultTitle').innerHTML =
+  '搜尋結果：<strong>' + keyword + '</strong>';

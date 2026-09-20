@@ -4,7 +4,7 @@
 
 | | `cases/` | `reference_cases/`(這裡) |
 |---|---|---|
-| 案例來源 | 真實蒐集(GitHub public repo、真實分享連結等) | 依已公開發表的資安事件技術報告**改寫** |
+| 案例來源 | 真實蒐集(GitHub public repo、真實分享連結等) | 依已公開發表的資安事件技術報告**改寫**,或依常見問題模式改寫的去識別化樣本 |
 | 進不進 `run_scaled_eval.js` 的統計 | 是 | **否** |
 | 用途 | 建立有統計意義的準確率信賴區間 | 擴充問題模式覆蓋面、當教學範例、記錄已知規則邊界 |
 | 新增時的品質要求 | 必須是真實案例，不能是發想 | 可以是改寫，但**必須**標明真實事件來源，不能是純虛構 |
@@ -19,6 +19,16 @@
 2. **規則邊界發現**：驗證過程中兩個案例（`incident-base44-2025.txt`、`incident-moltbook-2026.txt`）發現 M6(idor-detector) 正則保底版不涵蓋 Express 路由掛載式寫法（`app.get(path, (req,res)=>{...})`），已修正，修正紀錄見對應檔案的 `===SOURCE===` 區塊。
 3. **教學／文件用途**：每個案例都附了真實事件的技術背景說明，比起完全抽象的規則描述，更容易讓人理解「這條規則在防什麼真實會發生的事」。
 
+## 去識別化原則（2026-09 起）
+
+拿別人的專案實測之後，**不可以把那個專案寫進案例裡**——不寫 repo 名稱、帳號、網址、
+獨特的資料夾或檔名，變數與欄位一律改成通用名稱。對方現在沒意見不代表以後沒意見，
+而且案例內容等於在說「這個專案有什麼問題」。
+
+`incident-*.txt` 是例外：那些對照的是已經正式公開揭露、有 CVE 或廠商公告的事件，
+本來就是公開資訊，所以可以在 `===SOURCE===` 具名引用來源。
+`pattern-*.txt` 則完全不對應特定專案，只描述問題模式。
+
 ## 案例清單與對照事件
 
 | 檔案 | 對照事件/來源 | 驗證結果 |
@@ -29,6 +39,20 @@
 | `incident-ai-credentials-gitguardian-2026.txt` | GitGuardian《State of Secrets Sprawl 2026》AI服務憑證統計 | ✅ 命中 |
 | `incident-tenzai-nextjs-csp-2025.txt` | Tenzai 2025年12月研究(0/15應用程式設定安全標頭) | ✅ 命中 |
 | `incident-tenzai-ratelimit-2025.txt` | Tenzai 2025年12月研究(1/15應用程式嘗試速率限制) | ✅ 命中 |
+| `pattern-xss-innerhtml-unescaped.txt` | 常見問題模式改寫（資料未跳脫就組成 HTML），不對應特定專案 | ✅ 命中 `html_from_data` |
+| `pattern-xss-via-local-variable.txt` | 同上，但資料先組成字串變數再塞進 HTML | ✅ 命中（一跳追蹤補上後才抓到） |
+| `pattern-xss-url-parameter.txt` | 網址參數直接回顯（典型反射型 XSS） | ✅ 命中 `xss_from_url`（URL 來源追兩層後才抓到） |
+| `pattern-xss-escaped-safe.txt` | 同樣的渲染需求但有正確跳脫（負向案例） | ✅ 正確放行 |
+| `pattern-csp-unsafe-inline.txt` | 有 CSP 但 `script-src` 含 `unsafe-inline` | ✅ 命中 `csp_weak` |
+
+## 這批案例發現的規則漏判（2026-09）
+
+`pattern-xss-via-local-variable.txt` 與 `pattern-xss-url-parameter.txt` 加進來時都是**不命中**的，
+兩個都是真的漏判，因此修正了 M14：
+
+- 插進 HTML 的是個變數時，回頭看同檔案裡那個變數是怎麼組出來的（一跳）。
+- 判斷「值是否來自網址」時允許再追一層，因為 `const params = new URLSearchParams(location.search)` →
+  `const keyword = params.get('q')` → 塞進 HTML 是最典型的兩段式寫法。
 
 ## 已修正的規則邊界
 

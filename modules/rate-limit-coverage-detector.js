@@ -13,7 +13,7 @@
  * 完成(見該模組內的 tier3 相關程式碼),實作 M12 前已確認過 M8 能正確承接。
  *
  * ⚠️ 本模組的核心判斷邏輯(catch-all 偵測、嚴重度分級)已拿真實的
- * Cloudflare Workers 專案(yoya9933/chess-online)的 worker/index.js 與
+ * Cloudflare Workers 專案(一個社群分享的 Cloudflare Workers 專案)的 worker/index.js 與
  * worker/security.js 實測驗證過,詳見規格文件「核心邏輯」段落與
  * eval/samples.js 裡對應的真實案例。
  */

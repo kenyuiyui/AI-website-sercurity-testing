@@ -13,7 +13,7 @@ if (typeof module !== 'undefined' && module.exports && typeof keyDetector === 'u
   [
     'source-mask', 'key-detector', 'jwt-analyzer', 'hash-detector', 'secret-heuristics', 'csp-detector', 'project-map',
     'idor-detector', 'language-detector', 'finding-renderer', 'sql-injection-detector',
-    'insecure-deserialize-detector', 'rate-limit-coverage-detector', 'field-masking-consistency-detector'
+    'insecure-deserialize-detector', 'rate-limit-coverage-detector', 'field-masking-consistency-detector', 'xss-detector'
   ].forEach(name => Object.assign(globalThis, require('./' + name)));
 }
 
@@ -36,6 +36,7 @@ function getSingleFileDetectors() {
     { id: 'M6', run: (code, ctx) => { const r = idorDetectorWithMeta(code, blankNonCode(code, ctx.mask)); ctx.astUsed = r.astUsed; return r.findings; } },
     { id: 'M9', run: code => sqlInjectionDetector(code) },
     { id: 'M10', run: (code, ctx) => insecureDeserializeDetector(code, ctx) },
+    { id: 'M14', run: (code, ctx) => xssDetector(code, ctx) },
     // M12 需要看字串裡的路由路徑,所以只把註解換成空白(字串保留)
     { id: 'M12', run: (code, ctx) => rateLimitCoverageDetector(blankNonCode(code, ctx.mask, Infinity)) }
   ];
@@ -210,6 +211,85 @@ function buildCoverageNotices(projectMap, scanned) {
   return notices;
 }
 
+// ── 舊版本資料夾 ──
+// 為什麼:一個 repo 放 v1.0.0/ v2.0/ 好幾版網站時,舊版的問題會蓋過現役版本。(背景見 docs/CHANGELOG.md)
+const VERSION_DIR_RE = /^v?\d+(?:[._-][\w.]+)*$/i;
+
+/** 版本資料夾名稱 → 可比較的數字陣列(非數字段落算 0):v3.2.x → [3,2,0] */
+function versionRank(dir) {
+  return dir.replace(/^v/i, '').split(/[._-]/).map(seg => (/^\d+$/.test(seg) ? Number(seg) : 0));
+}
+
+function newerVersion(a, b) {
+  const ra = versionRank(a);
+  const rb = versionRank(b);
+  for (let i = 0; i < Math.max(ra.length, rb.length); i++) {
+    const x = ra[i] || 0;
+    const y = rb[i] || 0;
+    if (x !== y) return x > y ? a : b;
+  }
+  return ra.length >= rb.length ? a : b;
+}
+
+/**
+ * 舊版本資料夾裡的發現降為參考(金鑰不降:公開的舊版一樣會外洩)
+ * @param {Array} findings
+ * @param {Array<{filename: string}>} files
+ */
+function applyOldVersionContext(findings, files) {
+  const dirs = [...new Set(files.map(f => String(f.filename || '').split('/')[0]).filter(d => VERSION_DIR_RE.test(d)))];
+  if (dirs.length < 2) return findings;
+  const latest = dirs.reduce(newerVersion);
+  const oldDirs = dirs.filter(d => d !== latest);
+  return findings.map(f => {
+    if (!f.filename || f.context || f.tier === 3) return f;
+    if (!oldDirs.some(d => f.filename.indexOf(d + '/') === 0)) return f;
+    if (SECRET_KINDS.has(f.kind)) return Object.assign({}, f, { context: 'old-version-secret' });
+    return Object.assign({}, f, { tier: 3, originalTier: f.tier, context: 'old-version' });
+  });
+}
+
+// ── 這個專案有沒有後端? ──
+// 為什麼:純前端單機工具(資料只存在使用者自己的瀏覽器)沒有「別人的資料」,IDOR 規則只會製造噪音。(背景見 docs/CHANGELOG.md)
+// 判斷刻意寬鬆:只要有一點像後端就算有,寧可照常報 IDOR,也不要把真的越權問題降級。
+const BACKEND_SIGNALS = [
+  /(?:require|from)\s*\(?\s*['"](?:express|koa|fastify|@hapi\/|next|nuxt|mongoose|prisma|@prisma\/|knex|pg|mysql2?|sqlite3|sequelize|typeorm|@supabase\/|firebase|firebase-admin|aws-sdk|@aws-sdk\/|mongodb|redis)/i,
+  /\b(?:app|router|server)\s*\.\s*(?:get|post|put|patch|delete|use)\s*\(\s*['"`]/,
+  /\b(?:createServer|listen)\s*\(\s*(?:process\.env\.PORT|\d{2,5})/,
+  /\b(?:from|import)\s+(?:flask|django|fastapi|sqlalchemy|psycopg2)\b/i,
+  /\bsupabase\s*\.\s*from\s*\(|\bcreateClient\s*\(|getFirestore\s*\(|firebase\.firestore\s*\(/,
+  /\bfetch\s*\(\s*[`'"]https?:\/\//,
+  // 任何「路徑字串」或樣板網址都算:fetch('/users/'+id) 這種相對於自家後端的呼叫最常見。
+  // fetch(event.request)(Service Worker 快取)不算,那不是呼叫後端。
+  /\bfetch\s*\(\s*[`'"]\//,
+  /\bfetch\s*\(\s*`[^`]*\$\{/,
+  /\$\.(?:get|post|ajax)\s*\(/,
+  /\baxios\b|\bXMLHttpRequest\b|\$\.ajax\s*\(/,
+  /\bfunctions\.https\.|\bonRequest\s*\(|\bexports\.handler\s*=/
+];
+const BACKEND_PATH_RE = /(^|\/)(api|server|backend|functions|routes|controllers|handlers)\/|\.(py|php|rb|go|java|cs)$/i;
+const NO_BACKEND_KINDS = new Set(['possible_idor']);
+
+/** @param {Array<{filename: string, code: string}>} files */
+function projectHasBackend(files) {
+  return files.some(f => {
+    if (BACKEND_PATH_RE.test(f.filename || '')) return true;
+    const language = languageFromFilename(f.filename) || guessMaskLanguage(f.code || '');
+    // Infinity:字串全留(fetch 的網址本身就是字串),只抹掉註解
+    const code = blankNonCode(f.code || '', buildCodeMask(f.code || '', { language }), Infinity);
+    return BACKEND_SIGNALS.some(re => re.test(code));
+  });
+}
+
+/** 沒有後端時,把「越權存取」類的發現降為參考並說明原因(已有其他情境註記的不動) */
+function applyNoBackendContext(findings, hasBackend) {
+  if (hasBackend) return findings;
+  return findings.map(f => {
+    if (!NO_BACKEND_KINDS.has(f.kind) || f.context || f.tier === 3) return f;
+    return Object.assign({}, f, { tier: 3, originalTier: f.tier, context: 'no-backend' });
+  });
+}
+
 /** 有檔名時,副檔名優先於內容猜測:.js 檔不檢查網頁 CSP、不提示 Python 特徵 */
 function applyFilenameRules(findings, notices, filename, language) {
   if (!filename) return { findings, notices };
@@ -291,6 +371,8 @@ function scanFiles(files, opts) {
 
   let projectMap = null;
   if (isMultiFile) {
+    findings = applyOldVersionContext(findings, files);
+    findings = applyNoBackendContext(findings, projectHasBackend(files));
     projectMap = buildProjectMap(files, opts && opts.coverage, isTestLikePath);
     findings = applyUsageContext(findings, projectMap);
     notices.unshift(...buildCoverageNotices(projectMap, files.length));
@@ -299,5 +381,5 @@ function scanFiles(files, opts) {
 }
 
 if (typeof module !== 'undefined' && module.exports) {
-  module.exports = { scanCode, scanFiles, applyUsageContext, attachLocations, buildNotices, looksMinified, applyFileContext, isTestLikePath, looksLikePlaceholderSecret, getSingleFileDetectors, IDOR_AST_DEGRADED_NOTICE, MINIFIED_NOTICE };
+  module.exports = { scanCode, scanFiles, projectHasBackend, applyNoBackendContext, applyOldVersionContext, applyUsageContext, attachLocations, buildNotices, looksMinified, applyFileContext, isTestLikePath, looksLikePlaceholderSecret, getSingleFileDetectors, IDOR_AST_DEGRADED_NOTICE, MINIFIED_NOTICE };
 }

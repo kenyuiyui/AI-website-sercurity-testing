@@ -43,7 +43,7 @@
 │   ├── github-import.js       # 從公開 GitHub 專案匯入檔案
 │   └── app.js                 # 畫面層(輸入、讀檔、結果互動、匯出報告)
 ├── vendor/                   # acorn / acorn-jsx 本地版本與第三方授權
-├── modules/                  # M1~M13 偵測與分析模組 + scan-orchestrator(掃描流程唯一來源)
+├── modules/                  # M1~M14 偵測與分析模組 + scan-orchestrator(掃描流程唯一來源)
 ├── referencesingle/
 │   └── index.html            # 單檔版(由 scripts/build-single.js 產生，請勿手改)
 ├── scripts/                  # build-single(產生單檔版)、verify(一鍵驗證)與其子步驟
@@ -66,7 +66,7 @@
 
 單檔版是由拆分版產生的，**只改 `index.html`、`assets/`、`vendor/`、`modules/`**，改完執行 `npm run build:single`：更新檔案指紋與版本號，並重新產生 `referencesingle/index.html`。
 
-模組對照表：M1 key-detector（明文金鑰）／M2 jwt-analyzer（JWT/Supabase）／M3 hash-detector（弱雜湊）／M4 secret-heuristics（自訂密鑰啟發式）／M5 csp-detector（CSP 缺失）／M6 idor-detector（IDOR）／M7 language-detector／M8 finding-renderer（結果呈現、報告）／M9 sql-injection-detector／M10 insecure-deserialize-detector／M11 field-masking-consistency-detector（多檔案模式）／M12 rate-limit-coverage-detector／M13 project-map（檔案地圖、引用關係與檢查範圍，多檔案模式）；scan-orchestrator 負責依序呼叫並合併結果。
+模組對照表：M1 key-detector（明文金鑰）／M2 jwt-analyzer（JWT/Supabase）／M3 hash-detector（弱雜湊）／M4 secret-heuristics（自訂密鑰啟發式）／M5 csp-detector（CSP 缺失）／M6 idor-detector（IDOR）／M7 language-detector／M8 finding-renderer（結果呈現、報告）／M9 sql-injection-detector／M10 insecure-deserialize-detector／M11 field-masking-consistency-detector（多檔案模式）／M12 rate-limit-coverage-detector／M13 project-map（檔案地圖、引用關係與檢查範圍，多檔案模式）／M14 xss-detector（資料被直接組成 HTML）；scan-orchestrator 負責依序呼叫並合併結果。
 
 ---
 
@@ -77,18 +77,21 @@
 ### 查得到
 
 - 已知格式的明文 API 金鑰（OpenAI／Anthropic／Gemini／Line／AWS），並依上下文分辨 Firebase 設定這類「本來就可公開」的值
-- HTML／框架設定檔是否有 CSP
+- HTML／框架設定檔是否有 CSP，以及 CSP 內容是否被 `unsafe-inline`／`unsafe-eval`／`*` 放寬到形同虛設
 - 密碼是否用 MD5／SHA1 這類弱雜湊（含 Python `hashlib.new('md5')` 再 `.update(password)` 的兩段式寫法）
 - Supabase／JWT 金鑰，區分 `anon`（可公開）與 `service_role`（絕不可公開）
 - SQL Injection（字串拼接、模板插值、f-string、Python `%` 格式化）
 - 不安全的反序列化／動態執行（eval／exec／pickle／yaml.load，含 Python `exec()` 格式化字串注入）
-- 疑似缺少擁有權驗證（IDOR），含 Express 路由 `app.get(path, (req, res) => {...})` 寫法
+- XSS：網址或輸入框的內容被直接當成 HTML（`innerHTML`／`document.write`），以及資料欄位（name／title／message 等）未跳脫就組成 HTML
+- 疑似缺少擁有權驗證（IDOR），含 Express 路由 `app.get(path, (req, res) => {...})` 寫法；專案裡找不到任何後端跡象（伺服器程式、資料庫、對外 API 呼叫）時降為「參考」
 - 多檔案模式：同一敏感欄位在不同檔案的遮罩不一致、路由缺少速率限制
 - 多檔案模式：列出檢查範圍（掃了幾個檔案、哪些沒掃到）、每個檔案的角色（使用中／另一個網頁／工具設定／測試／疑似沒用到），以及「網頁用到哪些檔案」的引用關係樹。疑似沒用到的檔案裡，發現降為「參考」（金鑰除外）
 
 ### 做不到 / 僅供保守提示
 
 - 字串拆分組合而成的金鑰
+- XSS 只看「明顯是人打進去的文字」欄位（name、title、message、note…）進 `innerHTML` 的寫法，會往回追一層變數；再多轉一手（函式回傳、跨檔案）或欄位名稱特殊時會漏判
+- 「這個專案沒有後端」「這是舊版本資料夾」是依檔案內容推測的情境，用來把不急的項目降為「參考」；推測錯誤時真正的問題會被降級，所以結論會一併說明有幾項是被降級的
 - 協定層級漏洞、需動態執行才能確認的邏輯漏洞
 - IDOR——只是模式比對，主要針對 JS／Express，AST 解析失敗時降級為涵蓋率較低的正則版
 - 疑似自訂密鑰、疑似內部端點 URL、環境變數明文 fallback——無固定格式，誤判率較高
@@ -107,8 +110,8 @@
 | 分類 | 涵蓋程度 | 對應模組 |
 |---|---|---|
 | A01 – Broken Access Control | ✅ 完整 | M6 idor-detector |
-| A05 – Injection | ✅ 完整 | M9 sql-injection-detector、M10 insecure-deserialize-detector |
-| A02 – Security Misconfiguration | 🟡 部分（僅 CSP 缺失） | M5 csp-detector |
+| A05 – Injection | ✅ 完整 | M9 sql-injection-detector、M10 insecure-deserialize-detector、M14 xss-detector |
+| A02 – Security Misconfiguration | 🟡 部分（CSP 缺失與過度放寬） | M5 csp-detector |
 | A04 – Cryptographic Failures | 🟡 部分（僅弱雜湊） | M3 hash-detector |
 | A07 – Authentication Failures | 🟡 部分（僅 JWT／Supabase 角色判斷） | M2 jwt-analyzer |
 

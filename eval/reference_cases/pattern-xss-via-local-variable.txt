@@ -1,0 +1,22 @@
+===SOURCE===
+非真實蒐集樣本。依「先把資料組成字串變數、再把變數塞進 HTML」這個模式改寫,
+不對應任何特定專案。這個寫法比直接插值更難看出問題:資料在上一行就被組進字串,
+插進 HTML 的位置只看得到一個變數名稱。
+
+===CATEGORY===
+資料先組成變數再塞進 HTML(疑似 XSS)
+
+===EXPECTED===
+html_from_data
+
+===CODE===
+const records = JSON.parse(localStorage.getItem('records') || '[]');
+
+function showSummary() {
+  const summary = records
+    .map(r => `${r.title}（${r.count} 筆）`)
+    .join('；');
+
+  document.getElementById('summaryBar').innerHTML =
+    '<div class="summary">目前內容：' + summary + '</div>';
+}

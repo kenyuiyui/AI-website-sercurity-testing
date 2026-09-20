@@ -117,6 +117,19 @@
    "route_missing_rate_limit@2:5",
    "route_missing_rate_limit@2:8"
   ],
+  "reference_cases/pattern-csp-unsafe-inline.txt": [
+   "csp_weak@2:-"
+  ],
+  "reference_cases/pattern-xss-escaped-safe.txt": [],
+  "reference_cases/pattern-xss-innerhtml-unescaped.txt": [
+   "html_from_data@2:9"
+  ],
+  "reference_cases/pattern-xss-url-parameter.txt": [
+   "xss_from_url@1:4"
+  ],
+  "reference_cases/pattern-xss-via-local-variable.txt": [
+   "html_from_data@2:8"
+  ],
   "samples.js#1": [
    "plain_key@3:5"
   ],
@@ -296,6 +309,19 @@
    "route_missing_rate_limit@2:11",
    "route_missing_rate_limit@2:5",
    "route_missing_rate_limit@2:8"
+  ],
+  "reference_cases/pattern-csp-unsafe-inline.txt": [
+   "csp_weak@2:-"
+  ],
+  "reference_cases/pattern-xss-escaped-safe.txt": [],
+  "reference_cases/pattern-xss-innerhtml-unescaped.txt": [
+   "html_from_data@2:9"
+  ],
+  "reference_cases/pattern-xss-url-parameter.txt": [
+   "xss_from_url@1:4"
+  ],
+  "reference_cases/pattern-xss-via-local-variable.txt": [
+   "html_from_data@2:8"
   ],
   "samples.js#1": [
    "plain_key@3:5"

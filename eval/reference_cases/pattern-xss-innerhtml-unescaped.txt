@@ -1,0 +1,28 @@
+===SOURCE===
+非真實蒐集樣本。依「把資料直接組成 HTML」這個常見問題模式改寫,不對應任何特定專案、
+帳號或網址,變數與欄位名稱一律改為通用名稱。這個模式在多個 AI 產出的純前端工具裡都出現過:
+資料存在瀏覽器(localStorage 或匯入的 JSON),渲染時用樣板字串組成 HTML 後塞進 innerHTML,
+沒有做 HTML 跳脫。
+
+===CATEGORY===
+資料欄位未跳脫就組成 HTML(疑似 XSS)
+
+===EXPECTED===
+html_from_data
+
+===CODE===
+const items = JSON.parse(localStorage.getItem('items') || '[]');
+
+function renderList() {
+  const box = document.getElementById('list');
+  box.innerHTML = '';
+  items.forEach(item => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-title">${item.name}</div>
+      <div class="card-sub">${item.note}</div>
+    `;
+    box.appendChild(card);
+  });
+}

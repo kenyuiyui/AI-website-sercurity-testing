@@ -1,0 +1,29 @@
+===SOURCE===
+非真實蒐集樣本。依「有設定 CSP 但開了 unsafe-inline」這個問題模式改寫,不對應任何特定專案。
+這個組合很常見:頁面大量使用 onclick 這類行內事件屬性,為了讓它們能執行而加上 unsafe-inline,
+結果 CSP 擋不住最常見的 XSS 注入。
+
+===CATEGORY===
+有 CSP 但 script-src 含 unsafe-inline
+
+===EXPECTED===
+csp_weak
+
+===CODE===
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline';
+    style-src 'self' 'unsafe-inline';
+    img-src 'self' data:;
+  ">
+  <title>示範頁面</title>
+</head>
+<body>
+  <button onclick="doSomething()">送出</button>
+  <script src="app.js"></script>
+</body>
+</html>

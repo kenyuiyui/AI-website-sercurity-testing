@@ -144,6 +144,15 @@ check('真正的函式仍會報缺少擁有權檢查',
   'export async function deleteProperty(propertyId) {\n  const r = await db.from("p").delete().eq("id", propertyId);\n  return r;\n}',
   'possible_idor', true);
 
+// 第八輪:CSP 的內容品質、以及「這個專案有沒有後端」
+const cspMeta = v => `<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="${v}"></head><body></body></html>`;
+check('CSP 有 unsafe-inline 要提醒', cspMeta("default-src 'self'; script-src 'self' 'unsafe-inline';"), 'csp_weak', true);
+check('CSP 有 unsafe-eval 要提醒', cspMeta("script-src 'self' 'unsafe-eval';"), 'csp_weak', true);
+check('script-src 用萬用字元要提醒', cspMeta('script-src *;'), 'csp_weak', true);
+check('嚴格的 CSP 不提醒', cspMeta("default-src 'none'; script-src 'self';"), 'csp_weak', false);
+check('只有 style-src 放寬不提醒', cspMeta("script-src 'self'; style-src 'self' 'unsafe-inline';"), 'csp_weak', false);
+check('有 CSP 就不再報「沒有 CSP」', cspMeta("script-src 'self' 'unsafe-inline';"), 'no_csp_html', false);
+
 // ── 檔案地圖(project-map)、檢查範圍、沒用到檔案的降級 ──
 const { scanFiles } = require('../modules/scan-orchestrator');
 const { findingRenderer } = require('../modules/finding-renderer');
@@ -160,14 +169,14 @@ const VITE_PROJECT = [
   { filename: 'src/views/Home.vue', code: '<template><div/></template>' },
   { filename: 'src/components/Old.vue', code: '<script setup>\nconst x = eval(location.hash)\n</script>' },
   { filename: 'src/old/key.js', code: `export const OPENAI_KEY = "${OLD_KEY}";` },
-  { filename: 'tmp_home.html', code: '<!DOCTYPE html><html><head></head><body></body></html>' },
+  { filename: 'draft.html', code: '<!DOCTYPE html><html><head></head><body></body></html>' },
   { filename: 'vite.config.ts', code: "import path from 'node:path'\nexport default { resolve: { alias: { '@': path.resolve(__dirname, './src') } } }" }
 ];
 const vr = scanFiles(VITE_PROJECT);
 const st = (r, p) => (r.projectMap.nodes.find(n => n.path === p) || {}).status;
 checkMap('入口追得到的檔案標為使用中(含 @ 別名、動態 import)', ['index.html', 'src/main.ts', 'src/App.vue', 'src/components/Nav.vue', 'src/views/Home.vue'].every(p => st(vr, p) === 'used'));
 checkMap('追不到的檔案標為疑似沒用到', st(vr, 'src/components/Old.vue') === 'unused' && st(vr, 'src/old/key.js') === 'unused');
-checkMap('沒被首頁連到的網頁標為「另一個網頁」而不是沒用到', st(vr, 'tmp_home.html') === 'page');
+checkMap('沒被首頁連到的網頁標為「另一個網頁」而不是沒用到', st(vr, 'draft.html') === 'page');
 checkMap('建置設定檔不算沒用到', st(vr, 'vite.config.ts') === 'build');
 const evalF = vr.findings.find(f => f.kind === 'insecure_eval');
 checkMap('沒用到檔案裡的一般問題降為參考', !!evalF && evalF.tier === 3 && evalF.context === 'unused' && evalF.originalTier === 1);
@@ -214,6 +223,75 @@ const nst = p => (np.projectMap.nodes.find(n => n.path === p) || {}).status;
 checkMap('字串路徑載入(sw.js)也算有在使用', nst('sw.js') === 'used');
 checkMap('被建置腳本 require 的檔案標成工具而不是沒用到', nst('scripts/helper.js') === 'build');
 checkMap('真的沒人用到的檔案才標為疑似沒用到', nst('lonely.js') === 'unused' && np.projectMap.certain === true);
+
+// 版本資料夾各放一份網站(v1/ v2/ …)時,不能把其中一個舊版當成「主要入口」、其他當成「另一個網頁」
+const MULTI_SITE = [
+  { filename: 'v1.0.0/index.html', code: '<!DOCTYPE html><html><body><script src="js/old.js"></script></body></html>' },
+  { filename: 'v1.0.0/js/old.js', code: 'const a = 1;' },
+  { filename: 'v3/index.html', code: '<!DOCTYPE html><html><body><script src="/js/new.js"></script></body></html>' },
+  { filename: 'v3/js/new.js', code: 'const b = 2;' }
+];
+const ms = scanFiles(MULTI_SITE);
+const mst = p => (ms.projectMap.nodes.find(n => n.path === p) || {}).status;
+checkMap('沒有最上層 index.html 時不硬選主要入口', ms.projectMap.primary === '' && ms.projectMap.counts.page === 0);
+checkMap('每個版本資料夾各自算一個網站(含各自的絕對路徑)', mst('v1.0.0/index.html') === 'used' && mst('v3/index.html') === 'used' && mst('v3/js/new.js') === 'used' && mst('v1.0.0/js/old.js') === 'used');
+
+// 第九輪:XSS(把資料直接組成 HTML)
+const XSS_BASE = 'const d = JSON.parse(localStorage.getItem("x") || "{}");\n';
+check('網址內容直接進 innerHTML', 'box.innerHTML = location.hash;', 'xss_from_url', true);
+check('輸入框內容直接組成 HTML', 'box.innerHTML = "<p>" + document.getElementById("q").value + "</p>";', 'xss_from_url', true);
+check('資料欄位未跳脫組成 HTML', XSS_BASE + 'box.innerHTML = `<div>${d.name}</div>`;', 'html_from_data', true);
+check('有跳脫就不報', XSS_BASE + 'box.innerHTML = `<div>${escapeHTML(d.name)}</div>`;', 'html_from_data', false);
+check('清空 innerHTML 不報', XSS_BASE + 'box.innerHTML = "";', 'html_from_data', false);
+check('寫死的字串不報', XSS_BASE + 'box.innerHTML = `<div class="x">固定文字</div>`;', 'html_from_data', false);
+check('class 名稱這種非文字欄位不報', XSS_BASE + 'box.innerHTML = `<div class="${mode}">x</div>`;', 'html_from_data', false);
+check('已經組好的 HTML 片段不報', XSS_BASE + 'box.innerHTML = `<table>${rowsHtml}</table>`;', 'html_from_data', false);
+check('textContent 不是 HTML 注入點', XSS_BASE + 'box.textContent = d.name;', 'html_from_data', false);
+check('說明文字裡的範例不算', XSS_BASE + '// 例如 box.innerHTML = `<b>${user.name}</b>`\nconst a = 1;', 'html_from_data', false);
+check('沒有外部資料的純靜態頁不報', 'const t = "標題";\nbox.innerHTML = `<h1>${t}</h1>`;', 'html_from_data', false);
+// 先把資料組成字串、再塞進 HTML(真實案例改寫:先把課程名稱組成字串,再塞進提示區塊)
+check('先組成變數再塞進 HTML 也要追到',
+  'const list = JSON.parse(localStorage.getItem("c"));\nconst conflictText = list.map(x => `${x.name}`).join("；");\nbanner.innerHTML = `<div>${conflictText}</div>`;',
+  'html_from_data', true);
+check('組成變數時有跳脫就不報',
+  'const list = JSON.parse(localStorage.getItem("c"));\nconst conflictText = list.map(x => `${escapeHTML(x.name)}`).join("；");\nbanner.innerHTML = `<div>${conflictText}</div>`;',
+  'html_from_data', false);
+
+// 純前端單機工具:沒有後端就沒有「別人的資料」,IDOR 只會製造噪音
+const { projectHasBackend } = require('../modules/scan-orchestrator');
+const IDOR_CODE = 'function getItem(itemId) {\n  const item = db.find(itemId);\n  return item;\n}';
+const FRONT_ONLY = [
+  { filename: 'index.html', code: '<!DOCTYPE html><html><body><script src="app.js"></script></body></html>' },
+  { filename: 'app.js', code: 'const db = JSON.parse(localStorage.getItem("data") || "[]");\n' + IDOR_CODE }
+];
+const fo = scanFiles(FRONT_ONLY);
+const foIdor = fo.findings.find(f => f.kind === 'possible_idor');
+checkMap('純前端專案的越權提醒降為參考', !projectHasBackend(FRONT_ONLY) && !!foIdor && foIdor.tier === 3 && foIdor.context === 'no-backend' && foIdor.originalTier === 2);
+
+const WITH_BACKEND = FRONT_ONLY.concat([{ filename: 'lib/db.js', code: "const supabase = createClient(url, key);\nexport const q = () => supabase.from('t').select('*');" }]);
+const wb = scanFiles(WITH_BACKEND);
+const wbIdor = wb.findings.find(f => f.kind === 'possible_idor');
+checkMap('有後端(Supabase)時越權提醒維持原層級', projectHasBackend(WITH_BACKEND) && !!wbIdor && wbIdor.tier === 2 && !wbIdor.context);
+
+const WITH_API = FRONT_ONLY.concat([{ filename: 'api/users.js', code: 'module.exports = (req, res) => res.json({});' }]);
+checkMap('有 api/ 資料夾就算有後端', projectHasBackend(WITH_API));
+checkMap('註解裡提到 axios 不算有後端', !projectHasBackend([{ filename: 'a.js', code: '// 之後可能改用 axios 呼叫後端\nconst x = 1;' }]));
+checkMap('相對路徑的 fetch 也算有後端', projectHasBackend([{ filename: 'a.js', code: 'fetch("/users/" + id).then(r => r.json());' }]));
+checkMap('Service Worker 的快取 fetch 不算有後端', !projectHasBackend([{ filename: 'sw.js', code: 'self.addEventListener("fetch", e => e.respondWith(fetch(e.request)));' }]));
+
+// 舊版本資料夾:一個 repo 放好幾版網站時,舊版的問題不該蓋過現役版本
+const VERSIONED = [
+  { filename: 'v1.0.0/index.html', code: '<!DOCTYPE html><html><body><script src="js/a.js"></script></body></html>' },
+  { filename: 'v1.0.0/js/a.js', code: 'const d = JSON.parse(localStorage.getItem("x"));\nbox.innerHTML = `<b>${d.name}</b>`;' },
+  { filename: 'v2.0/index.html', code: '<!DOCTYPE html><html><head><meta http-equiv="Content-Security-Policy" content="default-src \'self\'"></head><body><script src="js/b.js"></script></body></html>' },
+  { filename: 'v2.0/js/b.js', code: 'const d = JSON.parse(localStorage.getItem("x"));\nbox.innerHTML = `<b>${escapeHTML(d.name)}</b>`;' }
+];
+const ver = scanFiles(VERSIONED);
+const oldF = ver.findings.find(f => f.filename === 'v1.0.0/js/a.js' && f.kind === 'html_from_data');
+checkMap('舊版本資料夾的發現降為參考並說明原因', !!oldF && oldF.tier === 3 && oldF.context === 'old-version' && oldF.originalTier === 2);
+checkMap('最新版本資料夾不受影響', !ver.findings.some(f => f.filename.indexOf('v2.0/') === 0 && f.context === 'old-version'));
+const verHtml = findingRenderer(ver.findings, ver.languageCaveat, ver.notices, ver.projectMap);
+checkMap('參考的摘要寫出可以略過的原因', /舊版本資料夾/.test(verHtml));
 
 // 檔案情境(需要檔名,直接用 scanCode 檢查層級)
 // 看起來像真的金鑰:拆開組合,避免本檔案在「掃描本專案自己」時被當成外洩
