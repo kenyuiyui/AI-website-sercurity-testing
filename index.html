@@ -12,8 +12,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>未發現 ≠ 安全 — AI 產出程式碼資安檢查器</title>
 <meta name="description" content="貼上程式碼或 GitHub 網址，檢查 AI 產出程式碼常見的資安問題：金鑰外洩、弱雜湊、SQL Injection、權限檢查缺漏。在你的瀏覽器內執行，內容不外送。">
-<link rel="stylesheet" href="assets/style.css">
-<script src="assets/theme-init.js"></script>
+<link rel="stylesheet" href="assets/style.css?v=e1e4a3fc">
+<script src="assets/theme-init.js?v=6a3a9a31"></script>
 </head>
 <body>
 
@@ -94,7 +94,7 @@
     <footer>
       <p>本工具只做靜態比對：不執行、不上傳、不儲存你貼上的內容。適合上線前快速自我檢查，不能取代正式的資安審查或滲透測試。</p>
       <p>「需要處理」是高信心度的結果；「請你確認」代表看起來可疑，需要你對照程式判斷。</p>
-      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a></p>
+      <p>作者：kenyuiyui ｜ <a href="https://github.com/kenyuiyui/AI-website-sercurity-testing" target="_blank" rel="noopener noreferrer">GitHub 專案頁面</a> ｜ 版本 <span id="appVersion">b489ee79</span></p>
     </footer>
   </div>
 
@@ -198,23 +198,23 @@
   新增模組:這裡加一行 + modules/scan-orchestrator.js 的 getSingleFileDetectors() 加一行。
   單檔版 referencesingle/index.html 由 scripts/build-single.js 依這份清單內嵌產生。
 -->
-<script src="vendor/acorn.min.js"></script>
-<script src="vendor/acorn-jsx.min.js"></script>
-<script src="modules/source-mask.js"></script>
-<script src="modules/key-detector.js"></script>
-<script src="modules/jwt-analyzer.js"></script>
-<script src="modules/hash-detector.js"></script>
-<script src="modules/secret-heuristics.js"></script>
-<script src="modules/csp-detector.js"></script>
-<script src="modules/idor-detector.js"></script>
-<script src="modules/language-detector.js"></script>
-<script src="modules/finding-renderer.js"></script>
-<script src="modules/sql-injection-detector.js"></script>
-<script src="modules/insecure-deserialize-detector.js"></script>
-<script src="modules/rate-limit-coverage-detector.js"></script>
-<script src="modules/field-masking-consistency-detector.js"></script>
-<script src="modules/scan-orchestrator.js"></script>
-<script src="assets/github-import.js"></script>
-<script src="assets/app.js"></script>
+<script src="vendor/acorn.min.js?v=75730bd6"></script>
+<script src="vendor/acorn-jsx.min.js?v=58fa1ba4"></script>
+<script src="modules/source-mask.js?v=931033f0"></script>
+<script src="modules/key-detector.js?v=f74facaf"></script>
+<script src="modules/jwt-analyzer.js?v=4fa581e0"></script>
+<script src="modules/hash-detector.js?v=9bb3cca5"></script>
+<script src="modules/secret-heuristics.js?v=22e5913b"></script>
+<script src="modules/csp-detector.js?v=29a4e3a2"></script>
+<script src="modules/idor-detector.js?v=d8747db4"></script>
+<script src="modules/language-detector.js?v=d31fbb9c"></script>
+<script src="modules/finding-renderer.js?v=d5269af5"></script>
+<script src="modules/sql-injection-detector.js?v=d75b98dc"></script>
+<script src="modules/insecure-deserialize-detector.js?v=5d6fe669"></script>
+<script src="modules/rate-limit-coverage-detector.js?v=8233146a"></script>
+<script src="modules/field-masking-consistency-detector.js?v=6ad6c847"></script>
+<script src="modules/scan-orchestrator.js?v=19163e05"></script>
+<script src="assets/github-import.js?v=4f551e85"></script>
+<script src="assets/app.js?v=8d630769"></script>
 </body>
 </html>

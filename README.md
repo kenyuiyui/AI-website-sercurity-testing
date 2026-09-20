@@ -62,9 +62,9 @@
 - **Claude 修改時**：在雲端工作區跑 `npm run verify`，全部通過才寫回資料夾
 - **push 到 GitHub 後**（若已放入 `.github/workflows/verify.yml`）：GitHub 自動跑同一套驗證，在 commit 旁顯示通過或失敗
 
-`verify` 包含：模組清單一致、每種問題都有白話說明、規則回歸測試、所有樣本的行為快照比對、匯出報告不含金鑰與原始碼、GitHub 匯入解析、單檔版同步，以及（有 playwright 時）瀏覽器畫面驗收。規則是刻意調整、快照差異也確認合理時，才用 `npm run verify -- --update` 更新快照。
+`verify` 包含：模組清單一致、每種問題都有白話說明、規則回歸測試、所有樣本的行為快照比對、匯出報告不含金鑰與原始碼、GitHub 匯入解析、檔案指紋是最新的、單檔版同步，以及（有 playwright 時）瀏覽器畫面驗收。規則是刻意調整、快照差異也確認合理時，才用 `npm run verify -- --update` 更新快照。
 
-單檔版是由拆分版產生的，**只改 `index.html`、`assets/`、`vendor/`、`modules/`**，改完重新產生 `referencesingle/index.html`（`npm run build:single`）。
+單檔版是由拆分版產生的，**只改 `index.html`、`assets/`、`vendor/`、`modules/`**，改完執行 `npm run build:single`：更新檔案指紋與版本號，並重新產生 `referencesingle/index.html`。
 
 模組對照表：M1 key-detector（明文金鑰）／M2 jwt-analyzer（JWT/Supabase）／M3 hash-detector（弱雜湊）／M4 secret-heuristics（自訂密鑰啟發式）／M5 csp-detector（CSP 缺失）／M6 idor-detector（IDOR）／M7 language-detector／M8 finding-renderer（結果呈現、報告）／M9 sql-injection-detector／M10 insecure-deserialize-detector／M11 field-masking-consistency-detector（多檔案模式）／M12 rate-limit-coverage-detector；scan-orchestrator 負責依序呼叫並合併結果。
 
@@ -133,6 +133,13 @@
 - **明顯的假金鑰**（含 test／example 字樣、`abcdefgh`、`12345678` 這類連續字元）→ 「參考」
 - **看起來是真的金鑰，即使在測試檔裡也維持「需要處理」**——公開專案的測試檔外洩一樣是外洩
 - 說明文字、註解、字串裡「提到」`eval()`、`pickle.loads()` 等函式，不會被當成真的呼叫
+
+### 同一份程式碼，不同瀏覽器跑出不同結果？
+
+多半是瀏覽器還在用舊版工具。每個版本的頁尾都有「版本 xxxxxxxx」，匯出的報告也會附上版本號，兩邊版本不同時結果就可能不同。
+
+- 網站更新後，工具的程式檔網址會跟著改變，瀏覽器會自動下載新版，不會新舊混用
+- 若頁尾版本還是舊的，按 **Ctrl + F5**（Mac：Cmd + Shift + R）強制重新整理一次即可
 
 ### 貼上「檢視網頁原始碼」的內容，結果可靠嗎？
 

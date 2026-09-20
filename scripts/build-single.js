@@ -41,6 +41,7 @@ function build() {
 
   let out = html.replace(/^([ \t]*)<link rel="stylesheet" href="([^"]+)">$/gm, (all, indent, href) => {
     if (!isLocal(href)) return all;
+    href = href.replace(/\?.*$/, ''); // 去掉 ?v= 檔案指紋
     inlinedCss++;
     const body = `\n/* ── 內嵌: ${href} ── */\n${inlineCss(href)}\n`;
     styleHashes.push(sha256(body));
@@ -49,6 +50,7 @@ function build() {
 
   out = out.replace(/^([ \t]*)<script src="([^"]+)"><\/script>$/gm, (all, indent, src) => {
     if (!isLocal(src)) return all;
+    src = src.replace(/\?.*$/, ''); // 去掉 ?v= 檔案指紋
     inlinedJs++;
     const code = readText(src);
     // 行內 script 內容不能出現這兩種序列,否則 HTML 解析會提前結束或吞掉後面的標籤

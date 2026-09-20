@@ -788,7 +788,7 @@ function buildReportMarkdown(findings, notices, meta) {
   lines.push(`- 產生時間：${meta.generatedAt || new Date().toLocaleString('zh-TW')}`);
   if (meta.source) lines.push(`- 檢查對象：${meta.source}`);
   if (meta.mode) lines.push(`- 檢查方式：${meta.mode}`);
-  lines.push(`- 工具：看見 AI 網頁的程式過錯${meta.toolUrl ? '（' + meta.toolUrl + '）' : ''}`);
+  lines.push(`- 工具：看見 AI 網頁的程式過錯${meta.toolUrl ? '（' + meta.toolUrl + '）' : ''}${meta.version ? '，版本 ' + meta.version : ''}`);
   lines.push('', `**結論：${verdict.headline}**`, '');
   if (verdict.calm) lines.push(verdict.calm, '');
   if (verdict.steps.length) {

@@ -13,6 +13,7 @@
 
 - 行為快照（`eval/findings-snapshot.json`）記錄每個驗證樣本的掃描結果。規則改動是刻意的 → 檢查 verify 印出的差異合理後，`npm run verify -- --update`。**不要為了讓測試通過而更新快照。**
 - **不要手改 `referencesingle/index.html`**，它由 `npm run build:single` 產生（含 CSP 雜湊，手改會讓腳本被瀏覽器擋下）。
+- **改了任何 `assets/`、`modules/`、`vendor/` 的 JS/CSS 後執行 `npm run build:single`**：它會先更新 `index.html` 裡的檔案指紋（`?v=…`）與頁尾版本號，再產生單檔版。指紋過期 verify 會失敗。不要手改 `?v=` 或版本號。
 - 修正紀錄寫在 `docs/CHANGELOG.md`；程式碼旁只留一行 `為什麼:…(背景見 docs/CHANGELOG.md)`。
 - 報告數字（README「準確度驗證」、`eval/EVAL_REPORT.md`）只在跑過 `npm run eval` / `eval:ast` 後依實際輸出更新。
 
@@ -30,6 +31,7 @@ modules/*.js                  偵測模組(瀏覽器全域腳本 + Node module.e
 modules/source-mask.js        分辨程式碼／字串／註解／正則;「執行程式碼」類規則只對真正的程式碼報警
 modules/scan-orchestrator.js  掃描流程唯一來源:scanCode(code, {filename}) / scanFiles(files);另含檔案情境規則(測試檔、假金鑰、副檔名、去重複)
 modules/finding-renderer.js   結果 HTML(依問題類型分組)、白話標題(PLAIN_TITLES)、結論與步驟(buildVerdict)、報告(buildReportMarkdown)
+scripts/stamp-version.js      index.html 本地 CSS/JS 網址加內容指紋 ?v=…、寫入頁尾版本號(避免 GitHub Pages 快取造成新舊版混用)
 scripts/build-single.js       index.html → referencesingle/index.html(內嵌 css/js/字型,改寫 CSP 為 sha256)
 scripts/verify.js             一鍵驗證;snapshot.js / check-report.js / ui-smoke.js 為其子步驟
 eval/load-ast.js              讓 Node 使用 vendor/ 內與網頁相同的 acorn(require 它 = AST 版)
@@ -94,7 +96,7 @@ notices（本次檢查的限制）：`{ id, level: 'warn' | 'info', text }`，�
 | 指令 | 用途 |
 |---|---|
 | `npm run verify` | 改完必跑，全綠才寫回 |
-| `npm run build:single` | 重新產生單檔版 |
+| `npm run build:single` | 更新檔案指紋與版本號，並重新產生單檔版 |
 | `npm run eval` / `eval:ast` / `eval:fp` | 準確度統計（更新報告數字時用） |
 | `npm run test:ui` | 畫面驗收（需 playwright；可用 `CHROMIUM_PATH` 指定瀏覽器） |
 

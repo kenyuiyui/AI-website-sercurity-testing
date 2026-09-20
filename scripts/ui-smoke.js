@@ -76,6 +76,10 @@ async function checkPage(browser, url, label, viewport) {
   assert(input < vh - 40, `${label}: 首屏看不到輸入框(top=${Math.round(input)})`);
   assert(sample <= vh, `${label}: 首屏看不到「看範例」按鈕(bottom=${Math.round(sample)})`);
 
+  // 版本號(scripts/stamp-version.js 寫入頁尾;使用者回報結果不一致時用來對照版本)
+  const ver = await page.$eval('#appVersion', el => el.textContent.trim());
+  assert(/^[0-9a-f]{8}$/.test(ver), `${label}: 頁尾版本號不正確(${ver})`);
+
   // C. CSP 生效
   const blocked = await page.evaluate(() => fetch('https://example.com/').then(() => false, () => true));
   assert(blocked, `${label}: CSP 沒有擋下對外連線`);

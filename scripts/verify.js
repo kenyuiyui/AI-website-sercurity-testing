@@ -7,6 +7,7 @@
  * 4. 行為快照:所有驗證樣本的掃描結果與 eval/findings-snapshot.json 比對(正則版 + AST 版)
  *    規則改動是刻意的 → 確認差異合理後執行 npm run verify -- --update 更新快照
  *    另含:匯出報告安全、整專案自我掃描(需要處理 = 0)、GitHub 匯入解析
+ *    另含:JS/CSS 檔案指紋(scripts/stamp-version.js)是最新的
  * 5. 單檔版同步:referencesingle/index.html 與拆分版一致
  * 6. 畫面冒煙測試:有安裝 playwright 時才跑(scripts/ui-smoke.js),沒有就略過
  */
@@ -43,7 +44,7 @@ function run(cmd, args, opts) {
 step('模組清單一致', () => {
   const files = fs.readdirSync(path.join(root, 'modules')).filter(f => f.endsWith('.js')).sort();
   const html = fs.readFileSync(path.join(root, 'index.html'), 'utf-8');
-  const tags = [...html.matchAll(/<script src="modules\/([\w-]+\.js)"><\/script>/g)].map(m => m[1]);
+  const tags = [...html.matchAll(/<script src="modules\/([\w-]+\.js)(?:\?v=[0-9a-f]+)?"><\/script>/g)].map(m => m[1]);
   const orch = fs.readFileSync(path.join(root, 'modules', 'scan-orchestrator.js'), 'utf-8');
   const nodeList = [...orch.slice(0, orch.indexOf('].forEach')).matchAll(/'([\w-]+)'/g)].map(m => m[1] + '.js');
 
@@ -53,7 +54,7 @@ step('模組清單一致', () => {
   const missingNode = files.filter(f => f !== 'scan-orchestrator.js' && !nodeList.includes(f));
   if (missingNode.length) problems.push('scan-orchestrator.js 的 Node 清單缺少: ' + missingNode.join(', '));
   if (tags[tags.length - 1] !== 'scan-orchestrator.js') problems.push('scan-orchestrator.js 必須是最後載入的模組');
-  const appIdx = html.indexOf('<script src="assets/app.js">');
+  const appIdx = html.search(/<script src="assets\/app\.js[?"]/);
   if (appIdx < html.lastIndexOf('<script src="modules/')) problems.push('assets/app.js 必須在所有模組之後載入');
   if (problems.length) throw new Error(problems.join('\n'));
   return `${files.length} 個模組`;
@@ -155,6 +156,9 @@ step('GitHub 匯入的網址解析與檔案篩選', () => {
   if (problems.length) throw new Error(problems.join('\n'));
   return `${cases.length} 個網址、2 組篩選`;
 });
+
+// ── 4d. 檔案指紋(避免瀏覽器快取造成新舊版混用) ──
+step('JS/CSS 檔案指紋是最新的', () => 'v' + run('node', ['scripts/stamp-version.js', '--check']).trim());
 
 // ── 5. 單檔版同步 ──
 step('單檔版同步', () => { run('node', ['scripts/build-single.js', '--check']); });

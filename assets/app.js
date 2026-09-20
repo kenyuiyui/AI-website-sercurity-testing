@@ -387,13 +387,20 @@
     return scan.astUsed ? '完整分析（含語法分析）' : '簡易比對（程式碼含無法解析的語法，例如 TypeScript 型別）';
   }
 
+  // 頁尾版本號由 scripts/stamp-version.js 寫入;報告附上版本,結果不一致時可對照是否為同一版
+  function appVersion() {
+    const el = document.getElementById('appVersion');
+    return el ? el.textContent.trim() : '';
+  }
+
   function currentReport() {
     if (!lastScan) return '';
     return buildReportMarkdown(lastScan.findings, lastScan.notices, {
       generatedAt: new Date().toLocaleString('zh-TW', { hour12: false }),
       source: lastScan.source,
       mode: describeMode(lastScan),
-      toolUrl: TOOL_URL
+      toolUrl: TOOL_URL,
+      version: appVersion()
     });
   }
 
